@@ -41,7 +41,8 @@ namespace MassSpectrometry
             switch (DeconvolutionType)
             {
                 case DeconvolutionTypes.ClassicDeconvolution:
-                    ((ClassicDeconvolutionParameters)DeconvolutionParameters).Range = new MzRange(scan.IsolationRange.Minimum - 8.5, scan.IsolationRange.Maximum + 8.5);
+                    //((ClassicDeconvolutionParameters)DeconvolutionParameters).Range = new MzRange(scan.IsolationRange.Minimum - 8.5, scan.IsolationRange.Maximum + 8.5);
+                    ((ClassicDeconvolutionParameters)DeconvolutionParameters).Range = new MzRange(scan.MassSpectrum.XArray.First(), scan.MassSpectrum.XArray.Last());
                     break;
 
                 case DeconvolutionTypes.AlexDeconvolution:
@@ -49,10 +50,11 @@ namespace MassSpectrometry
                     break;
             }
 
-            return DeconvolutionAlgorithm.Deconvolute(scan.MassSpectrum);
-        }
+            var envelopes = DeconvolutionAlgorithm.Deconvolute(scan.MassSpectrum);
+            //ScoreDeconvolution(envelopes, scan.MassSpectrum);
 
- 
+            return envelopes;
+        }
 
         /// <summary>
         /// Constructs the relevant deconvolution algorithm
@@ -75,5 +77,18 @@ namespace MassSpectrometry
                 default: throw new MzLibException("DeconvolutionType not yet supported");
             }
         }
+
+
+
+        // BELOW is new
+
+        public void ScoreDeconvolution(IEnumerable<IsotopicEnvelope> envelopes, MzSpectrum spectrum)
+        {
+            DeconvolutionScorer.ScoreDeconvolution(envelopes, spectrum);
+        }
     }
+
+
+
+
 }

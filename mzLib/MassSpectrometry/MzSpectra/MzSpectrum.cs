@@ -29,8 +29,10 @@ using System.Text.Json;
 
 namespace MassSpectrometry
 {
-    public class MzSpectrum
+    public class MzSpectrum : IDeconvolutable
     {
+        public DeconvolutionScore Score { get; set; }
+
         private const int numAveraginesToGenerate = 1500;
         private static readonly double[][] allMasses = new double[numAveraginesToGenerate][];
         private static readonly double[][] allIntensities = new double[numAveraginesToGenerate][];

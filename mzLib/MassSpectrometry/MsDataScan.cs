@@ -23,8 +23,10 @@ using System.Linq;
 
 namespace MassSpectrometry
 {
-    public class MsDataScan
+    public class MsDataScan : IDeconvolutable
     {
+        public DeconvolutionScore Score => MassSpectrum.Score;
+
         public MsDataScan(MzSpectrum massSpectrum, int oneBasedScanNumber, int msnOrder, bool isCentroid, Polarity polarity, double retentionTime, MzRange scanWindowRange, string scanFilter, MZAnalyzerType mzAnalyzer,
             double totalIonCurrent, double? injectionTime, double[,] noiseData, string nativeId, double? selectedIonMz = null, int? selectedIonChargeStateGuess = null, double? selectedIonIntensity = null, double? isolationMZ = null,
             double? isolationWidth = null, DissociationType? dissociationType = null, int? oneBasedPrecursorScanNumber = null, double? selectedIonMonoisotopicGuessMz = null, string hcdEnergy = null)
