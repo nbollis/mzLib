@@ -19,21 +19,6 @@ namespace Test
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public static class TestProteinDigestion
     {
-        private static Stopwatch Stopwatch { get; set; }
-
-        [SetUp]
-        public static void Setup()
-        {
-            Stopwatch = new Stopwatch();
-            Stopwatch.Start();
-        }
-
-        [TearDown]
-        public static void TearDown()
-        {
-            Console.WriteLine($"Analysis time: {Stopwatch.Elapsed.Hours}h {Stopwatch.Elapsed.Minutes}m {Stopwatch.Elapsed.Seconds}s");
-        }
-
         [Test]
         public static void ProteaseLoader()
         {

@@ -27,21 +27,6 @@ namespace Test
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public sealed class TestRangeAndTolerances
     {
-        private static Stopwatch Stopwatch { get; set; }
-
-        [SetUp]
-        public static void Setuppp()
-        {
-            Stopwatch = new Stopwatch();
-            Stopwatch.Start();
-        }
-
-        [TearDown]
-        public static void TearDown()
-        {
-            Console.WriteLine($"Analysis time: {Stopwatch.Elapsed.Hours}h {Stopwatch.Elapsed.Minutes}m {Stopwatch.Elapsed.Seconds}s");
-        }
-
         #region DoubleRangeTests
 
         [Test]

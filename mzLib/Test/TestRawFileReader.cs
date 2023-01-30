@@ -70,8 +70,6 @@ namespace Test
 
             dynamicConnection1.CloseDynamicConnection();
             dynamicConnection2.CloseDynamicConnection();
-
-            Console.WriteLine($"Analysis time for TestDynamicConnectionRawFileReader: {stopwatch.Elapsed.Hours}h {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s");
         }
 
         /// <summary>
@@ -120,9 +118,6 @@ namespace Test
                     Assert.AreEqual(roundedMzmlIntensity, roundedRawIntensity);
                 }
             }
-
-            Console.WriteLine($"Analysis time for TestPeakFilteringRawFileReader: {stopwatch.Elapsed.Hours}h " +
-                $"{stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s");
         }
 
         /// <summary>
@@ -136,8 +131,6 @@ namespace Test
 
             var licence = ThermoRawFileReaderLicence.ThermoLicenceText;
             Assert.That(licence.Length > 100);
-
-            Console.WriteLine($"Analysis time for TestThermoLicence: {stopwatch.Elapsed.Hours}h {stopwatch.Elapsed.Minutes}m {stopwatch.Elapsed.Seconds}s");
         }
 
         /// <summary>

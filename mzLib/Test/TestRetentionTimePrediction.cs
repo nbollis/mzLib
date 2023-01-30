@@ -595,22 +595,7 @@ namespace Test
                 {"QNEHKRDE", 22.20}
             };
         }
-
-        private static Stopwatch Stopwatch { get; set; }
-
-        [SetUp]
-        public static void Setuppp()
-        {
-            Stopwatch = new Stopwatch();
-            Stopwatch.Start();
-        }
-
-        [TearDown]
-        public static void TearDown()
-        {
-            Console.WriteLine($"Analysis time: {Stopwatch.Elapsed.Hours}h {Stopwatch.Elapsed.Minutes}m {Stopwatch.Elapsed.Seconds}s");
-        }
-
+        
         /// <summary>
         ///A test for ScoreSequence with 300A column
         ///</summary>

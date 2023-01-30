@@ -15,7 +15,6 @@ namespace Test
     public class TestVariantProtein
     {
         private static List<Modification> UniProtPtms;
-        private static Stopwatch Stopwatch { get; set; }
 
         [OneTimeSetUp]
         public static void SetUpModifications()
@@ -24,20 +23,7 @@ namespace Test
             Dictionary<string, int> formalChargesDictionary = Loaders.GetFormalChargesDictionary(psiModDeserialized);
             UniProtPtms = Loaders.LoadUniprot(Path.Combine(TestContext.CurrentContext.TestDirectory, "ptmlist2.txt"), formalChargesDictionary).ToList();
         }
-
-        [SetUp]
-        public static void Setuppp()
-        {
-            Stopwatch = new Stopwatch();
-            Stopwatch.Start();
-        }
-
-        [TearDown]
-        public static void TearDown()
-        {
-            Console.WriteLine($"Analysis time: {Stopwatch.Elapsed.Hours}h {Stopwatch.Elapsed.Minutes}m {Stopwatch.Elapsed.Seconds}s");
-        }
-
+        
         [Test]
         public static void VariantProtein()
         {
