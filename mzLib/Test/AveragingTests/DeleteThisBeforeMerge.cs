@@ -5,6 +5,7 @@ using NUnit.Framework;
 using SpectralAveraging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -149,6 +150,30 @@ namespace Test.AveragingTests
             }
             double noiseLevel = histogram.MaxBy(p => p.Value.Count).Value.Average(p => p.Intensity);
             return noiseLevel;
+        }
+
+        public static Dictionary<(double start, double end), List<double>> GetHistogram(this MzSpectrum spectrum, int numberOfBins)
+        {
+            if (spectrum.FirstX == null || spectrum.LastX == null)
+            {
+                Debugger.Break();
+                return null;
+            }
+
+            Dictionary<(double start, double end), List<double>> histogram = new();
+            var peaks = spectrum.Extract(new DoubleRange(spectrum.FirstX.Value, spectrum.LastX.Value))
+                .OrderBy(p => p.Mz).ToList();
+            double maxIntensity = peaks.Max(p => p.Intensity);
+            var binWidth = maxIntensity / numberOfBins;
+
+            for (int i = 0; i < numberOfBins; i++)
+            {
+                (double start, double end) bin = new(binWidth * i, binWidth * (i + 1));
+                List<double> peaksInBin = spectrum.YArray.Where(p => p >= bin.start && p < bin.end).ToList();
+                histogram.Add(bin, peaksInBin);
+            }
+
+            return histogram;
         }
     }
 }
