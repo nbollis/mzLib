@@ -49,6 +49,13 @@ public static class AveragedSpectraWriter
             PeriodTolerantFilenameWithoutExtension.GetPeriodTolerantFilenameWithoutExtension(originalSpectraPath) +
             ".mzML");
 
+        int index = 1;
+        while (File.Exists(averagedPath))
+        {
+            int indexToInsert = averagedPath.IndexOf(".mzML", StringComparison.InvariantCulture );
+            averagedPath = averagedPath.Insert(indexToInsert, $"({index})");
+        }
+
         MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(msDataFile, averagedPath, true);
     }
 

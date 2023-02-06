@@ -33,7 +33,7 @@ public static class SpectralWeighting
             case SpectraWeightingType.TicValue:
                 return WeightByTicValue(yArrays);
 
-            case SpectraWeightingType.MrsNoiseEstimation:
+            case SpectraWeightingType.NoiseLevel:
                 return WeightByMrsNoiseEstimation(yArrays);
             //return WeightByMrsNoiseEstimation(xArrays, yArrays);
 
@@ -135,5 +135,29 @@ public static class SpectralWeighting
         }
     }
 
-    
+    private static Dictionary<int, double> WeightByHistogramNoiseLevel(double[][] yArrays)
+    {
+        var weights = new Dictionary<int, double>();
+        double numberOfBins = 5000.0;
+
+        for (var index = 0; index < yArrays.Length; index++)
+        {
+            var yArray = yArrays[index];
+            double binWidth = yArray.Max() / numberOfBins;
+            Dictionary<(double start, double end), List<double>> histogram = new();
+
+            for (int i = 0; i < numberOfBins; i++)
+            {
+                (double start, double end) bin = new(binWidth * i, binWidth * (i + 1));
+                List<double> peaksInBin = yArray.Where(p => p >= bin.start && p < bin.end).ToList();
+                histogram.Add(bin, peaksInBin);
+            }
+
+            double noiseLevel = histogram.MaxBy(p => p.Value.Count).Value.Average();
+            weights.Add(index, noiseLevel);
+        }
+        return weights;
+    }
+
+
 }

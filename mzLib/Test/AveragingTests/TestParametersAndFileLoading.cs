@@ -102,7 +102,7 @@ namespace Test.AveragingTests
             }
 
             parameters.OutlierRejectionType = OutlierRejectionType.AveragedSigmaClipping;
-            parameters.SpectralWeightingType = SpectraWeightingType.MrsNoiseEstimation;
+            parameters.SpectralWeightingType = SpectraWeightingType.NoiseLevel;
             parameters.NormalizationType = NormalizationType.NoNormalization;
             parameters.Percentile = 2;
             parameters.MinSigmaValue = 2;
@@ -110,7 +110,7 @@ namespace Test.AveragingTests
             parameters.BinSize = 2;
 
             Assert.That(parameters.OutlierRejectionType == OutlierRejectionType.AveragedSigmaClipping);
-            Assert.That(parameters.SpectralWeightingType == SpectraWeightingType.MrsNoiseEstimation);
+            Assert.That(parameters.SpectralWeightingType == SpectraWeightingType.NoiseLevel);
             Assert.That(parameters.NormalizationType == NormalizationType.NoNormalization);
             Assert.That(Math.Abs(parameters.Percentile - 2) < 0.001);
             Assert.That(Math.Abs(parameters.MinSigmaValue - 2) < 0.001);
@@ -122,17 +122,17 @@ namespace Test.AveragingTests
 
         [Test]
         [TestCase(new[] { 0.1 }, new[] { 5 }, new[] { 0 }, new[] { 1.3 }, new[] { 0.8 }, 
-            new[] {SpectraWeightingType.MrsNoiseEstimation, SpectraWeightingType.WeightEvenly, SpectraWeightingType.TicValue}, 
+            new[] {SpectraWeightingType.NoiseLevel, SpectraWeightingType.WeightEvenly, SpectraWeightingType.TicValue}, 
             new[] {OutlierRejectionType.PercentileClipping, OutlierRejectionType.MinMaxClipping, OutlierRejectionType.SigmaClipping, 
                 OutlierRejectionType.WinsorizedSigmaClipping, OutlierRejectionType.AveragedSigmaClipping, OutlierRejectionType.BelowThresholdRejection},
             new[] {NormalizationType.RelativeToTics, NormalizationType.NoNormalization})]
         [TestCase(new[] { 0.01, 0.1 }, new[] { 5, 10, 20 }, new[] { 2, 3, 4 }, new[] { 1.0, 2.0, 3.0 }, 
-            new[] { 0.5, 0.7, 0.9 }, new[] { SpectraWeightingType.MrsNoiseEstimation, SpectraWeightingType.WeightEvenly, SpectraWeightingType.TicValue },
+            new[] { 0.5, 0.7, 0.9 }, new[] { SpectraWeightingType.NoiseLevel, SpectraWeightingType.WeightEvenly, SpectraWeightingType.TicValue },
             new[] {OutlierRejectionType.PercentileClipping, OutlierRejectionType.MinMaxClipping, OutlierRejectionType.SigmaClipping,
                 OutlierRejectionType.WinsorizedSigmaClipping, OutlierRejectionType.AveragedSigmaClipping, OutlierRejectionType.BelowThresholdRejection},
             new[] { NormalizationType.RelativeToTics, NormalizationType.NoNormalization })]
         [TestCase(new[] { 0.01, 0.1 }, new[] { 5, 10, 20 }, new[] { 2, 3, 4, 10, 15 }, new[] { 1.0, 2.0, 3.0, 4.0 },
-            new[] { 0.5, 0.7, 0.9 }, new[] { SpectraWeightingType.MrsNoiseEstimation, SpectraWeightingType.WeightEvenly, SpectraWeightingType.TicValue },
+            new[] { 0.5, 0.7, 0.9 }, new[] { SpectraWeightingType.NoiseLevel, SpectraWeightingType.WeightEvenly, SpectraWeightingType.TicValue },
             new[] {OutlierRejectionType.PercentileClipping, OutlierRejectionType.MinMaxClipping, OutlierRejectionType.SigmaClipping,
                 OutlierRejectionType.WinsorizedSigmaClipping, OutlierRejectionType.AveragedSigmaClipping, OutlierRejectionType.BelowThresholdRejection},
             new[] { NormalizationType.RelativeToTics, NormalizationType.NoNormalization })]

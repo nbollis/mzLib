@@ -76,7 +76,7 @@ namespace Test.AveragingTests
                 new double[] { 20, 25, 30, 35, 40 }
             };
             Dictionary<int, double> weights = SpectralWeighting.CalculateSpectraWeights(xArrays, 
-                yArrays, SpectraWeightingType.MrsNoiseEstimation);
+                yArrays, SpectraWeightingType.NoiseLevel);
             double[] expectedWeights = { 0.499999, 0.45036, 0.090072 }; 
             
             Assert.That(weights.Values, Is.EqualTo(expectedWeights).Within(0.001));
