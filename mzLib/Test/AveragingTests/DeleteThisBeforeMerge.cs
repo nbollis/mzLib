@@ -46,14 +46,6 @@ namespace Test.AveragingTests
                 IntensityHistogram hist = new(file.Value, 5000, 20);
                 hist.OutputWithPlotly($"{file.Key} - {normType}");
             }
-
-
-     
-                    
-                    
-
-
-
         }
 
 
