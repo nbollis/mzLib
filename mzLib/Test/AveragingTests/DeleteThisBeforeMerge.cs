@@ -10,15 +10,55 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Easy.Common.Extensions;
+using MathNet.Numerics.Statistics;
+using MzLibUtil.MrsNoiseEstimation;
+using Plotly.NET;
+using Plotly.NET.CSharp;
+using Plotly.NET.LayoutObjects;
+using TopDownProteomics;
+using Chart = Plotly.NET.CSharp.Chart;
 
 namespace Test.AveragingTests
 {
     [TestFixture]
     public static class DeleteThisBeforeMerge
     {
+        [Test]
+        public static void CompareMRSToGausianHistogramFit()
+        {
+            var standardsDirectory = @"R:\Nic\Chimera Validation\SingleStandards";
+            var files = Directory.GetFiles(standardsDirectory).Where(p => p.Contains(".raw") || p.Contains(".mzML"));
+
+            Dictionary<string, List<MzSpectrum>> fileDict = new();
+            foreach (var file in files)
+            {
+                fileDict.Add(Path.GetFileNameWithoutExtension(file),
+                    SpectraFileHandler.LoadAllScansFromFile(file).Where(p => p.MsnOrder == 1)
+                        .Select(p => p.MassSpectrum).ToList());
+            }
+
+
+            foreach (var file in fileDict)
+            {
+                var normType = NormalizationType.RelativeToTics;
+                file.Value.NormalizeSpectra(normType);
+                IntensityHistogram hist = new(file.Value, 5000, 20);
+                hist.OutputWithPlotly($"{file.Key} - {normType}");
+            }
+
+
+     
+                    
+                    
+
+
+
+        }
+
 
         [Test]
-        public static void filteringTest()
+        public static void FilteringTestShortreedSideQuest()
         {
             string jurkatPath = @"D:\DataFiles\JurkatTopDown\FXN7_tr1_032017.raw";
             var filteringParams = new FilteringParams(numberOfPeaksToKeepPerWindow: 200,
