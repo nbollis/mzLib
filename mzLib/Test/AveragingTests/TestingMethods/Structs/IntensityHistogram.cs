@@ -99,7 +99,7 @@ namespace Test.AveragingTests
         {
             // get bins from beginning until value is 1% of maximum
             var lastBinToConsider = Bins.First(p =>
-                p.BinIndex > MostAbundantBin.BinIndex && p.PeakCount <= MostAbundantBin.PeakCount / 100.0);
+                p.BinIndex > MostAbundantBin.BinIndex && p.PeakCount <= MostAbundantBin.PeakCount *.05);
             var trimmedBins = Bins.SubSequence(NoiseStartBin.BinIndex, lastBinToConsider.BinIndex).ToList();
             binsToOutput = trimmedBins.Count;
 
@@ -147,29 +147,32 @@ namespace Test.AveragingTests
 
         public void OutputWithPlotly(string title = "")
         {
+            Plotly.NET.CSharp.GenericChartExtensions.Show(GetPlot(title));
+        }
+
+        public GenericChart.GenericChart GetPlot(string title = "")
+        {
             var chartValues = Bins.SubSequence(NoiseStartBin.BinIndex, binsToOutput).Select(p => p.PeakCount).ToList();
             var binKeys = Bins.SubSequence(NoiseStartBin.BinIndex, binsToOutput).Select(p => p.BinStringForOutput).ToArray();
             var chartKeys = new Optional<IEnumerable<string>>(binKeys, true);
 
 
-            var noiseCutoffLine = Shape.init<string, string, int, int>(StyleParam.ShapeType.Line, 
+            var noiseCutoffLine = Shape.init<string, string, int, int>(StyleParam.ShapeType.Line,
                 NoiseEndBin.BinStringForOutput,
-                NoiseEndBin.BinStringForOutput, 
-                0, 
+                NoiseEndBin.BinStringForOutput,
+                0,
                 chartValues.Max());
 
             var fitCurve = Chart.Line<string, double, string>(
-                    binKeys, polynomialCurve, LineColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.LightPink), true))
+                    binKeys, polynomialCurve, LineColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.Red), true))
                 .WithTitle("Polynomial Fit");
 
             var noiseHistogram = Chart.Column<int, string, string>(chartValues, chartKeys,
-                    MarkerColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.LightAkyBlue), true))
-                    .WithTitle(title)
-                    .WithShapes(new List<Shape>() { noiseCutoffLine });
+                    MarkerColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.Blue), true))
+                .WithTitle(title)
+                .WithShapes(new List<Shape>() { noiseCutoffLine });
 
-            var finalChart = Chart.Combine(new List<GenericChart.GenericChart>() { fitCurve, noiseHistogram });
-
-            Plotly.NET.CSharp.GenericChartExtensions.Show(finalChart);
+            return Chart.Combine(new List<GenericChart.GenericChart>() { fitCurve, noiseHistogram });
         }
 
         public void OutputToCsv(string filepath)

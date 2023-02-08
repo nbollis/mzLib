@@ -17,6 +17,9 @@ using Plotly.NET;
 using Plotly.NET.CSharp;
 using Plotly.NET.LayoutObjects;
 using TopDownProteomics;
+using Plotly.NET;
+using Plotly.NET.CSharp;
+using Plotly.NET.LayoutObjects;
 using Chart = Plotly.NET.CSharp.Chart;
 
 namespace Test.AveragingTests
@@ -28,7 +31,9 @@ namespace Test.AveragingTests
         public static void CompareMRSToGausianHistogramFit()
         {
             var standardsDirectory = @"R:\Nic\Chimera Validation\SingleStandards";
-            var files = Directory.GetFiles(standardsDirectory).Where(p => p.Contains(".raw") || p.Contains(".mzML"));
+            var files = Directory.GetFiles(standardsDirectory).Where(p => p.Contains(".raw")).ToList();
+            files.Add(@"D:\DataFiles\JurkatTopDown\FXN7_tr1_032017.raw");
+            files.Add(@"D:\DataFiles\Hela_1\20100611_Velos1_TaGe_SA_Hela_3.raw");
 
             Dictionary<string, List<MzSpectrum>> fileDict = new();
             foreach (var file in files)
@@ -38,14 +43,15 @@ namespace Test.AveragingTests
                         .Select(p => p.MassSpectrum).ToList());
             }
 
-
             foreach (var file in fileDict)
             {
                 var normType = NormalizationType.RelativeToTics;
                 file.Value.NormalizeSpectra(normType);
-                IntensityHistogram hist = new(file.Value, 5000, 20);
+                IntensityHistogram hist = new(file.Value, 5000, 50);
                 hist.OutputWithPlotly($"{file.Key} - {normType}");
             }
+
+          
         }
 
 
