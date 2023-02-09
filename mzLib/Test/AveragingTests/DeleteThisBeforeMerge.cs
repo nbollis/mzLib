@@ -35,21 +35,38 @@ namespace Test.AveragingTests
             files.Add(@"D:\DataFiles\JurkatTopDown\FXN7_tr1_032017.raw");
             files.Add(@"D:\DataFiles\Hela_1\20100611_Velos1_TaGe_SA_Hela_3.raw");
 
-            Dictionary<string, List<MzSpectrum>> fileDict = new();
-            foreach (var file in files)
+
+            int numberOfBins = 500;
+            int percentToKeep = 90;
+            int ouputtedBins = 150;
+            string fileType = "Jurkat";
+            foreach (var scan in ThermoRawFileReader.LoadAllStaticData(files.First(p => p.Contains(fileType))).GetMS1Scans()
+                         .Where(p => p.OneBasedScanNumber >= 1004))
             {
-                fileDict.Add(Path.GetFileNameWithoutExtension(file),
-                    SpectraFileHandler.LoadAllScansFromFile(file).Where(p => p.MsnOrder == 1)
-                        .Select(p => p.MassSpectrum).ToList());
+                string title =
+                    $"{fileType} {scan.OneBasedScanNumber}, {numberOfBins} Bins, {percentToKeep}% peaks kept, {ouputtedBins} Bins Outputted";
+                var noise = new NoiseEstimationMethodComparison(scan.MassSpectrum, numberOfBins, percentToKeep);
+                noise.ShowCompositePlot(title);
             }
 
-            foreach (var file in fileDict)
-            {
-                var normType = NormalizationType.RelativeToTics;
-                file.Value.NormalizeSpectra(normType);
-                IntensityHistogram hist = new(file.Value, 5000, 50);
-                hist.OutputWithPlotly($"{file.Key} - {normType}");
-            }
+
+
+
+            //Dictionary<string, List<MzSpectrum>> fileDict = new();
+            //foreach (var file in files)
+            //{
+            //    fileDict.Add(Path.GetFileNameWithoutExtension(file),
+            //        SpectraFileHandler.LoadAllScansFromFile(file).Where(p => p.MsnOrder == 1)
+            //            .Select(p => p.MassSpectrum).ToList());
+            //}
+
+            //foreach (var file in fileDict)
+            //{
+            //    var normType = NormalizationType.RelativeToTics;
+            //    file.Value.NormalizeSpectra(normType);
+            //    IntensityHistogram hist = new(file.Value, 5000, 50);
+            //    hist.OutputWithPlotly($"{file.Key} - {normType}");
+            //}
 
           
         }

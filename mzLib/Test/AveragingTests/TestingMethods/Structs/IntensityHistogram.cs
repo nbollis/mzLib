@@ -11,6 +11,7 @@ using MassSpectrometry;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearRegression;
 using MathNet.Numerics.Statistics;
+using Microsoft.FSharp.Core;
 using MzLibUtil;
 using NUnit.Framework.Constraints;
 using TopDownProteomics;
@@ -27,7 +28,7 @@ namespace Test.AveragingTests
     {
         private int percentOfPeaksToKeep;
         private double[] polynomialCurve;
-        private int binsToOutput;
+        private int binsToOutput = 150;
 
         public List<MzPeakHistogramBin> Bins { get; init; }
         public List<MzPeakHistogramBin> NoiseRegion { get; private set; }
@@ -46,18 +47,29 @@ namespace Test.AveragingTests
             CalculateSpecialBins();
         }
 
+        public IntensityHistogram(MzSpectrum spectrum, int numberOfBins, int percentageOfPeaksToKeep)
+        {
+            percentOfPeaksToKeep = percentageOfPeaksToKeep;
+            var peaks = ExtractPeaks(new List<MzSpectrum>() {spectrum}).ToList();
+            Bins = BinPeaks(peaks, numberOfBins);
+            CalculateSpecialBins();
+        }
+
         public IEnumerable<MzPeak> ExtractPeaks(List<MzSpectrum> spectra)
         {
             foreach (var spectrum in spectra)
             {
                 double maxIntensity = spectrum.YArray.Max();
-                foreach (var peak in spectrum.Extract(spectrum.XArray.First(), spectrum.XArray.Last()))
-                {
-                    if (peak.Intensity <= maxIntensity * (percentOfPeaksToKeep / 100.0))
-                        yield return peak;
-                    else
-                        SignalIntegrated += peak.Intensity;
-                }
+                var extractedPeaks = spectrum
+                    .Extract(spectrum.XArray.First(), spectrum.XArray.Last())
+                    .OrderBy(p => p.Intensity)
+                    .ToList();
+
+                int peaksToKeepCount = (int)(extractedPeaks.Count * (percentOfPeaksToKeep / 100.0));
+
+                // add count for number of peaks extracted that did not make it to the histogram
+                SignalIntegrated = +extractedPeaks.SubSequence(peaksToKeepCount, extractedPeaks.Count).Count();
+                foreach (var mzPeak in extractedPeaks.SubSequence(0, peaksToKeepCount)) yield return mzPeak;
             }
         }
 
@@ -67,14 +79,18 @@ namespace Test.AveragingTests
             double maxIntensity = peaks.Max(p => p.Intensity);
             var binWidth = maxIntensity / numberOfBins;
 
+            bool foundFirstBin = false;
+            int binIndex = 1;
             for (int i = 0; i < numberOfBins; i++)
             {
                 double start = binWidth * i;
                 double end = binWidth * (i + 1);
                 var peaksInBin = peaks.Where(p => p.Intensity >= start && p.Intensity < end).ToList();
 
-                MzPeakHistogramBin bin = new(i, start, end, peaksInBin);
-                bins.Add(bin);
+                if (!foundFirstBin && !peaksInBin.Any()) continue;
+                bins.Add(new(binIndex, start, end, peaksInBin));
+                binIndex++;
+                foundFirstBin = true;
             }
 
             return bins;
@@ -97,15 +113,10 @@ namespace Test.AveragingTests
 
         public void FitCurveToPolynomial()
         {
-            // get bins from beginning until value is 1% of maximum
-            var lastBinToConsider = Bins.First(p =>
-                p.BinIndex > MostAbundantBin.BinIndex && p.PeakCount <= MostAbundantBin.PeakCount *.05);
-            var trimmedBins = Bins.SubSequence(NoiseStartBin.BinIndex, lastBinToConsider.BinIndex).ToList();
-            binsToOutput = trimmedBins.Count;
 
-            // fit these bins to a polynomial
-            var xValues = trimmedBins.Select(p => (double)p.BinIndex).ToArray();
-            var yValues = trimmedBins.Select(p => (double)p.PeakCount).ToArray();
+            // fit bins to a polynomial
+            var xValues = Bins.Select(p => (double)p.BinIndex).ToArray();
+            var yValues = Bins.Select(p => (double)p.PeakCount).ToArray();
 
             int denominator = 1;
             Polynomial polynomial;
@@ -129,19 +140,28 @@ namespace Test.AveragingTests
             polynomialCurve = curveValues;
             
             // find local minimum
-            int maxIndex = MostAbundantBin.BinIndex - NoiseStartBin.BinIndex;
-            // fallback value is bin that is the same distance from the start of the noise region to the maximum
-            int noiseCutoffBinIndex = Bins[MostAbundantBin.BinIndex + (MostAbundantBin.BinIndex - NoiseStartBin.BinIndex)].BinIndex;
-            for (int i = maxIndex; i < noiseCutoffBinIndex; i++)
+            // first fallback value is first bin with 1% of most abundant bin
+            int noiseCutoffBinIndex = Bins.FirstOrDefault(p => 
+                p.BinIndex > MostAbundantBin.BinIndex 
+                && p.PeakCount <= MostAbundantBin.PeakCount / 100).BinIndex;
+            for (int i = MostAbundantBin.BinIndex; i < Bins.Count; i++)
             {
-                if (!(firstDerivativeCurveValues[i] < 0) || !(firstDerivativeCurveValues[i + 1] > 0)) continue;
-                noiseCutoffBinIndex = i + NoiseStartBin.BinIndex;
-                break;
-
+                if (firstDerivativeCurveValues[i] < 0 && firstDerivativeCurveValues[i + 1] > 0)
+                {
+                    noiseCutoffBinIndex = i;
+                    break;
+                }
             }
-            NoiseEndBin = Bins[noiseCutoffBinIndex];
+
+            if (noiseCutoffBinIndex != -1)
+                NoiseEndBin = Bins.First(p => p.BinIndex == noiseCutoffBinIndex);
+            else
+                NoiseEndBin = Bins[MostAbundantBin.BinIndex + NoiseStartBin.BinIndex];
+            // second fallback value is bin that is the same distance from the start of the noise region to the maximum
+
+
         }
-        
+
         #region Output Methods
 
 
@@ -150,29 +170,66 @@ namespace Test.AveragingTests
             Plotly.NET.CSharp.GenericChartExtensions.Show(GetPlot(title));
         }
 
-        public GenericChart.GenericChart GetPlot(string title = "")
+        public GenericChart.GenericChart GetPlot(string title = "", string yAxis = "BinValues")
         {
-            var chartValues = Bins.SubSequence(NoiseStartBin.BinIndex, binsToOutput).Select(p => p.PeakCount).ToList();
-            var binKeys = Bins.SubSequence(NoiseStartBin.BinIndex, binsToOutput).Select(p => p.BinStringForOutput).ToArray();
-            var chartKeys = new Optional<IEnumerable<string>>(binKeys, true);
+            switch (yAxis)
+            {
+                case "BinValues":
+                {
+                    var chartValues = Bins.Select(p => p.PeakCount).ToList();
+                    var binKeys = Bins.Select(p => p.BinStringForOutput).ToArray();
+                    var chartKeys = new Optional<IEnumerable<string>>(binKeys, true);
 
 
-            var noiseCutoffLine = Shape.init<string, string, int, int>(StyleParam.ShapeType.Line,
-                NoiseEndBin.BinStringForOutput,
-                NoiseEndBin.BinStringForOutput,
-                0,
-                chartValues.Max());
+                    var noiseCutoffLine = Shape.init<string, string, int, int>(StyleParam.ShapeType.Line,
+                    NoiseEndBin.BinStringForOutput,
+                    NoiseEndBin.BinStringForOutput,
+                    0,
+                    chartValues.Max(),
+                        Fillcolor: new FSharpOption<Color>(Color.fromKeyword(ColorKeyword.Purple)));
 
-            var fitCurve = Chart.Line<string, double, string>(
-                    binKeys, polynomialCurve, LineColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.Red), true))
-                .WithTitle("Polynomial Fit");
+                    var fitCurve = Chart.Line<string, double, string>(
+                        binKeys, polynomialCurve, 
+                        Name: "Fit Curve",
+                        LineColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.Red), true))
+                        .WithTitle("Polynomial Fit");
 
-            var noiseHistogram = Chart.Column<int, string, string>(chartValues, chartKeys,
-                    MarkerColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.Blue), true))
-                .WithTitle(title)
-                .WithShapes(new List<Shape>() { noiseCutoffLine });
+                    var noiseHistogram = Chart.Column<int, string, string>(chartValues, chartKeys,
+                        Name: "Binned Int Values",
+                        MarkerColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.Blue), true))
+                        .WithTitle(title)
+                        .WithShapes(new List<Shape>() { noiseCutoffLine });
 
-            return Chart.Combine(new List<GenericChart.GenericChart>() { fitCurve, noiseHistogram });
+                    return Chart.Combine(new List<GenericChart.GenericChart>() { fitCurve, noiseHistogram })
+                        .WithSize(1000, 600);
+                }
+                case "BinNumbers":
+                {
+                    var chartValues = Bins.Select(p => p.PeakCount).ToList();
+                    var binKeys = Bins.Select(p => p.BinIndex).ToArray();
+                    var chartKeys = new Optional<IEnumerable<int>>(binKeys, true);
+
+
+                    var noiseCutoffLine = Shape.init<int, int, int, int>(StyleParam.ShapeType.Line,
+                        NoiseEndBin.BinIndex,
+                        NoiseEndBin.BinIndex,
+                        0,
+                        chartValues.Max());
+
+                    var fitCurve = Chart.Line<int, double, string>(
+                            binKeys, polynomialCurve, LineColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.Red), true))
+                        .WithTitle("Polynomial Fit");
+
+                    var noiseHistogram = Chart.Column<int, int, string>(chartValues, chartKeys,
+                            MarkerColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.Blue), true))
+                        .WithTitle(title)
+                        .WithShapes(new List<Shape>() { noiseCutoffLine });
+
+                    return Chart.Combine(new List<GenericChart.GenericChart>() { fitCurve, noiseHistogram });
+                }
+                default:
+                    throw new MzLibException("yAxis is not implemented");
+            }
         }
 
         public void OutputToCsv(string filepath)
