@@ -27,6 +27,81 @@ namespace Test.AveragingTests
     [TestFixture]
     public static class DeleteThisBeforeMerge
     {
+
+        [Test]
+        public static void TestAveragingMethodsWithNoiseComparison()
+        {
+            List<SpectralAveragingParameters> parameters = new()
+            {
+                new ()
+                {
+                    OutlierRejectionType = OutlierRejectionType.SigmaClipping,
+                    MinSigmaValue = 1.5,
+                    MaxSigmaValue = 1.5,
+                },
+                new ()
+                {
+                    OutlierRejectionType = OutlierRejectionType.WinsorizedSigmaClipping,
+                    MinSigmaValue = 1.5,
+                    MaxSigmaValue = 1.5,
+                },
+                new ()
+                {
+                    OutlierRejectionType = OutlierRejectionType.AveragedSigmaClipping,
+                    MinSigmaValue = 1.5,
+                    MaxSigmaValue = 1.5,
+                },
+            };
+
+            foreach (var parameter in parameters)
+            {
+                parameter.NormalizationType = NormalizationType.RelativeToTics;
+                parameter.BinSize = 0.01;
+                parameter.NumberOfScansToAverage = 5;
+                parameter.ScanOverlap = 4;
+                parameter.SpectraFileAveragingType = SpectraFileAveragingType.AverageEverynScansWithOverlap;
+                parameter.SpectralWeightingType = SpectraWeightingType.TicValue;
+            }
+
+            //var standardsDirectory = @"R:\Nic\Chimera Validation\SingleStandards";
+            List<string> files = new(); /*Directory.GetFiles(standardsDirectory).Where(p => p.Contains(".raw")).ToList();*/
+            //files.Add(@"D:\DataFiles\JurkatTopDown\FXN7_tr1_032017.raw");
+            files.Add(@"D:\DataFiles\Hela_1\20100611_Velos1_TaGe_SA_Hela_3.raw");
+
+
+            int numberOfBins = 500;
+            int percentToKeep = 90;
+            int ouputtedBins = 150;
+            List<WholeSpectraFileNoiseEstimationMethodComparison> noiseComaprisons = new();
+            foreach (var file in files)
+            {
+                var scans = SpectraFileHandler.LoadAllScansFromFile(file)
+                    .Where(p => p.MsnOrder == 1)
+                    .ToList();
+
+                var original =
+                    new WholeSpectraFileNoiseEstimationMethodComparison(Path.GetFileNameWithoutExtension(file), scans,
+                        numberOfBins, percentToKeep);
+                noiseComaprisons.Add(original);
+
+                //foreach (var parameter in parameters)
+                //{
+                //    var averagedScans = SpectraFileAveraging.AverageSpectraFile(scans, parameter);
+                //    var averaged =
+                //        new WholeSpectraFileNoiseEstimationMethodComparison(Path.GetFileNameWithoutExtension(file) + "Averaged - " + parameter.OutlierRejectionType,
+                //            averagedScans.ToList(), numberOfBins, percentToKeep);
+                //    noiseComaprisons.Add(averaged);
+                //}
+            }
+
+            string outPath = @"D:\Projects\SpectralAveraging\Comparing Noise Level\helaNoiseAcrossAllScans.tsv";
+            var individualComparisons = noiseComaprisons
+                .SelectMany(p => p.IndividualComparisons)
+                .Select(p => (ITsv)p);
+            individualComparisons.ExportAsTsv(outPath);
+
+        }
+
         [Test]
         public static void CompareMRSToGausianHistogramFit()
         {
@@ -40,35 +115,13 @@ namespace Test.AveragingTests
             int percentToKeep = 90;
             int ouputtedBins = 150;
             string fileType = "Jurkat";
-            foreach (var scan in ThermoRawFileReader.LoadAllStaticData(files.First(p => p.Contains(fileType))).GetMS1Scans()
-                         .Where(p => p.OneBasedScanNumber >= 1004))
+            foreach (var scan in ThermoRawFileReader.LoadAllStaticData(files.First(p => p.Contains(fileType))).GetMS1Scans())
             {
                 string title =
                     $"{fileType} {scan.OneBasedScanNumber}, {numberOfBins} Bins, {percentToKeep}% peaks kept, {ouputtedBins} Bins Outputted";
-                var noise = new NoiseEstimationMethodComparison(scan.MassSpectrum, numberOfBins, percentToKeep);
+                var noise = new NoiseEstimationMethodComparison(scan, numberOfBins, percentToKeep);
                 noise.ShowCompositePlot(title);
             }
-
-
-
-
-            //Dictionary<string, List<MzSpectrum>> fileDict = new();
-            //foreach (var file in files)
-            //{
-            //    fileDict.Add(Path.GetFileNameWithoutExtension(file),
-            //        SpectraFileHandler.LoadAllScansFromFile(file).Where(p => p.MsnOrder == 1)
-            //            .Select(p => p.MassSpectrum).ToList());
-            //}
-
-            //foreach (var file in fileDict)
-            //{
-            //    var normType = NormalizationType.RelativeToTics;
-            //    file.Value.NormalizeSpectra(normType);
-            //    IntensityHistogram hist = new(file.Value, 5000, 50);
-            //    hist.OutputWithPlotly($"{file.Key} - {normType}");
-            //}
-
-          
         }
 
 

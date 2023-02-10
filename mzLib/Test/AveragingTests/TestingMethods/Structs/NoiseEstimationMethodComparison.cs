@@ -22,6 +22,7 @@ namespace Test.AveragingTests
     {
         public MzSpectrum Spectrum { get; private set; }
         public IntensityHistogram IntensityHistogram { get; private set; }
+        public double ScanNumber { get; set; }
         public double MrsNoiseEstimation { get; private set; }
         public double AverageOfMostAbundantHistogramBin { get; private set; }
         public double AverageOfLastHistogramNoiseBin { get; private set; }
@@ -31,42 +32,19 @@ namespace Test.AveragingTests
         public double AverageOverStDevOfPeaks { get; private set; }
 
 
-        public NoiseEstimationMethodComparison(List<MzSpectrum> spectra, int numberOfBins, int histogramPercentageOfPeaksToKeep)
+        public NoiseEstimationMethodComparison(MsDataScan scan, int numberOfBins, int histogramPercentageOfPeaksToKeep)
         {
-            Spectrum = null;
-            IntensityHistogram = new IntensityHistogram(spectra, numberOfBins, histogramPercentageOfPeaksToKeep);
-            AverageOverStDevOfPeaks = spectra.SelectMany(p => p.YArray).Average() /
-                                      spectra.SelectMany(p => p.YArray).StandardDeviation();
-
-            AverageOfMostAbundantHistogramBin = IntensityHistogram.MostAbundantBin.AverageBinValue;
-            AverageOfLastHistogramNoiseBin = IntensityHistogram.NoiseEndBin.AverageBinValue;
-            HistogramNoiseOverSignalIntegration = IntensityHistogram.NoiseIntegrated / IntensityHistogram.SignalIntegrated;
-
-            double[] mrsNoise = new double[spectra.Count];
-            for (int i = 0; i < spectra.Count; i++)
-            {
-                MRSNoiseEstimator.MRSNoiseEstimation(spectra[i].YArray, 0.01, out double noise);
-                mrsNoise[i] = noise;
-            }
-            MrsNoiseEstimation = mrsNoise.Average();
-
-            MaxSignalOverMrsNoise = Spectrum.YArray.Max() / MrsNoiseEstimation;
-            MaxSignalOverMaxHistogramNoise =
-                Spectrum.YArray.Max() / IntensityHistogram.NoiseEndBin.AverageBinValue;
-        }
-
-        public NoiseEstimationMethodComparison(MzSpectrum spectrum, int numberOfBins, int histogramPercentageOfPeaksToKeep)
-        {
-            Spectrum = spectrum;
+            Spectrum = scan.MassSpectrum;
+            ScanNumber = scan.OneBasedScanNumber;
             IntensityHistogram = new IntensityHistogram(Spectrum, numberOfBins, histogramPercentageOfPeaksToKeep);
             AverageOverStDevOfPeaks = Spectrum.YArray.Average() /
                                       Spectrum.YArray.StandardDeviation();
 
             AverageOfMostAbundantHistogramBin = IntensityHistogram.MostAbundantBin.AverageBinValue;
-            AverageOfLastHistogramNoiseBin = IntensityHistogram.NoiseEndBin.AverageBinValue;
             HistogramNoiseOverSignalIntegration = IntensityHistogram.NoiseIntegrated / IntensityHistogram.SignalIntegrated;
+            AverageOfLastHistogramNoiseBin = IntensityHistogram.NoiseEndBin.AverageBinValue;
+         
 
-            
             MRSNoiseEstimator.MRSNoiseEstimation(Spectrum.YArray, 0.01, out double noise);
             MrsNoiseEstimation = noise;
             MaxSignalOverMrsNoise = Spectrum.YArray.Max() / MrsNoiseEstimation;
@@ -148,6 +126,7 @@ namespace Test.AveragingTests
             get
             {
                 var sb = new StringBuilder();
+                sb.Append("Scan Number\t");
                 sb.Append("Mrs Noise\t");
                 sb.Append("Most Abundant Hist\t");
                 sb.Append("Last Noise Hist\t");
@@ -161,10 +140,10 @@ namespace Test.AveragingTests
             }
         }
 
-
         public string ToTsvString()
         {
             var sb = new StringBuilder();
+            sb.Append($"{ScanNumber}\t");
             sb.Append($"{MrsNoiseEstimation}\t");
             sb.Append($"{AverageOfMostAbundantHistogramBin}\t");
             sb.Append($"{AverageOfLastHistogramNoiseBin}\t");

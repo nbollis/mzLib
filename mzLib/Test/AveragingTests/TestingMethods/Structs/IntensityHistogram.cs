@@ -148,6 +148,10 @@ namespace Test.AveragingTests
             {
                 if (firstDerivativeCurveValues[i] < 0 && firstDerivativeCurveValues[i + 1] > 0)
                 {
+                    while (Bins.First(p => p.BinIndex == i).PeakCount <= 0)
+                    {
+                        i++;
+                    }
                     noiseCutoffBinIndex = i;
                     break;
                 }
