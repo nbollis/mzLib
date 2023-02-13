@@ -28,46 +28,69 @@ namespace Test.AveragingTests
     public static class DeleteThisBeforeMerge
     {
 
+        private const string JurkatPath = @"D:\DataFiles\JurkatTopDown\FXN7_tr1_032017.raw";
+        private const string JurkatPathNoRejection = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Jurkat-FXN7-averaged-NoRejection.mzML";
+        private const string JurkatPathSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Jurkat-FXN7-averaged-Sigma1.5.mzML";
+        private const string JurkatPathWinsorized = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\";
+        private const string JurkatPathAvgSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Jurkat-FXN7-averaged-AveragedSigma1.5.mzML";
+
+        private const string HelaPath = @"D:\DataFiles\Hela_1\20100611_Velos1_TaGe_SA_Hela_3.raw";
+        private const string HelaPathNoRejection = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Hela3-averaged-NoRejection.mzML";
+        private const string HelaPathSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Hela3-averaged-Sigma1.5.mzML";
+        private const string HelaPathWinsorized = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Hela3-averaged-Winsorized.mzML";
+        private const string HelatPathAvgSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Hela3-averaged-AveragedSigma1.5.mzML";
+        
+        private const string UbqPath = @"R:\Nic\Chimera Validation\SingleStandards\221110_UbiqOnly_50IW.raw";
+        private const string UbqPathNoRejection = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-NoRejection.mzML";
+        private const string UbqPathSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-Sigma1.5.mzML";
+        private const string UbqPathWinsorized = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\";
+        private const string UbqPathAvgSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-AveragedSigma1.5.mzML";
+
+        [Test]
+        public static void CompareNoiseInAveragedShit()
+        {
+            var ms1Scans = SpectraFileHandler.LoadAllScansFromFile(UbqPathAvgSigma)
+                .Where(p => p.MsnOrder == 1 && p.OneBasedScanNumber >= 1004);
+
+            foreach (var scan in ms1Scans)
+            {
+                var noise = new NoiseEstimationMethodComparison(scan, 500, 90);
+                noise.ShowCompositePlot($"Ubiq TD Averaged Sigma {scan.OneBasedScanNumber}");
+            }
+            
+        }
+
+        [Test]
+        public static void TestAveragingWithWinsorized()
+        {
+            SpectralAveragingParameters parameters = new SpectralAveragingParameters()
+            {
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap,
+                OutlierRejectionType = OutlierRejectionType.SigmaClipping,
+                SpectralWeightingType = SpectraWeightingType.TicValue,
+                NormalizationType = NormalizationType.RelativeToTics,
+                BinSize = 0.01,
+                NumberOfScansToAverage = 5,
+                ScanOverlap = 4,
+                MinSigmaValue = 1.5,
+                MaxSigmaValue = 1.5,
+            };
+
+            var jurkat = ThermoRawFileReader.LoadAllStaticData(UbqPath).GetAllScansList();
+            var averaged = SpectraFileAveraging.AverageSpectraFile(jurkat, parameters);
+            AveragedSpectraWriter.WriteAveragedScans(averaged, parameters, UbqPath);
+        }
+
         [Test]
         public static void TestAveragingMethodsWithNoiseComparison()
         {
-            List<SpectralAveragingParameters> parameters = new()
-            {
-                new ()
-                {
-                    OutlierRejectionType = OutlierRejectionType.SigmaClipping,
-                    MinSigmaValue = 1.5,
-                    MaxSigmaValue = 1.5,
-                },
-                new ()
-                {
-                    OutlierRejectionType = OutlierRejectionType.WinsorizedSigmaClipping,
-                    MinSigmaValue = 1.5,
-                    MaxSigmaValue = 1.5,
-                },
-                new ()
-                {
-                    OutlierRejectionType = OutlierRejectionType.AveragedSigmaClipping,
-                    MinSigmaValue = 1.5,
-                    MaxSigmaValue = 1.5,
-                },
-            };
-
-            foreach (var parameter in parameters)
-            {
-                parameter.NormalizationType = NormalizationType.RelativeToTics;
-                parameter.BinSize = 0.01;
-                parameter.NumberOfScansToAverage = 5;
-                parameter.ScanOverlap = 4;
-                parameter.SpectraFileAveragingType = SpectraFileAveragingType.AverageEverynScansWithOverlap;
-                parameter.SpectralWeightingType = SpectraWeightingType.TicValue;
-            }
-
             //var standardsDirectory = @"R:\Nic\Chimera Validation\SingleStandards";
             List<string> files = new(); /*Directory.GetFiles(standardsDirectory).Where(p => p.Contains(".raw")).ToList();*/
             //files.Add(@"D:\DataFiles\JurkatTopDown\FXN7_tr1_032017.raw");
-            files.Add(@"D:\DataFiles\Hela_1\20100611_Velos1_TaGe_SA_Hela_3.raw");
-
+            //files.Add(@"D:\DataFiles\Hela_1\20100611_Velos1_TaGe_SA_Hela_3.raw");
+            files.Add(JurkatPathAvgSigma);
+            files.Add(JurkatPathNoRejection);
+            files.Add(JurkatPath);
 
             int numberOfBins = 500;
             int percentToKeep = 90;
@@ -83,24 +106,14 @@ namespace Test.AveragingTests
                     new WholeSpectraFileNoiseEstimationMethodComparison(Path.GetFileNameWithoutExtension(file), scans,
                         numberOfBins, percentToKeep);
                 noiseComaprisons.Add(original);
-
-                //foreach (var parameter in parameters)
-                //{
-                //    var averagedScans = SpectraFileAveraging.AverageSpectraFile(scans, parameter);
-                //    var averaged =
-                //        new WholeSpectraFileNoiseEstimationMethodComparison(Path.GetFileNameWithoutExtension(file) + "Averaged - " + parameter.OutlierRejectionType,
-                //            averagedScans.ToList(), numberOfBins, percentToKeep);
-                //    noiseComaprisons.Add(averaged);
-                //}
             }
 
-            string outPath = @"D:\Projects\SpectralAveraging\Comparing Noise Level\helaNoiseAcrossAllScans.tsv";
-            var individualComparisons = noiseComaprisons
-                .SelectMany(p => p.IndividualComparisons)
-                .Select(p => (ITsv)p);
-            individualComparisons.ExportAsTsv(outPath);
+            string outPath = @"D:\Projects\SpectralAveraging\Comparing Noise Level\NoiseAcrossAllScans.tsv";
+            noiseComaprisons.Select(p => (ITsv)p).ExportAsTsv(outPath);
+          
 
         }
+
 
         [Test]
         public static void CompareMRSToGausianHistogramFit()

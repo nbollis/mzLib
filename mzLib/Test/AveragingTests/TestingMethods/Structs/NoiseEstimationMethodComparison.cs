@@ -20,9 +20,10 @@ namespace Test.AveragingTests
 {
     public record struct NoiseEstimationMethodComparison : ITsv
     {
-        public MzSpectrum Spectrum { get; private set; }
-        public IntensityHistogram IntensityHistogram { get; private set; }
-        public double ScanNumber { get; set; }
+        public MzSpectrum Spectrum { get; init; }
+        public IntensityHistogram IntensityHistogram { get; init; }
+        public double ScanNumber { get; init; }
+        public double Tic { get; init; }
         public double MrsNoiseEstimation { get; private set; }
         public double AverageOfMostAbundantHistogramBin { get; private set; }
         public double AverageOfLastHistogramNoiseBin { get; private set; }
@@ -36,6 +37,7 @@ namespace Test.AveragingTests
         {
             Spectrum = scan.MassSpectrum;
             ScanNumber = scan.OneBasedScanNumber;
+            Tic = Spectrum.YArray.Sum();
             IntensityHistogram = new IntensityHistogram(Spectrum, numberOfBins, histogramPercentageOfPeaksToKeep);
             AverageOverStDevOfPeaks = Spectrum.YArray.Average() /
                                       Spectrum.YArray.StandardDeviation();
@@ -127,6 +129,7 @@ namespace Test.AveragingTests
             {
                 var sb = new StringBuilder();
                 sb.Append("Scan Number\t");
+                sb.Append("Tic\t");
                 sb.Append("Mrs Noise\t");
                 sb.Append("Most Abundant Hist\t");
                 sb.Append("Last Noise Hist\t");
@@ -144,6 +147,7 @@ namespace Test.AveragingTests
         {
             var sb = new StringBuilder();
             sb.Append($"{ScanNumber}\t");
+            sb.Append($"{Tic}\t");
             sb.Append($"{MrsNoiseEstimation}\t");
             sb.Append($"{AverageOfMostAbundantHistogramBin}\t");
             sb.Append($"{AverageOfLastHistogramNoiseBin}\t");

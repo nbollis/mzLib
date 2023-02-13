@@ -28,6 +28,11 @@ namespace Test.AveragingTests
                 IndividualComparisons.Add(new (scan, numberOfBins, percentToKeep));
         }
 
+        public IEnumerable<ITsv> GetNoiseComparisons()
+        {
+            return IndividualComparisons.Select(p => (ITsv)p);
+        }
+
         public string TabSeparatedHeader
         {
             get
