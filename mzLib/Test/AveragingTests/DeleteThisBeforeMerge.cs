@@ -27,11 +27,17 @@ namespace Test.AveragingTests
     [TestFixture]
     public static class DeleteThisBeforeMerge
     {
+        public static string[] AllPaths = new string[]
+        {
+            JurkatPath, JurkatPathNoRejection, JurkatPathSigma, JurkatPathWinsorized, JurkatPathAvgSigma,
+            HelaPath, HelaPathNoRejection, HelaPathSigma, HelaPathWinsorized, HelatPathAvgSigma,
+            UbqPath, UbqPathNoRejection, UbqPathSigma, UbqPathWinsorized, UbqPathAvgSigma
+        };
 
         private const string JurkatPath = @"D:\DataFiles\JurkatTopDown\FXN7_tr1_032017.raw";
         private const string JurkatPathNoRejection = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Jurkat-FXN7-averaged-NoRejection.mzML";
         private const string JurkatPathSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Jurkat-FXN7-averaged-Sigma1.5.mzML";
-        private const string JurkatPathWinsorized = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\";
+        private const string JurkatPathWinsorized = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Jurkat-FXN7-averaged-Winsorized.mzML";
         private const string JurkatPathAvgSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Jurkat-FXN7-averaged-AveragedSigma1.5.mzML";
 
         private const string HelaPath = @"D:\DataFiles\Hela_1\20100611_Velos1_TaGe_SA_Hela_3.raw";
@@ -43,21 +49,82 @@ namespace Test.AveragingTests
         private const string UbqPath = @"R:\Nic\Chimera Validation\SingleStandards\221110_UbiqOnly_50IW.raw";
         private const string UbqPathNoRejection = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-NoRejection.mzML";
         private const string UbqPathSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-Sigma1.5.mzML";
-        private const string UbqPathWinsorized = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\";
+        private const string UbqPathWinsorized = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-Winsorized.mzML";
         private const string UbqPathAvgSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-AveragedSigma1.5.mzML";
+        private const string UbqPathAvgSigma25Scans = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Ubiq-averaged-AveragedSigma1.5-25Scans.mzML";
 
         [Test]
         public static void CompareNoiseInAveragedShit()
         {
-            var ms1Scans = SpectraFileHandler.LoadAllScansFromFile(UbqPathAvgSigma)
-                .Where(p => p.MsnOrder == 1 && p.OneBasedScanNumber >= 1004);
+            string outDirectory = @"D:\Projects\SpectralAveraging\Comparing Noise Level\IndividualComparisons";
 
-            foreach (var scan in ms1Scans)
+            List<ITsv> allNoiseEstimates = new();
+            List<ITsv> allNoiseEstimatesRelativeIntensity = new();
+            List<ITsv> allNoiseEstimatesAbsolute = new();
+            List<ITsv> allNoiseRelativeToTics = new();
+
+            foreach (var path in AllPaths.Where(p => p.Contains("Ubiq-averaged-AveragedSigma1.5-25Scans.mzML")))
             {
-                var noise = new NoiseEstimationMethodComparison(scan, 500, 90);
-                noise.ShowCompositePlot($"Ubiq TD Averaged Sigma {scan.OneBasedScanNumber}");
+                var ms1Scans = SpectraFileHandler.LoadAllScansFromFile(path)
+                    .Where(p => p.MsnOrder == 1)
+                    .ToList();
+
+                ms1Scans.NormalizeSpectra(NormalizationType.RelativeIntensity);
+                var normNoiseEstimate =
+                    new WholeSpectraFileNoiseEstimationMethodComparison(Path.GetFileNameWithoutExtension(path),
+                        ms1Scans, 500, 90);
+                normNoiseEstimate.IndividualComparisons.Select(p => (ITsv)p)
+                    .ExportAsTsv(Path.Combine(outDirectory, $"{Path.GetFileNameWithoutExtension(path)} RelativeIntensity.tsv"));
+                allNoiseEstimatesRelativeIntensity.Add(normNoiseEstimate);
+
+                ms1Scans = SpectraFileHandler.LoadAllScansFromFile(path)
+                    .Where(p => p.MsnOrder == 1)
+                    .ToList();
+                ms1Scans.NormalizeSpectra(NormalizationType.RelativeToTics);
+                normNoiseEstimate =
+                    new WholeSpectraFileNoiseEstimationMethodComparison(Path.GetFileNameWithoutExtension(path),
+                        ms1Scans, 500, 90);
+                normNoiseEstimate.IndividualComparisons.Select(p => (ITsv)p)
+                    .ExportAsTsv(Path.Combine(outDirectory, $"{Path.GetFileNameWithoutExtension(path)} RelativeToTics.tsv"));
+                allNoiseRelativeToTics.Add(normNoiseEstimate);
             }
-            
+
+
+            string outPath = @"D:\Projects\SpectralAveraging\Comparing Noise Level\WholeFileRelativeIntensity25.tsv";
+            allNoiseEstimatesRelativeIntensity.ExportAsTsv(outPath);
+
+
+            outPath = @"D:\Projects\SpectralAveraging\Comparing Noise Level\WholeFileNoiseRelativeToTics25.tsv";
+            allNoiseRelativeToTics.ExportAsTsv(outPath);
+
+        }
+
+        [Test]
+
+        public static void TestReadingInITsv()
+        {
+            string directory = @"D:\Projects\SpectralAveraging\Comparing Noise Level\IndividualComparisons";
+            var files = Directory.GetFiles(directory);
+            List<WholeSpectraFileNoiseEstimationMethodComparison> comparisons = new();
+            foreach (var file in files.Where(p => !p.Contains("NotNormalized") && p.Contains("FXN7")))
+            {
+                comparisons.Add(new WholeSpectraFileNoiseEstimationMethodComparison(
+                    Path.GetFileNameWithoutExtension(file),
+                    TsvExtensions.ReadFromTsv<NoiseEstimationMethodComparison>(file)));
+            }
+
+            WholeSpectraFileNoiseEstimationMethodComparison.ShowOverlaidBoxPlot(comparisons);
+            //comparisons.First().ShowBoxPlot();
+        }
+
+        [Test]
+        public static void RunThrashSnr()
+        {
+            string cytoPath = @"R:\Nic\Chimera Validation\SingleStandards\221110_CytoOnly.raw";
+            var ms1Scans = ThermoRawFileReader.LoadAllStaticData(JurkatPath).GetMS1Scans()
+                .Where(p => p.OneBasedScanNumber >= 1052).ToList();
+            var scanToTest = ms1Scans.First();
+            ThrashSnrCalculator.CalculateSnr(scanToTest.MassSpectrum);
         }
 
         [Test]

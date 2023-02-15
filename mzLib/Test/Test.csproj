@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     <PackageReference Include="Plotly.NET" Version="3.0.1" />
     <PackageReference Include="Plotly.NET.CSharp" Version="0.8.0" />
+    <PackageReference Include="ScottPlot" Version="4.1.60" />
     <PackageReference Include="SharpLearning.Optimization" Version="0.28.0" />
     <PackageReference Include="TopDownProteomics" Version="0.0.287" />
   </ItemGroup>

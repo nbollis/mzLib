@@ -60,13 +60,13 @@ public static class MassSpectrometryExtensions
     }
 
     /// <summary>
-    ///     Absolute normalization of a MzSpectrum
+    ///     Converts MzSpectrum to Relative Intensity
     /// </summary>
     /// <param name="spectrum"></param>
     public static void NormalizeSpectrum(this MzSpectrum spectrum)
     {
         var yArrays = new[] { spectrum.YArray };
-        SpectraNormalization.NormalizeSpectra(yArrays, NormalizationType.AbsoluteToTic);
+        SpectraNormalization.NormalizeSpectra(yArrays, NormalizationType.RelativeIntensity);
     }
 
     /// <summary>

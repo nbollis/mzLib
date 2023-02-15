@@ -24,13 +24,14 @@ namespace Test.AveragingTests
         public IntensityHistogram IntensityHistogram { get; init; }
         public double ScanNumber { get; init; }
         public double Tic { get; init; }
-        public double MrsNoiseEstimation { get; private set; }
-        public double AverageOfMostAbundantHistogramBin { get; private set; }
-        public double AverageOfLastHistogramNoiseBin { get; private set; }
-        public double MaxSignalOverMrsNoise { get; private set; }
-        public double MaxSignalOverMaxHistogramNoise { get; private set; }
-        public double HistogramNoiseOverSignalIntegration { get; private set; }
-        public double AverageOverStDevOfPeaks { get; private set; }
+        public double MrsNoiseEstimation { get; init; }
+        public double AverageOfMostAbundantHistogramBin { get; init; }
+        public double AverageOfLastHistogramNoiseBin { get; init; }
+        public double MaxSignalOverMrsNoise { get; init; }
+        public double MaxSignalOverMaxHistogramNoise { get; init; }
+        public double HistSignalOverNoiseByHist { get; init; }
+        public double HistSignalOverNoiseByMrs { get; init; }
+        public double AverageOverStDevOfPeaks { get; init; }
 
 
         public NoiseEstimationMethodComparison(MsDataScan scan, int numberOfBins, int histogramPercentageOfPeaksToKeep)
@@ -43,7 +44,7 @@ namespace Test.AveragingTests
                                       Spectrum.YArray.StandardDeviation();
 
             AverageOfMostAbundantHistogramBin = IntensityHistogram.MostAbundantBin.AverageBinValue;
-            HistogramNoiseOverSignalIntegration = IntensityHistogram.NoiseIntegrated / IntensityHistogram.SignalIntegrated;
+            HistSignalOverNoiseByHist = IntensityHistogram.SignalIntegrated / IntensityHistogram.NoiseIntegrated;
             AverageOfLastHistogramNoiseBin = IntensityHistogram.NoiseEndBin.AverageBinValue;
          
 
@@ -52,6 +53,8 @@ namespace Test.AveragingTests
             MaxSignalOverMrsNoise = Spectrum.YArray.Max() / MrsNoiseEstimation;
             MaxSignalOverMaxHistogramNoise =
                 Spectrum.YArray.Max() / IntensityHistogram.NoiseEndBin.AverageBinValue;
+            HistSignalOverNoiseByMrs = IntensityHistogram.Bins.Count(p => p.End >= noise) /
+                                       (double)IntensityHistogram.Bins.Count(p => p.End < noise);
         }
 
         public void ShowSpectrumPlot(string title = "")
@@ -135,7 +138,8 @@ namespace Test.AveragingTests
                 sb.Append("Last Noise Hist\t");
                 sb.Append("Max Signal / Mrs\t");
                 sb.Append("Max Signal / Last Hist\t");
-                sb.Append("Hist Noise / Signal Integration\t");
+                sb.Append("Hist Signal / Noise Integration By Last Hist\t");
+                sb.Append("Hist Signal / Noise Integration By Mrs\t");
                 sb.Append("Avg / Stdev\t");
 
                 var tsvString = sb.ToString().TrimEnd('\t');
@@ -153,7 +157,8 @@ namespace Test.AveragingTests
             sb.Append($"{AverageOfLastHistogramNoiseBin}\t");
             sb.Append($"{MaxSignalOverMrsNoise}\t");
             sb.Append($"{MaxSignalOverMaxHistogramNoise}\t");
-            sb.Append($"{HistogramNoiseOverSignalIntegration}\t");
+            sb.Append($"{HistSignalOverNoiseByHist}\t");
+            sb.Append($"{HistSignalOverNoiseByMrs}\t");
             sb.Append($"{AverageOverStDevOfPeaks}\t");
 
             var tsvString = sb.ToString().TrimEnd('\t');

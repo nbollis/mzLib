@@ -59,12 +59,13 @@ namespace Test.AveragingTests
         {
             foreach (var spectrum in spectra)
             {
-                double maxIntensity = spectrum.YArray.Max();
-                var extractedPeaks = spectrum
-                    .Extract(spectrum.XArray.First(), spectrum.XArray.Last())
-                    .OrderBy(p => p.Intensity)
-                    .ToList();
+                List<MzPeak> allPeaks = new List<MzPeak>();
+                for (int i = 0; i < spectrum.YArray.Length; i++)
+                {
+                    allPeaks.Add(new MzPeak(spectrum.XArray[i], spectrum.YArray[i]));
+                }
 
+                var extractedPeaks = allPeaks.OrderBy(p => p.Intensity).ToList();
                 int peaksToKeepCount = (int)(extractedPeaks.Count * (percentOfPeaksToKeep / 100.0));
 
                 // add count for number of peaks extracted that did not make it to the histogram

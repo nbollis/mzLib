@@ -27,7 +27,7 @@ public static class SpectraNormalization
                 break;
 
             case NormalizationType.RelativeIntensity:
-
+                ToRelativeIntensity(yArrays);
                 break;
 
             default:
@@ -76,7 +76,7 @@ public static class SpectraNormalization
         {
             double maxValue = yArrays[i].Max();
             for (int j = 0; j < yArrays[i].Length; j++)
-                yArrays[i][j] /= maxValue;
+                yArrays[i][j] /= maxValue / 100;
         }
     }
 }
