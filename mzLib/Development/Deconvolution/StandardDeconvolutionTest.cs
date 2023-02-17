@@ -144,8 +144,13 @@ namespace Development.Deconvolution
             _wholeSpectrumDeconvolutionTestCases = wholeSpectrumDeconvolutionTestCases;
         }
 
-        #endregion
-
+        /// <summary>
+        /// Returns deconvolution parameters based upon the type of deconvolution and sample
+        /// </summary>
+        /// <param name="sampleType">sample information that is used to set parameters</param>
+        /// <param name="deconType">type of default decon parameters to get</param>
+        /// <returns></returns>
+        /// <exception cref="MzLibException">throws if specific decon type has not been implemented in this method</exception>
         private static DeconvolutionParameters GetDeconvolutionParameters(SampleType sampleType, DeconvolutionType deconType)
         {
             DeconvolutionParameters parameters = null;
@@ -174,6 +179,8 @@ namespace Development.Deconvolution
             else
                 throw new MzLibException("Deconvolution Parameter return type not implemented in this method");
         }
+
+        #endregion
 
         /// <summary>
         /// Tests fails if classic deconvolution top scoring result does not equal the expected
