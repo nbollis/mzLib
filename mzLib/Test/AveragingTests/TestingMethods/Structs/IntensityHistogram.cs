@@ -52,7 +52,7 @@ namespace Test.AveragingTests
                 }
             }
 
-                var peaks = ExtractPeaks(spectra).ToList();
+            var peaks = ExtractPeaks(spectra).ToList();
             Bins = BinPeaks(peaks, numberOfBins);
             CalculateSpecialBins();
         }
