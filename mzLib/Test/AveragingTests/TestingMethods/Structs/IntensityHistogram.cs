@@ -39,17 +39,35 @@ namespace Test.AveragingTests
         public double NoiseIntegrated { get; private set; }
         public double SignalIntegrated { get; private set; }
 
-        public IntensityHistogram(List<MzSpectrum> spectra, int numberOfBins, int percentageOfPeaksToKeep)
+        public IntensityHistogram(List<MzSpectrum> spectra, int numberOfBins, int percentageOfPeaksToKeep,
+            bool logTransformY = true)
         {
             percentOfPeaksToKeep = percentageOfPeaksToKeep;
-            var peaks = ExtractPeaks(spectra).ToList();
+            if (logTransformY)
+            {
+                for (int i = 0; i < spectra.Count; i++)
+                {
+                    var newYArray = spectra[i].YArray.Select(Math.Log10);
+                    spectra[i] = new MzSpectrum(spectra[i].XArray, newYArray, true);
+                }
+            }
+
+                var peaks = ExtractPeaks(spectra).ToList();
             Bins = BinPeaks(peaks, numberOfBins);
             CalculateSpecialBins();
         }
 
-        public IntensityHistogram(MzSpectrum spectrum, int numberOfBins, int percentageOfPeaksToKeep)
+        public IntensityHistogram(MzSpectrum spectrum, int numberOfBins, int percentageOfPeaksToKeep,
+            bool logTransformY = true)
         {
             percentOfPeaksToKeep = percentageOfPeaksToKeep;
+
+            if (logTransformY)
+            {
+                var newYArray = spectrum.YArray.Select(Math.Log10);
+                spectrum = new MzSpectrum(spectrum.XArray, newYArray, true);
+            }
+
             var peaks = ExtractPeaks(new List<MzSpectrum>() {spectrum}).ToList();
             Bins = BinPeaks(peaks, numberOfBins);
             CalculateSpecialBins();
