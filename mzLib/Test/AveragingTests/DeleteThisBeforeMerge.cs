@@ -24,6 +24,15 @@ using Chart = Plotly.NET.CSharp.Chart;
 
 namespace Test.AveragingTests
 {
+    public static class Extensions
+    {
+        public static void Show(this GenericChart.GenericChart chart)
+        {
+            Plotly.NET.CSharp.GenericChartExtensions.Show(chart);
+        }
+    }
+
+
     [TestFixture]
     public static class DeleteThisBeforeMerge
     {
@@ -128,6 +137,69 @@ namespace Test.AveragingTests
         }
 
         [Test]
+        public static void testShortreedMethod()
+        {
+            var ms1Scans = ThermoRawFileReader.LoadAllStaticData(HelaPath).GetMS1Scans().ToList();
+            ShortreedMethod(ms1Scans);
+
+        }
+
+        /// <summary>
+        /// returns a dictionary where key is the floor mz of the bin and value is the sum of all intensity values in bin
+        /// </summary>
+        /// <param name="scans"></param>
+        /// <returns></returns>
+        public static Dictionary<double, double> ShortreedMethod(List<MsDataScan> scans)
+        {
+            // get all peaks
+            List<MzPeak> allPeaks = new();
+
+            // foreach ms1 scan, add peaks to all peaks
+            foreach (MsDataScan scan in scans.Where(p => p.MsnOrder == 1))
+            {
+                allPeaks.AddRange(scan.MassSpectrum.Extract(scan.MassSpectrum.XArray.First(), scan.MassSpectrum.XArray.Last()));
+            }
+            
+            // get min and max mz from all spectra
+            double binSize = 1;
+            int min = (int)allPeaks.Min(p => p.Mz);
+            double max = (int)allPeaks.Max(p => p.Mz) + binSize;
+
+            // sort peaks into bins of mz bin size defined above
+            var sortedPeaks = new Dictionary<double, List<MzPeak>>();
+            for (double i = min; i < max; i+=binSize)
+            {
+                var peaksInBin = allPeaks.Where(p => p.Mz >= i && p.Mz < i + binSize).ToList();
+                sortedPeaks.Add(i, peaksInBin);
+            }
+
+            // sum all peaks in each bin
+            var summedPeaks = sortedPeaks
+                .ToDictionary(p => p.Key, p => p.Value.Sum(m => m.Intensity));
+            return summedPeaks;
+        }
+
+        [Test]
+        public static void TicButWithSnr()
+        {
+            //var ms1Scans = SpectraFileHandler.LoadAllScansFromFile(JurkatPath)
+            //    .Where(p => p.MsnOrder == 1);
+
+            //var scanSubset = ms1Scans.Where(p => p.RetentionTime >= 30 && p.RetentionTime <= 80).ToList();
+            //var comparer = new SnrComparer(scanSubset);
+            //comparer.GetTicLikePlot("Jurkat RT 30-80").Show();
+
+            List<string> path = new List<string>()
+            {
+                JurkatPath,
+                JurkatPathNoRejection,
+                JurkatPathAvgSigma,
+            };
+            WholeFileSnrComparer comparison = new WholeFileSnrComparer(path);
+            comparison.GetPlot().Show();
+        }
+
+        [Test]
         public static void TestAveragingWithWinsorized()
         {
             SpectralAveragingParameters parameters = new SpectralAveragingParameters()
@@ -180,7 +252,6 @@ namespace Test.AveragingTests
           
 
         }
-
 
         [Test]
         public static void CompareMRSToGausianHistogramFit()
@@ -242,7 +313,6 @@ namespace Test.AveragingTests
 
             }
         }
-
 
         [Test]
         public static void HistogramTest()

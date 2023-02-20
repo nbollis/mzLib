@@ -32,6 +32,7 @@ namespace Test.AveragingTests
         public double HistSignalOverNoiseByHist { get; init; }
         public double HistSignalOverNoiseByMrs { get; init; }
         public double AverageOverStDevOfPeaks { get; init; }
+        public double MedianOfAllPeaks { get; init; }
 
 
         public NoiseEstimationMethodComparison(MsDataScan scan, int numberOfBins, int histogramPercentageOfPeaksToKeep)
@@ -42,6 +43,7 @@ namespace Test.AveragingTests
             IntensityHistogram = new IntensityHistogram(Spectrum, numberOfBins, histogramPercentageOfPeaksToKeep);
             AverageOverStDevOfPeaks = Spectrum.YArray.Average() /
                                       Spectrum.YArray.StandardDeviation();
+            MedianOfAllPeaks = Spectrum.YArray.Median();
 
             AverageOfMostAbundantHistogramBin = IntensityHistogram.MostAbundantBin.AverageBinValue;
             HistSignalOverNoiseByHist = IntensityHistogram.SignalIntegrated / IntensityHistogram.NoiseIntegrated;
@@ -56,6 +58,20 @@ namespace Test.AveragingTests
             HistSignalOverNoiseByMrs = IntensityHistogram.Bins.Count(p => p.End >= noise) /
                                        (double)IntensityHistogram.Bins.Count(p => p.End < noise);
         }
+
+        public double CalculateSnr(double[] array, double referenceMedian)
+        {
+            double median = array.Median();
+            double scaling = referenceMedian / median;
+            var stddev = array.Where(i => i < median)
+                .Select(i => i * scaling)
+                .StandardDeviation();
+            var mean = array.Select(i => i * scaling).Where(i => i > 3 * stddev)
+                .Mean();
+            return mean / stddev;
+        }
+
+        #region Output Methods
 
         public void ShowSpectrumPlot(string title = "")
         {
@@ -83,7 +99,7 @@ namespace Test.AveragingTests
 
             var specrumChart = Chart.Line<double, double, string>(
                 xArray,
-                yArray, 
+                yArray,
                 Name: "Spectrum",
                 LineColor: new Optional<Color>(Color.fromKeyword(ColorKeyword.Blue), true),
                 LineWidth: new Optional<double>(0.5, true));
@@ -164,5 +180,9 @@ namespace Test.AveragingTests
             var tsvString = sb.ToString().TrimEnd('\t');
             return tsvString;
         }
+
+        #endregion
+
+
     }
 }

@@ -111,7 +111,6 @@ namespace Test.AveragingTests
             SignalIntegrated += SignalRegion.Sum(p => p.PeakCount);
         }
 
-
         public void FitCurveToPolynomial()
         {
 

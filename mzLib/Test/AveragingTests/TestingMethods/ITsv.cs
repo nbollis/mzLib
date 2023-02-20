@@ -131,23 +131,6 @@ namespace Test.AveragingTests
         private static IEnumerable<WholeSpectraFileNoiseEstimationMethodComparison> ParseWholeSpectraFileNoiseEstimationMethodComparison(
             Dictionary<string, List<string>> parsedValues)
         {
-            var ticStats = ParseBasicStats(parsedValues.Where(p => p.Key.Contains("Tic "))
-                .ToDictionary(p => p.Key, p => p.Value)).ToList();
-            var mrsNoiseEstimationStats = ParseBasicStats(parsedValues.Where(p => p.Key.StartsWith("Mrs ") && !p.Key.Contains("Noise"))
-                .ToDictionary(p => p.Key, p => p.Value)).ToList();
-            var averageOfMostAbundantHistogramBinStats = ParseBasicStats(parsedValues.Where(p => p.Key.Contains("Most Abundant Hist "))
-                .ToDictionary(p => p.Key, p => p.Value)).ToList();
-            var averageOfLastHistogramNoiseBinStats = ParseBasicStats(parsedValues.Where(p => p.Key.Contains("Last Noise Hist "))
-                .ToDictionary(p => p.Key, p => p.Value)).ToList();
-            var maxSignalOverMrsNoiseStats = ParseBasicStats(parsedValues.Where(p => p.Key.Contains("Max Signal / Mrs "))
-                .ToDictionary(p => p.Key, p => p.Value)).ToList();
-            var maxSignalOverMaxHistogramNoiseStats = ParseBasicStats(parsedValues.Where(p => p.Key.Contains("Tic "))
-                .ToDictionary(p => p.Key, p => p.Value)).ToList();
-            var histogramNoiseOverSignalIntegrationStats = ParseBasicStats(parsedValues.Where(p => p.Key.Contains("Hist Noise / Signal Integration "))
-                .ToDictionary(p => p.Key, p => p.Value)).ToList();
-            var averageOverStDevOfPeaksStats = ParseBasicStats(parsedValues.Where(p => p.Key.Contains("Avg / Stdev "))
-                .ToDictionary(p => p.Key, p => p.Value)).ToList();
-
             List<WholeSpectraFileNoiseEstimationMethodComparison> readObjects = new();
             for (int i = 0; i < parsedValues.First().Value.Count; i++)
             {
@@ -168,14 +151,7 @@ namespace Test.AveragingTests
                             AverageOverStDevOfPeaks = double.Parse(parsedValues["Avg / Stdev"][i]),
                         }
                     },
-                    TicStats = ticStats[i],
-                    MrsNoiseEstimationStats = mrsNoiseEstimationStats[i],
-                    AverageOfMostAbundantHistogramBinStats = averageOfMostAbundantHistogramBinStats[i],
-                    AverageOfLastHistogramNoiseBinStats = averageOfLastHistogramNoiseBinStats[i],
-                    MaxSignalOverMrsNoiseStats = maxSignalOverMrsNoiseStats[i],
-                    MaxSignalOverMaxHistogramNoiseStats = maxSignalOverMaxHistogramNoiseStats[i],
-                    HistogramNoiseOverSignalIntegrationStats = histogramNoiseOverSignalIntegrationStats[i],
-                    AverageOverStDevOfPeaksStats = averageOverStDevOfPeaksStats[i]
+              
                 });
             }
 

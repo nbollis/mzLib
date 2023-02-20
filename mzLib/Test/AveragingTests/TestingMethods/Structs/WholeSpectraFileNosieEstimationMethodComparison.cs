@@ -30,14 +30,6 @@ namespace Test.AveragingTests
         public double HistogramNoiseOverSignalIntegrationByMrs => IndividualComparisons.Average(p => p.HistSignalOverNoiseByMrs);
         public double AverageOverStDevOfPeaks => IndividualComparisons.Average(p => p.AverageOverStDevOfPeaks);
 
-        public BasicStats TicStats { get; init; }
-        public BasicStats MrsNoiseEstimationStats { get; init; }
-        public BasicStats AverageOfMostAbundantHistogramBinStats { get; init; }
-        public BasicStats AverageOfLastHistogramNoiseBinStats { get; init; }
-        public BasicStats MaxSignalOverMrsNoiseStats { get; init; }
-        public BasicStats MaxSignalOverMaxHistogramNoiseStats { get; init; }
-        public BasicStats HistogramNoiseOverSignalIntegrationStats { get; init; }
-        public BasicStats AverageOverStDevOfPeaksStats { get; init; }
 
         public WholeSpectraFileNoiseEstimationMethodComparison(string name, List<MsDataScan> scans, int numberOfBins,
             int percentToKeep)
@@ -47,14 +39,6 @@ namespace Test.AveragingTests
             foreach (var scan in scans) 
                 IndividualComparisons.Add(new (scan, numberOfBins, percentToKeep));
 
-            TicStats = new BasicStats("Tic", IndividualComparisons.Select(p => p.Tic));
-            MrsNoiseEstimationStats = new BasicStats("Mrs", IndividualComparisons.Select(p => p.MrsNoiseEstimation));
-            AverageOfMostAbundantHistogramBinStats = new BasicStats("Most Abundant Hist", IndividualComparisons.Select(p => p.AverageOfMostAbundantHistogramBin));
-            AverageOfLastHistogramNoiseBinStats = new BasicStats("Last Noise Hist", IndividualComparisons.Select(p => p.AverageOfLastHistogramNoiseBin));
-            MaxSignalOverMrsNoiseStats = new BasicStats("Max Signal / Mrs", IndividualComparisons.Select(p => p.MaxSignalOverMrsNoise));
-            MaxSignalOverMaxHistogramNoiseStats = new BasicStats("Max Signal / Max Hist", IndividualComparisons.Select(p => p.MaxSignalOverMaxHistogramNoise));
-            HistogramNoiseOverSignalIntegrationStats = new BasicStats("Hist Noise / Signal Integration", IndividualComparisons.Select(p => p.HistSignalOverNoiseByHist));
-            AverageOverStDevOfPeaksStats = new BasicStats("Avg / Stdev", IndividualComparisons.Select(p => p.AverageOverStDevOfPeaks));
         }
 
         public WholeSpectraFileNoiseEstimationMethodComparison(string name,
@@ -62,14 +46,6 @@ namespace Test.AveragingTests
         {
             Name = name;
             IndividualComparisons = individualComparisons.ToList();
-            TicStats = new BasicStats("Tic", IndividualComparisons.Select(p => p.Tic));
-            MrsNoiseEstimationStats = new BasicStats("Mrs", IndividualComparisons.Select(p => p.MrsNoiseEstimation));
-            AverageOfMostAbundantHistogramBinStats = new BasicStats("Most Abundant Hist", IndividualComparisons.Select(p => p.AverageOfMostAbundantHistogramBin));
-            AverageOfLastHistogramNoiseBinStats = new BasicStats("Last Noise Hist", IndividualComparisons.Select(p => p.AverageOfLastHistogramNoiseBin));
-            MaxSignalOverMrsNoiseStats = new BasicStats("Max Signal / Mrs", IndividualComparisons.Select(p => p.MaxSignalOverMrsNoise));
-            MaxSignalOverMaxHistogramNoiseStats = new BasicStats("Max Signal / Max Hist", IndividualComparisons.Select(p => p.MaxSignalOverMaxHistogramNoise));
-            HistogramNoiseOverSignalIntegrationStats = new BasicStats("Hist Noise / Signal Integration", IndividualComparisons.Select(p => p.HistSignalOverNoiseByHist));
-            AverageOverStDevOfPeaksStats = new BasicStats("Avg / Stdev", IndividualComparisons.Select(p => p.AverageOverStDevOfPeaks));
         }
 
         public void ShowBoxPlot()
@@ -173,14 +149,6 @@ namespace Test.AveragingTests
                 sb.Append("Hist Signal / Noise By Last Hist\t");
                 sb.Append("Hist Signal / Noise By Mrs\t");
                 //sb.Append("Avg / Stdev\t");
-                //sb.Append($"{TicStats.TabSeparatedHeader}\t");
-                //sb.Append($"{MrsNoiseEstimationStats.TabSeparatedHeader}\t");
-                //sb.Append($"{AverageOfMostAbundantHistogramBinStats.TabSeparatedHeader}\t");
-                //sb.Append($"{AverageOfLastHistogramNoiseBinStats.TabSeparatedHeader}\t");
-                //sb.Append($"{MaxSignalOverMrsNoiseStats.TabSeparatedHeader}\t");
-                //sb.Append($"{MaxSignalOverMaxHistogramNoiseStats.TabSeparatedHeader}\t");
-                //sb.Append($"{HistogramNoiseOverSignalIntegrationStats.TabSeparatedHeader}\t");
-                //sb.Append($"{AverageOverStDevOfPeaksStats.TabSeparatedHeader}\t");
 
                 var tsvString = sb.ToString().TrimEnd('\t');
                 return tsvString;
@@ -200,14 +168,7 @@ namespace Test.AveragingTests
             sb.Append($"{HistogramNoiseOverSignalIntegrationByHist}\t");
             sb.Append($"{HistogramNoiseOverSignalIntegrationByMrs}\t");
             //sb.Append($"{AverageOverStDevOfPeaks}\t");
-            //sb.Append($"{TicStats.ToTsvString()}\t");
-            //sb.Append($"{MrsNoiseEstimationStats.ToTsvString()}\t");
-            //sb.Append($"{AverageOfMostAbundantHistogramBinStats.ToTsvString()}\t");
-            //sb.Append($"{AverageOfLastHistogramNoiseBinStats.ToTsvString()}\t");
-            //sb.Append($"{MaxSignalOverMrsNoiseStats.ToTsvString()}\t");
-            //sb.Append($"{MaxSignalOverMaxHistogramNoiseStats.ToTsvString()}\t");
-            //sb.Append($"{HistogramNoiseOverSignalIntegrationStats.ToTsvString()}\t");
-            //sb.Append($"{AverageOverStDevOfPeaksStats.ToTsvString()}\t");
+
             var tsvString = sb.ToString().TrimEnd('\t');
             return tsvString;
         }
