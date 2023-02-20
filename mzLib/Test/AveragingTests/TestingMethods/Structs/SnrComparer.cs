@@ -53,7 +53,7 @@ namespace Test.AveragingTests
             var stddev = array.Where(i => i < cutoffValue)
                 .Select(i => i * scaling)
                 .StandardDeviation();
-            var mean = array.Select(i => i * scaling).Where(i => i > 3 * stddev)
+            var mean = array.Select(i => i * scaling).Where(i => i > stddev)
                 .Mean();
             return mean / stddev;
         }
