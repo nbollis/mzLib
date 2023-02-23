@@ -86,6 +86,11 @@ namespace MassSpectrometry
 
         private MzRange isolationRange;
 
+        public void SetMassSpectrum(MzSpectrum spec)
+        {
+            MassSpectrum = spec;
+        }
+
         public MzRange IsolationRange
         {
             get

@@ -21,6 +21,7 @@ using Plotly.NET;
 using Plotly.NET.CSharp;
 using Plotly.NET.LayoutObjects;
 using Chart = Plotly.NET.CSharp.Chart;
+using MzSpectrum = MassSpectrometry.MzSpectrum;
 
 namespace Test.AveragingTests
 {
@@ -61,6 +62,134 @@ namespace Test.AveragingTests
         private const string UbqPathWinsorized = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-Winsorized.mzML";
         private const string UbqPathAvgSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-AveragedSigma1.5.mzML";
         private const string UbqPathAvgSigma25Scans = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Ubiq-averaged-AveragedSigma1.5-25Scans.mzML";
+
+        [Test]
+        public static void HistogramStuff()
+        {
+            var ms1scans = SpectraFileHandler.LoadAllScansFromFile(@"B:\Users\Nic\ScanAveraging\220220AveragedDatasets\Original\221110_CytoOnly.raw");
+            var trimmedScans = ms1scans.Where(p =>
+                p.MsnOrder == 1 && p.OneBasedScanNumber  is >= 0 and <= 150)
+                .ToList();
+            foreach (var scan in trimmedScans)
+            {
+                var hist = new IntensityHistogram(scan.MassSpectrum, 500, 100, true);
+                hist.OutputWithPlotly(scan.OneBasedScanNumber.ToString());
+            }
+        }
+
+        [Test]
+        public static void miniHelaHistTesting()
+        {
+            string spePath = @"D:\DataFiles\Hela_1\20100611_Velos1_TaGe_SA_Hela_1.raw";
+
+
+            foreach (var scan in ThermoRawFileReader.LoadAllStaticData(spePath).GetMS1Scans()
+                         .Where(p => p.OneBasedScanNumber >= 800))
+            {
+                bool log = true;
+                int bins = 300;
+                int percent = 90;
+
+                var hist = new IntensityHistogram(scan.MassSpectrum, bins, percent, log);
+                hist.OutputWithPlotly($"{scan.OneBasedScanNumber}: Bins: {bins}, Percent: {percent}, Log Transform: {log}");
+            }
+        }
+
+        [Test]
+        public static void TestSRPeakDivisionIdea()
+        {
+            string helaDirectory = @"D:\DataFiles\Hela_1";
+            string distributionPath = @"C:\Users\Nic\Documents\Copy of stupidity.csv";
+            string outputDirectory = @"D:\Projects\SpectralAveraging\ShortreedDivideByIntensityDistrubutionIdea\Averaged";
+
+            SpectralAveragingParameters parameters = new()
+            {
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap,
+                NormalizationType = NormalizationType.RelativeToTics,
+                OutlierRejectionType = OutlierRejectionType.AveragedSigmaClipping,
+                SpectralWeightingType = SpectraWeightingType.TicValue,
+                MaxSigmaValue = 3,
+                MinSigmaValue = 1,
+                BinSize = 0.01,
+                MaxThreadsToUsePerFile = 10,
+                NumberOfScansToAverage = 5,
+                ScanOverlap = 4,
+            };
+            
+            // load in the distribution to a usable format
+            Dictionary<DoubleRange, double> tempDistribution = new();
+            var lines = File.ReadAllLines(distributionPath);
+            for (var i = 2; i < lines.Length; i++)
+            {
+                var currentSplits = lines[i].Split(',');
+                var range = new DoubleRange(double.Parse(currentSplits[0]), double.Parse(currentSplits[0]) + 10);
+                var val = double.Parse(currentSplits[1]);
+                tempDistribution.Add(range, val);
+            }
+            var orderedDistribution = tempDistribution
+                .OrderBy(p => p.Key.Minimum)
+                .ToDictionary(p => p.Key, p => p.Value);
+
+            // load in the scans
+            Dictionary<string, List<MsDataScan>> spectraFiles = Directory.GetFiles(helaDirectory)
+                .Where(p => p.Contains("Velos1_TaGe"))
+                .ToDictionary(p => p, p => ThermoRawFileReader.LoadAllStaticData(p).GetAllScansList());
+
+            string preProcessingType = "TrimByNoiseEstimate";
+            foreach (var file in spectraFiles)
+            {
+
+                // alter the intensity of each spectrum based upon the distribution
+                if (preProcessingType == "WeightPeaksByDistribution")
+                {
+                    foreach (var scan in file.Value.Where(p => p.MsnOrder == 1))
+                    {
+                        for (int i = 0; i < scan.MassSpectrum.YArray.Length; i++)
+                        {
+                            var divisor = orderedDistribution
+                                .FirstOrDefault(p => p.Key.Contains(scan.MassSpectrum.XArray[i]))
+                                .Value;
+                            if (divisor.IsDefault())
+                                continue;
+
+                            scan.MassSpectrum.YArray[i] /= divisor;
+                        }
+                    }
+                }
+                // reduce peaks by nosie estimate
+                else if (preProcessingType == "TrimByNoiseEstimate")
+                {
+                    foreach (var scan in file.Value.Where(p => p.MsnOrder == 1))
+                    {
+                        bool log = true;
+                        int bins = 300;
+                        int percent = 90;
+
+                        var hist = new IntensityHistogram(scan.MassSpectrum, bins, percent, log);
+                        var noiseLevel = Math.Pow(10, hist.NoiseEndBin.AverageBinValue);
+
+                        List<double> newX = new();
+                        List<double> newY = new();
+                        for (int i = 0; i < scan.MassSpectrum.YArray.Length; i++)
+                        {
+                            scan.MassSpectrum.YArray[i] -= noiseLevel;
+                            if (scan.MassSpectrum.YArray[i] >= 0)
+                            {
+                                newX.Add(scan.MassSpectrum.XArray[i]);
+                                newY.Add(scan.MassSpectrum.YArray[i]);
+                            }
+                        }
+
+                        scan.SetMassSpectrum(new MzSpectrum(newX.ToArray(), newY.ToArray(), true));
+                    }
+                }
+
+                // average the file
+                var outPath = Path.Combine(outputDirectory, $"{Path.GetFileNameWithoutExtension(file.Key)}-averagedTrimmedByNoise");
+                var averagedSpectra = SpectraFileAveraging.AverageSpectraFile(file.Value, parameters);
+                AveragedSpectraWriter.WriteAveragedScans(averagedSpectra, parameters, file.Key!, outPath);
+            }
+        }
 
         [Test]
         public static void CompareNoiseInAveragedShit()

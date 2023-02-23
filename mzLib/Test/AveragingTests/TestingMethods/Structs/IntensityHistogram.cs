@@ -42,6 +42,7 @@ namespace Test.AveragingTests
         public IntensityHistogram(List<MzSpectrum> spectra, int numberOfBins, int percentageOfPeaksToKeep,
             bool logTransformY = true)
         {
+            
             percentOfPeaksToKeep = percentageOfPeaksToKeep;
             if (logTransformY)
             {
@@ -60,6 +61,7 @@ namespace Test.AveragingTests
         public IntensityHistogram(MzSpectrum spectrum, int numberOfBins, int percentageOfPeaksToKeep,
             bool logTransformY = true)
         {
+            binsToOutput = binsToOutput > numberOfBins ? numberOfBins : binsToOutput;
             percentOfPeaksToKeep = percentageOfPeaksToKeep;
 
             if (logTransformY)
@@ -106,7 +108,9 @@ namespace Test.AveragingTests
                 double end = binWidth * (i + 1);
                 var peaksInBin = peaks.Where(p => p.Intensity >= start && p.Intensity < end).ToList();
 
-                if (!foundFirstBin && !peaksInBin.Any()) continue;
+                if (!foundFirstBin && !peaksInBin.Any()) 
+                    continue;
+               
                 bins.Add(new(binIndex, start, end, peaksInBin));
                 binIndex++;
                 foundFirstBin = true;
@@ -136,6 +140,7 @@ namespace Test.AveragingTests
             var xValues = Bins.Select(p => (double)p.BinIndex).ToArray();
             var yValues = Bins.Select(p => (double)p.PeakCount).ToArray();
 
+            binsToOutput = binsToOutput > xValues.Length ? xValues.Length : binsToOutput;
             int denominator = 1;
             Polynomial polynomial;
             do
