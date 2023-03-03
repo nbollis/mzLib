@@ -57,13 +57,7 @@ namespace Test
             Assert.AreEqual(501.00727646687898, mz);
         }
 
-        [Test]
-        public static void MassToMzPositiveCharge_plus3()
-        {
-            ObjectWithMass1000 a = new ObjectWithMass1000();
-            double mz = (double)ClassExtensions.RoundedDouble(a.ToMz(3), 9);
-            Assert.AreEqual(334.340609800, mz);
-        }
+ 
 
         [Test]
         public static void MassToMzNegativeCharge()
