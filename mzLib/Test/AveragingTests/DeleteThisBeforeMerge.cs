@@ -6,6 +6,7 @@ using SpectralAveraging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,6 +22,7 @@ using Plotly.NET;
 using Plotly.NET.CSharp;
 using Plotly.NET.LayoutObjects;
 using Chart = Plotly.NET.CSharp.Chart;
+using GenericChartExtensions = Plotly.NET.GenericChartExtensions;
 using MzSpectrum = MassSpectrometry.MzSpectrum;
 
 namespace Test.AveragingTests
@@ -62,6 +64,103 @@ namespace Test.AveragingTests
         private const string UbqPathWinsorized = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-Winsorized.mzML";
         private const string UbqPathAvgSigma = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\UbiqOnly-averaged-AveragedSigma1.5.mzML";
         private const string UbqPathAvgSigma25Scans = @"D:\Projects\SpectralAveraging\Comparing Noise Level\AveragedFiles\Ubiq-averaged-AveragedSigma1.5-25Scans.mzML";
+        private const string HghPath = @"R:\Nic\Chimera Validation\SingleStandards\221110_HGHOnly_50IW.raw";
+
+        
+
+
+        [Test]
+        public static void MassAccuracy2()
+        {
+            var hghMzs = new[]
+                { 1107.16, 1165.44, 1230.18, 1302.43, 1383.77, 1475.95, 1581.38, 1702.87, 1844.69, 2012.38 };
+            var ubqMzs = new double[] { 1254.8, 1115.49, 1004.14, 912.86, 836.95, 772.57, 717.46, 669.7, 627.84 };
+            var ubqCharges = new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+
+            var ubqAveragedScans = SpectraFileHandler.LoadAllScansFromFile(UbqPathAvgSigma).ToList();
+            var ubqAveragedAccuracy = new MassAccuracy("Ubiq", ubqMzs, ubqAveragedScans);
+            var averagedChart = ubqAveragedAccuracy.GetDistributionLinePlot( "Averaged").WithTitle("Averaged");
+
+            var ubiqScans = SpectraFileHandler.LoadAllScansFromFile(UbqPath).ToList();
+            var ubqAccuracy = new MassAccuracy("Control", ubqMzs, ubiqScans);
+            var controlChart = ubqAccuracy.GetDistributionLinePlot("Control").WithTitle("Control");
+
+            var chart = Chart.Combine(new List<GenericChart.GenericChart>() { averagedChart, controlChart });
+            GenericChartExtensions.Show(chart);
+        }
+
+        [Test]
+        public static void MostAbundantPeakPerChargeState()
+        {
+            var hghMzs = new[]
+                { 1107.16, 1165.44, 1230.18, 1302.43, 1383.77, 1475.95, 1581.38, 1702.87, 1844.69, 2012.38 };
+            var ubqMzs = new double[] { 1254.8, 1115.49, 1004.14, 912.86, 836.95, 772.57, 717.46, 669.7, 627.84 };
+            var ubqCharges = new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+            var controlColor = Color.fromKeyword(ColorKeyword.Red);
+            var averagedColor = Color.fromKeyword(ColorKeyword.Blue);
+
+            var ubiqScans = SpectraFileHandler.LoadAllScansFromFile(UbqPath).ToList();
+            var ubqAccuracy = new MassAccuracy("Control", ubqMzs, ubiqScans);
+            var controlChart = ubqAccuracy.GetBigPlot(ubqCharges, controlColor, "Control");
+
+            var ubqAveragedScans = SpectraFileHandler.LoadAllScansFromFile(UbqPathAvgSigma).ToList();
+            var ubqAveragedAccuracy = new MassAccuracy("Ubiq", ubqMzs, ubqAveragedScans);
+            var averagedChart = ubqAveragedAccuracy.GetBigPlot(ubqCharges, averagedColor, "Averaged");
+
+            var chart = Chart.Combine(new List<GenericChart.GenericChart>() { averagedChart, controlChart })
+                .WithTitle("Most Abundant Peak Per Charge State Envelope");
+            GenericChartExtensions.Show(chart);
+        }
+
+        [Test]
+        public static void OverlappingIsotopicEnvelopes()
+        {
+            var hghMzs = new[]
+                { 1107.16, 1165.44, 1230.18, 1302.43, 1383.77, 1475.95, 1581.38, 1702.87, 1844.69, 2012.38 };
+            var ubqMzs = new double[] { 1254.8, 1115.49, 1004.14, 912.86, 836.95, 772.57, 717.46, 669.7, 627.84 };
+            var ubqCharges = new int[] { 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+            var controlColor = Color.fromKeyword(ColorKeyword.Red);
+            var averagedColor = Color.fromKeyword(ColorKeyword.Blue);
+
+            var ubiqScans = SpectraFileHandler.LoadAllScansFromFile(UbqPath).ToList();
+            var ubiqFirst10 = ubiqScans.Where(p => p.MsnOrder == 1)
+                .Take(10).ToList();
+            var controlPlot = MassAccuracy.GetIsotopicEnvelopeChart(ubqMzs, ubiqFirst10, controlColor);
+
+            var ubqAveragedScans = SpectraFileHandler.LoadAllScansFromFile(UbqPathAvgSigma).ToList();
+            var averagedFirst10 = ubqAveragedScans.Where(p => p.MsnOrder == 1)
+                .Take(10).ToList();
+            var averagedPlot = MassAccuracy.GetIsotopicEnvelopeChart(ubqMzs, averagedFirst10, averagedColor);
+
+            var finalPlot = Chart.Combine(new List<GenericChart.GenericChart>() { controlPlot, averagedPlot });
+
+            GenericChartExtensions.Show(finalPlot);
+
+        }
+
+        [Test]
+        public static void LookAtQuantWindow()
+        {
+            string filePath = @"D:\Projects\Top Down MetaMorpheus\NBReplicate\Cali_MOxAndBioMetArtModsGPTMD_Search_Quant8ppm\Task1-SearchTask\AllQuantifiedPeaks.tsv";
+
+            var lines = File.ReadAllLines(filePath);
+            List<Peak> peaks = new List<Peak>();
+
+            for (var i = 1; i < lines.Length; i++)
+            {
+                var splits = lines[i].Split('\t');
+                if (splits[8] == "0") continue;
+
+                var start = double.Parse(splits[9]);
+                var apex = double.Parse(splits[10]);
+                var end = double.Parse(splits[11]);
+                peaks.Add(new Peak(start, apex, end));
+            }
+
+
+        }
+
+        private record struct Peak(double Start, double Apex, double End);
 
         [Test]
         public static void HistogramStuff()
