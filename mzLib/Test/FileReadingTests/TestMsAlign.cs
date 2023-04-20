@@ -20,6 +20,7 @@ namespace Test.FileReadingTests
         {
             string spectraPath = Path.Combine(TestContext.CurrentContext.TestDirectory, filePath);
             MsDataFile datafile = MsDataFileReader.GetDataFile(spectraPath);
+            var t = datafile.LoadAllStaticData();
         }
     }
 }

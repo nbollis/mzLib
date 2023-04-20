@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using MassSpectrometry;
 using MzLibUtil;
-using Readers.ReaderFactories;
 
 namespace Readers
 {
@@ -14,16 +13,14 @@ namespace Readers
         public static MsDataFile GetDataFile(string filePath)
         {
             string fileExtension = Path.GetExtension(filePath).ToLowerInvariant();
-            IReaderFactory factory = null;
-            factory = fileExtension switch
+            return fileExtension switch
             {
-                ".raw" => new ThermoRawReaderFactory(filePath),
-                ".mzml" => new MzMLReaderFactory(filePath),
-                ".mgf" => new MgfReaderFactory(filePath),
-                ".msalign" => new MsAlignReaderFactory(filePath),
+                ".raw" => new ThermoRawFileReader(filePath),
+                ".mzml" => new Mzml(filePath),
+                ".mgf" => new Mgf(filePath),
+                ".msalign" => new MsAlign(filePath),
                 _ => throw new MzLibException("File extension not supported."),
             };
-            return factory.Reader; 
         }
     }
 }
