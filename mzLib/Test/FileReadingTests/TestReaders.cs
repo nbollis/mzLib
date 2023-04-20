@@ -47,7 +47,7 @@ namespace Test.FileReadingTests
             switch (Path.GetExtension(filePath).ToLower())
             {
                 case ".raw":
-                    dataFile = IO.ThermoRawFileReader.ThermoRawFileReader.LoadAllStaticData(filePath);
+                    dataFile = ThermoRawFileReader.LoadAllStaticData(filePath);
                     scans = dataFile.GetAllScansList();
                     break;
 

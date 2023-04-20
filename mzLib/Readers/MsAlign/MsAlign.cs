@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MassSpectrometry;
-using System.IO
+using System.IO;
 
 namespace Readers
 {
@@ -37,21 +37,44 @@ namespace Readers
             }
         }
 
+        internal enum ReadingProgress
+        {
+            NotFound,
+            Found,
+            Finished
+        }
+
         public override MsDataFile LoadAllStaticData(FilteringParams filteringParams = null, int maxThreads = 1)
         {
             // TODO: Figure out dynamic connection and have static call dynamic
 
+            ReadingProgress headerProgress = ReadingProgress.NotFound;
+            ReadingProgress entryProgress = ReadingProgress.NotFound;
             using (StreamReader sr = new StreamReader(FilePath))
             {
                 // get header
                 // ### -> ###
-                while (sr.Peek() != 0)
+                string? line;
+                while ((line = sr.ReadLine()) is not null)
                 {
+                    // get header
+                    if (headerProgress != ReadingProgress.Finished)
+                    {
+                        if (line.Contains("#####Parameters####") && headerProgress == ReadingProgress.NotFound)
+                            headerProgress = ReadingProgress.Found;
+                        else if (line.Contains("#####Parameters####") && headerProgress == ReadingProgress.Found)
+                            headerProgress = ReadingProgress.Finished;
+
+
+                    }
+
+
+                    // do each spectrum
+                    // BEGIN IONS -> END IONS
 
                 }
 
-                // do each spectrum
-                // BEGIN IONS -> END IONS
+
             }
 
 
