@@ -61,4 +61,20 @@ namespace Readers.ReaderFactories
             return new Mgf(FilePath);
         }
     }
+
+    internal sealed class MsAlignReaderFactory : BaseReaderFactory, IReaderFactory
+    {
+        public MsDataFile Reader { get; }
+
+        internal MsAlignReaderFactory(string filePath) : base(filePath)
+        {
+            FilePath = filePath;
+            Reader = CreateReader();
+        }
+
+        public MsDataFile CreateReader()
+        {
+            return new Mgf(FilePath);
+        }
+    }
 }

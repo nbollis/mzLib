@@ -20,6 +20,7 @@ namespace Readers
                 ".raw" => new ThermoRawReaderFactory(filePath),
                 ".mzml" => new MzMLReaderFactory(filePath),
                 ".mgf" => new MgfReaderFactory(filePath),
+                ".msalign" => new MsAlignReaderFactory(filePath),
                 _ => throw new MzLibException("File extension not supported."),
             };
             return factory.Reader; 
