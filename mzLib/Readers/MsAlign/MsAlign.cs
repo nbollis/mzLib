@@ -16,7 +16,7 @@ namespace Readers
         Unknown,
     }
 
-    public class MsAlign : MsDataFile
+    public class MsAlign : MassSpectrometry.MsDataFile
     {
 
         public MsAlignType MsAlignType { get; set; }
@@ -48,41 +48,53 @@ namespace Readers
         {
             // TODO: Figure out dynamic connection and have static call dynamic
 
+            List<MsDataScan> scans = new();
             ReadingProgress headerProgress = ReadingProgress.NotFound;
             ReadingProgress entryProgress = ReadingProgress.NotFound;
             using (StreamReader sr = new StreamReader(FilePath))
             {
-                // get header
-                // ### -> ###
                 string? line;
                 while ((line = sr.ReadLine()) is not null)
                 {
+                    List<string> linesToProcess = new();
+
                     // get header
                     if (headerProgress != ReadingProgress.Finished)
                     {
-                        if (line.Contains("#####Parameters####") && headerProgress == ReadingProgress.NotFound)
+                        if (headerProgress == ReadingProgress.NotFound && line.Contains("#####Parameters#####"))
                             headerProgress = ReadingProgress.Found;
-                        else if (line.Contains("#####Parameters####") && headerProgress == ReadingProgress.Found)
+                        else if (headerProgress == ReadingProgress.Found && line.Contains("#####Parameters#####"))
+                        {
                             headerProgress = ReadingProgress.Finished;
-
-
+                            ParseHeaderLines(linesToProcess); // TODO: this method
+                            linesToProcess.Clear();
+                        }
+                        else
+                        {
+                            linesToProcess.Add(line);
+                            continue;
+                        }
                     }
 
-
-                    // do each spectrum
-                    // BEGIN IONS -> END IONS
-
+                    // each entry after header
+                    if (entryProgress == ReadingProgress.NotFound && line.Contains("BEGIN IONS"))
+                        entryProgress = ReadingProgress.Found;
+                    else if (entryProgress == ReadingProgress.Found && line.Contains("END IONS"))
+                    {
+                        entryProgress = ReadingProgress.NotFound;
+                        scans.Add(ParseEntryLines(linesToProcess)); // TODO: this method
+                        linesToProcess.Clear();
+                    }
+                    else
+                    {
+                        linesToProcess.Add(line);
+                        continue;
+                    }
                 }
-
-
             }
 
-
-
-
-
-
-            return new GenericMsDataFile();
+            Scans = scans.ToArray();
+            return this;
         }
 
         public override SourceFile GetSourceFile()
@@ -101,6 +113,18 @@ namespace Readers
         }
 
         public override void InitiateDynamicConnection()
+        {
+            throw new NotImplementedException();
+        }
+
+
+
+        private void ParseHeaderLines(List<string> headerLines)
+        {
+            throw new NotImplementedException();
+        }
+
+        private MsDataScan ParseEntryLines(List<string> entryLines)
         {
             throw new NotImplementedException();
         }
