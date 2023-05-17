@@ -5,7 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Easy.Common.Extensions;
 using MassSpectrometry;
 using NUnit.Framework;
 using Readers;
@@ -27,6 +29,11 @@ namespace Test.FileReadingTests
             @"B:\Users\Nic\ScanAveraging\AveragedDataBulkJurkat\FLASHDeconNoCentroid\CalibAveraged";
         private const string FlashDeconCalibDirectory =
             @"B:\Users\Nic\ScanAveraging\AveragedDataBulkJurkat\FLASHDeconNoCentroid\Calib";
+
+        private const string MyoFlashDeconAveragedDirectory =
+            @"B:\Users\Nic\ScanAveraging\LVSMyolbast\FlashDeconv\AveragedCentroided";
+        private const string MtoFlashDeconCalibDirectory =
+            @"B:\Users\Nic\ScanAveraging\LVSMyolbast\FlashDeconv\Centroided";
 
         private const string TopFDAveragedDirectory =
             @"B:\Users\Nic\ScanAveraging\AveragedDataBulkJurkat\TopFD\CalibAveraged";
@@ -50,6 +57,71 @@ namespace Test.FileReadingTests
         }
 
         [Test]
+        public void GetDirectories()
+        {
+            var directores = Directory.GetDirectories(@"D:\Averaging")
+                .Where(p => !p.Contains("MMTasks", StringComparison.InvariantCultureIgnoreCase)).ToArray();
+
+            // read in all results
+            List<MSAlignResults2> results = new();
+            foreach (var dir in directores)
+            {
+                if (dir.Contains("Rep2CalibCentroidAverageCentroid", StringComparison.InvariantCultureIgnoreCase))
+                    continue;
+
+                string directoryPath = dir;
+                string dataset = "Jurkat";
+                string rep = Regex.Match(directoryPath, @"\d+").Value;
+                string processing = directoryPath.Split('\\').Last().Substring(4);
+
+                var ms1FlashAlignFilePaths = GetMs1AlignFiles2(dir, DeconType.FLASHDecon);
+                var ms1TopAlignFilePaths = GetMs1AlignFiles2(dir, DeconType.TopFD);
+
+              
+                // if deconvoluted
+                for (int i = 0; i < ms1FlashAlignFilePaths.Length; i++)
+                {
+                    var topFDFile = MsDataFileReader.GetDataFile(ms1TopAlignFilePaths[i]);
+                    var topFDCount = topFDFile.GetAllScansList()
+                        .Sum(p => p.MassSpectrum.XArray.Length);
+                    var flashFile = MsDataFileReader.GetDataFile(ms1FlashAlignFilePaths[i]);
+                    var flashCount = flashFile.GetAllScansList()
+                        .Sum(p => p.MassSpectrum.XArray.Length);
+
+                    var substring = ms1FlashAlignFilePaths[i].Substring(ms1FlashAlignFilePaths[i].IndexOf("fract", StringComparison.Ordinal));
+                    var substring2 = ms1TopAlignFilePaths[i].Substring(ms1TopAlignFilePaths[i].IndexOf("fract", StringComparison.Ordinal));
+                    string fraction = Regex.Match(substring, @"\d+").Value;
+                    string fraction2 = Regex.Match(substring2, @"\d+").Value;
+                    Assert.That(fraction, Is.EqualTo(fraction2));
+
+                    results.Add(new MSAlignResults2(directoryPath, dataset, rep, fraction, processing, DeconType.FLASHDecon, flashCount));
+                    results.Add(new MSAlignResults2(directoryPath, dataset, rep, fraction, processing,DeconType.TopFD, topFDCount));
+                }
+
+                // if not deconvoluted
+                if (ms1TopAlignFilePaths.Length == 0)
+                {
+                    for (int i = 0; i < Directory.GetFiles(dir).Count(p => p.EndsWith(".mzml", StringComparison.InvariantCultureIgnoreCase)); i++)
+                    {
+                        results.Add(new MSAlignResults2(directoryPath, dataset, rep, (i+2).ToString(), processing, null, 0));
+                    }
+                }
+            }
+
+            // export all results
+            string outPath = @"C:\Users\Nic\OneDrive - UW-Madison\AUSTIN V CARR - AUSTIN V CARR's files\SpectralAveragingPaper\ResultsData\Deconvolution\SecondRun\msAlignParsing.csv";
+            using var sw = new StreamWriter(File.Create(outPath));
+            sw.WriteLine($"Directory Path,Dataset,Rep,Fraction,Processing,DeconSoftware,Ms1AlignCount");
+            foreach (var result in results)
+            {
+                sw.WriteLine($"{result.DirectoryPath},{result.Dataset},{result.Rep},{result.Fraction},{result.Processing},{result.DeconType},{result.MassCount}");
+            }
+
+        }
+
+
+        [Test]
+        [TestCase(MtoFlashDeconCalibDirectory, MyoFlashDeconAveragedDirectory, DeconType.FLASHDecon)]
         [TestCase(FlashDeconCalibDirectory, FlashDeconAveragedDirectory, DeconType.FLASHDecon)]
         [TestCase(TopFDCalibDirectory, TopFDAveragedDirectory, DeconType.TopFD)]
         public void CompareFlashDeconvMs1Align(string calibDirectory, string averagedDirectory, DeconType type)
@@ -64,10 +136,10 @@ namespace Test.FileReadingTests
                 var calibFile = calibFiles[i];
                 var averagedFile = averagedFiles[i];
 
-                var withoutExtension = Path.GetFileNameWithoutExtension(averagedFile);
-                var longName = withoutExtension.Substring(withoutExtension.IndexOf('_') + 1,
-                    withoutExtension.Length - withoutExtension.IndexOf('_') - 1);
-                var fileName = longName.Remove(longName.IndexOf("-calib"));
+                var fileName = Path.GetFileNameWithoutExtension(averagedFile);
+                //var longName = withoutExtension.Substring(withoutExtension.IndexOf('_') + 1,
+                //    withoutExtension.Length - withoutExtension.IndexOf('_') - 1);
+                //var fileName = longName.Remove(longName.IndexOf("-calib"));
                 if (type == DeconType.TopFD)
                     fileName = fileName.Substring(fileName.IndexOf('_') + 1, fileName.Length - fileName.IndexOf('_') - 1);
 
@@ -96,6 +168,9 @@ namespace Test.FileReadingTests
 
         public record struct MsAlignResults(DeconType Type, string FileName, double Calib, double Averaged);
 
+        public record struct MSAlignResults2(string DirectoryPath, string Dataset, string Rep, string Fraction,
+            string Processing, DeconType? DeconType, double MassCount);
+
 
         private string[] GetMs1AlignFiles(string directoryPath, DeconType type)
         {
@@ -107,6 +182,25 @@ namespace Test.FileReadingTests
                         .OrderBy(p => p)
                         .ToArray(),
                 DeconType.TopFD => 
+                    Directory.GetDirectories(directoryPath)
+                        .Where(p => p.EndsWith("_file"))
+                        .SelectMany(p => Directory.GetFiles(p).Where(m => m.EndsWith("ms1.msalign")))
+                        .OrderBy(p => p)
+                        .ToArray()
+            };
+        }
+
+
+        private string[] GetMs1AlignFiles2(string directoryPath, DeconType type)
+        {
+            return type switch
+            {
+                DeconType.FLASHDecon =>
+                    Directory.Exists(Path.Combine(directoryPath, "FlashDeconv")) ? Directory.GetFiles(Path.Combine(directoryPath, "FlashDeconv"))
+                        .Where(p => p.EndsWith("ms1.msalign"))
+                        .OrderBy(p => p)
+                        .ToArray() : Array.Empty<string>(),
+                DeconType.TopFD =>
                     Directory.GetDirectories(directoryPath)
                         .Where(p => p.EndsWith("_file"))
                         .SelectMany(p => Directory.GetFiles(p).Where(m => m.EndsWith("ms1.msalign")))
