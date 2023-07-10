@@ -40,7 +40,10 @@ namespace Readers
             }
         }
 
-        internal enum ReadingProgress
+        /// <summary>
+        /// Enum is required as there are several different ways an msAlign header information is written
+        /// </summary>
+        private enum ReadingProgress
         {
             NotFound,
             Found,
