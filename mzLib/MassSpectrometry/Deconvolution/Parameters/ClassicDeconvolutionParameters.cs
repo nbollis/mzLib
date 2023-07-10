@@ -16,6 +16,7 @@ namespace MassSpectrometry
         public int MaxAssumedChargeState { get; set; }
         public double DeconvolutionTolerancePpm { get; set; }
         public double IntensityRatioLimit { get; set; }
+        
 
         /// <summary>
         /// Construct Classic deconvolution parameters

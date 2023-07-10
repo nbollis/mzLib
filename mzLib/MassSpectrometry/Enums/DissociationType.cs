@@ -16,6 +16,10 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with MassSpectrometry. If not, see <http://www.gnu.org/licenses/>.
 
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using System.Security.Cryptography;
+using System;
+
 namespace MassSpectrometry
 {
     /// <summary>
@@ -118,5 +122,34 @@ namespace MassSpectrometry
         /// should be taken from the scan header instead of using a fixed, constant dissociation type
         /// </summary>
         Autodetect
+    }
+
+    public static class DissociationTypeExtensions
+    {
+        public static DissociationType ParseDissociationType(this string dissociationTypeString)
+        {
+            return dissociationTypeString switch
+            {
+                "HCD" => DissociationType.HCD,
+                "FILE" => DissociationType.Autodetect,
+                "CID" => DissociationType.CID,
+                "ETD" => DissociationType.ETD,
+                "BIRD" => DissociationType.BIRD,
+                "ECD" => DissociationType.ECD,
+                "ISCID" => DissociationType.ISCID,
+                "LOWCID" => DissociationType.LowCID,
+                "EThcD" => DissociationType.EThcD,
+                "IRMPD" => DissociationType.IRMPD,
+                "MPD" => DissociationType.MPD,
+                "NETD" => DissociationType.NETD,
+                "PD" => DissociationType.PD,
+                "PQD" => DissociationType.PQD,
+                "PSD" => DissociationType.PSD,
+                "SID" => DissociationType.SID,
+                "SORI" => DissociationType.SORI,
+                "UVPD" => DissociationType.UVPD,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
     }
 }

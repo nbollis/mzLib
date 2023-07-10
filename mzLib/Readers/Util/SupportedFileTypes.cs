@@ -12,7 +12,9 @@ namespace Readers
         ThermoRaw,
         MzML,
         Mgf,
-        BrukerD
+        BrukerD,
+        Ms1Align,
+        Ms2Align
     }
 
     public static class SupportedFileTypeExtensions
@@ -36,6 +38,8 @@ namespace Readers
                 SupportedFileType.MzML => ".mzML",
                 SupportedFileType.Mgf => ".mgf",
                 SupportedFileType.BrukerD => ".d",
+                SupportedFileType.Ms1Align => "_ms1.msalign",
+                SupportedFileType.Ms2Align => "_ms2.msalign",
                 _ => throw new MzLibException("File type not supported")
             };
         }
@@ -67,6 +71,13 @@ namespace Readers
                         !filePath.EndsWith("_ms1.tsv", StringComparison.InvariantCultureIgnoreCase))
                         return SupportedFileType.Tsv_FlashDeconv;
                     throw new MzLibException("Tsv file type not supported");
+
+                case ".msalign":
+                    if (filePath.EndsWith(SupportedFileType.Ms1Align.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
+                        return SupportedFileType.Ms1Align;
+                    if (filePath.EndsWith(SupportedFileType.Ms2Align.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
+                        return SupportedFileType.Ms2Align;
+                    throw new MzLibException("MsAlign file type not supported, must end with _msX.msalign where X is 1 or 2");
 
                 default:
                     throw new MzLibException("File type not supported");

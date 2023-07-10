@@ -180,5 +180,16 @@ namespace MassSpectrometry
         {
             return (Scans != null && Scans.Length > 0);
         }
+
+        protected (double Mz, double Intensity, double NeutralMass) ParseMsAlignPeakLine(string line)
+        {
+            var splits = line.Split('\t');
+
+            double mass = double.Parse(splits[0]);
+            double intensity = double.Parse(splits[1]);
+            int charge = int.Parse(splits[2]);
+
+            return (mass.ToMz(charge), intensity, mass);
+        }
     }
 }

@@ -285,6 +285,15 @@
     <None Update="FileReadingTests\ExternalFileTypes\FlashDeconvTsv_OpenMs3.0.0.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="FileReadingTests\ExternalFileTypes\Ms1Align_FlashDeconvOpenMs3,0,0_ms1.msalign">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\Ms2Align_FlashDeconvOpenMs3,0,0_ms2.msalign">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\Ms2Align_TopFDv1,6,2_ms2.msalign">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="FileReadingTests\ExternalFileTypes\TopFDMs1Feature_v1.6.2_ms1.feature">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using IO.ThermoRawFileReader;
 using MzLibUtil;
 using NUnit.Framework.Interfaces;
+using ThermoRawFileReader = IO.ThermoRawFileReader.ThermoRawFileReader;
 
 namespace Test.FileReadingTests
 {
