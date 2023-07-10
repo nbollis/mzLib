@@ -19,14 +19,14 @@ public class TestReaderCreator
             "small.raw",
             "tester.mgf",
             "SmallCalibratibleYeast.mzml",
-            "humanInsulin.fasta",
-            "fakeFile.d"
+            "humanInsulin_ms1.feature",
+            "fakeFile.sci"
         };
 
         foreach (string path in filePaths)
         {
             string testPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "DataFiles", path);
-            if (path == "fakeFile.d")
+            if (path == "fakeFile.sci")
             {
                 Assert.Throws<MzLibException>(() =>
                 {
@@ -34,7 +34,7 @@ public class TestReaderCreator
                 });
                 continue;
             }
-            else if (path == "humanInsulin.fasta")
+            else if (path == "humanInsulin_ms1.feature")
             {
                 Assert.Throws<MzLibException>(() =>
                 {

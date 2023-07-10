@@ -96,6 +96,9 @@
     <None Update="DatabaseTests\Isoform.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="DatabaseTests\Isoform.fasta.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="DatabaseTests\isoformTest.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -270,6 +273,27 @@
     <None Update="DataFiles\BinGenerationTest.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="FileReadingTests\ExternalFileTypes\FlashDeconvMs1Feature_OpenMs3.0.0_ms1.feature">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\FlashDeconvMs1Tsv_OpenMs3.0.0_ms1.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\FlashDeconvMs2Feature_OpenMs3.0.0_ms2.feature">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\FlashDeconvTsv_OpenMs3.0.0.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\TopFDMs1Feature_v1.6.2_ms1.feature">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\TopFDMs2Feature_v1.6.2_ms2.feature">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\TopFDmzrt_v1.6.2.mzrt.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="DataFiles\humanInsulin.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -371,7 +395,16 @@
     </None>
     <None Update="ProteaseFilesForLoadingTests\TestProteases_Mod_dupName.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+	</None>
+	<None Update="DataFiles\centroid_1x_MS1_4x_autoMS2.d\**">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</None>
+	  <None Update="DataFiles\profile_1x_MS1_4x_autoMS2.d\**">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="DataFiles\profile_and_centroid_1x_MS1_4x_autoMS2.d\**">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
   </ItemGroup>
 
   <ItemGroup>
