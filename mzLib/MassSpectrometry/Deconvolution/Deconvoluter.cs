@@ -39,6 +39,7 @@ namespace MassSpectrometry
         public IEnumerable<IsotopicEnvelope> Deconvolute(MsDataScan scan, MzRange rangeToGetPeaksFrom = null)
         {
             rangeToGetPeaksFrom ??= scan.MassSpectrum.Range;
+            var polarity = scan.Polarity;
 
             // set deconvolution parameters that are only present in the MsDataScan
             switch (DeconvolutionType)
@@ -50,7 +51,7 @@ namespace MassSpectrometry
                     break;
             }
 
-            return DeconvolutionAlgorithm.Deconvolute(scan.MassSpectrum, rangeToGetPeaksFrom);
+            return DeconvolutionAlgorithm.Deconvolute(scan.MassSpectrum, rangeToGetPeaksFrom, polarity);
         }
 
  

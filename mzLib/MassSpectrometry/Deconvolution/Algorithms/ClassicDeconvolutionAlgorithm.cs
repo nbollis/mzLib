@@ -25,7 +25,7 @@ namespace MassSpectrometry
         /// <param name="spectrumToDeconvolute">spectrum to deconvolute</param>
         /// <param name="range">Range of peaks to deconvolute</param>
         /// <returns></returns>
-        public override IEnumerable<IsotopicEnvelope> Deconvolute(MzSpectrum spectrumToDeconvolute, MzRange range)
+        public override IEnumerable<IsotopicEnvelope> Deconvolute(MzSpectrum spectrumToDeconvolute, MzRange range, Polarity polarity = Polarity.Positive)
         {
             var deconParams = DeconvolutionParameters as ClassicDeconvolutionParameters ?? throw new MzLibException("Deconvolution params and algorithm do not match");
             spectrum = spectrumToDeconvolute;
@@ -73,10 +73,17 @@ namespace MassSpectrometry
                         if (deltaMass <
                             1.1) //if we're past a Th spacing, we're no longer looking at the closest isotope
                         {
+                            int charge = 0;
                             //get the lower bound charge state
-                            int charge =
-                                (int)Math.Floor(1 /
-                                                deltaMass); //e.g. deltaMass = 0.4 Th, charge is now 2 (but might be 3)
+                            if (polarity == Polarity.Negative)
+                            {
+                                charge = (int)Math.Floor(-1 / deltaMass); //e.g. deltaMass = 0.4 Th, charge is now 2 (but might be 3)
+                            }
+                            else
+                            {
+                                charge = (int)Math.Floor(1 / deltaMass); //e.g. deltaMass = 0.4 Th, charge is now 2 (but might be 3)
+                            }
+
                             if (charge >= deconParams.MinAssumedChargeState && charge <= deconParams.MaxAssumedChargeState)
                             {
                                 allPossibleChargeStates.Add(charge);
