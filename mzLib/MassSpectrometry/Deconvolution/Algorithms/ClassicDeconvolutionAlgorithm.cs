@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Chemistry;
@@ -74,9 +75,17 @@ namespace MassSpectrometry
                             1.1) //if we're past a Th spacing, we're no longer looking at the closest isotope
                         {
                             //get the lower bound charge state
-                            int charge =
-                                (int)Math.Floor(1 /
-                                                deltaMass); //e.g. deltaMass = 0.4 Th, charge is now 2 (but might be 3)
+                            int charge = 0;
+                            if (deconParams.Polarity == Polarity.Negative)
+                            {
+                                charge = (int)Math.Floor(-1 / deltaMass); //e.g. deltaMass = 0.4 Th, charge is now 2 (but might be 3)
+                            }
+                            else
+                            {
+                                charge = (int)Math.Floor(1 / deltaMass); //e.g. deltaMass = 0.4 Th, charge is now 2 (but might be 3)
+                            }
+
+
                             if (charge >= deconParams.MinAssumedChargeState && charge <= deconParams.MaxAssumedChargeState)
                             {
                                 allPossibleChargeStates.Add(charge);
