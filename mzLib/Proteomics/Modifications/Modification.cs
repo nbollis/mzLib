@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Proteomics
 {
-    public class Modification
+    public class Modification 
     {
         public string IdWithMotif { get; private set; }
         public string OriginalId { get; private set; }

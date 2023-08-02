@@ -17,4 +17,8 @@
 			<_Parameter1>Test</_Parameter1>
 		</AssemblyAttribute>
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Modification\" />
+	</ItemGroup>
 </Project>

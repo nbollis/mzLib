@@ -8,7 +8,6 @@ using Easy.Common.Extensions;
 using Easy.Common.Interfaces;
 using MassSpectrometry;
 using MathNet.Numerics;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Transcriptomics
 {
@@ -166,6 +165,14 @@ namespace Transcriptomics
             }
         }
 
+        public char this[int zeroBasedIndex]
+        {
+            get
+            {
+                return BaseSequence[zeroBasedIndex];
+            }
+        }
+
         #endregion
 
         #region Fragmentation
@@ -267,7 +274,18 @@ namespace Transcriptomics
 
         #region Digestion
 
-        // TODO: 
+        public IEnumerable<OligoWithSetMods> Digest(RnaDigestionParameters digestionParameters, List<int> allKnownFixedMods,
+            List<int> variableModifications)
+        {
+            allKnownFixedMods ??= new();
+            variableModifications ??= new();
+
+
+            var t = digestionParameters.Enzyme.GetUnmodifiedOligos(this, digestionParameters.MaxMissedCleavages,
+                digestionParameters.MinLength, digestionParameters.MaxLength);
+
+            throw new NotImplementedException();
+        }
 
         #endregion
 

@@ -1,4 +1,4 @@
-﻿ using Chemistry;
+﻿using Chemistry;
 using MassSpectrometry;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
@@ -10,7 +10,7 @@ using System.Text;
 namespace Proteomics.ProteolyticDigestion
 {
     [Serializable]
-    public class PeptideWithSetModifications : ProteolyticPeptide
+    public class PeptideWithSetModifications : ProteolyticPeptide, IPrecursor
     {
         public string FullSequence { get; private set; } //sequence with modifications
         public readonly int NumFixedMods;

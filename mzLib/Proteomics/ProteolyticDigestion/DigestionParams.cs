@@ -3,7 +3,7 @@ using System;
 
 namespace Proteomics.ProteolyticDigestion
 {
-    public class DigestionParams
+    public class DigestionParams 
     {
         // this parameterless constructor needs to exist to read the toml.
         // if you can figure out a way to get rid of it, feel free...

@@ -1,15 +1,17 @@
 ﻿global using FragmentationTerminus = MassSpectrometry.FragmentationTerminus;
 global using ProductType = MassSpectrometry.ProductType;
+global using MassSpectrometry;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using MassSpectrometry;
 
 namespace Proteomics
 {
-    public class Protein
+    public class Protein 
     {
         private List<ProteolysisProduct> _proteolysisProducts;
 
