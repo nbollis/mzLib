@@ -81,5 +81,11 @@ namespace Transcriptomics
         {
             return BaseSequence;
         }
+
+        internal IEnumerable<OligoWithSetMods> GetModified(IEnumerable<int> allKnownFixedMods,
+            RnaDigestionParameters digestionParams, List<int> variableModifications)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -16,6 +16,12 @@ namespace Transcriptomics
         {
 
         }
-        
+
+        public string FullSequence { get; private set; }
+        public readonly int NumFixedMods;
+
+        //[NonSerialized] private Dictionary<int, Modification> _allModsOneIsNterminus;
     }
+        
+    
 }

@@ -3,6 +3,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MassSpectrometry;
 using UsefulProteomicsDatabases;
 
 namespace Test

@@ -19,8 +19,4 @@
     <ProjectReference Include="..\MzLibUtil\MzLibUtil.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="BaseClasses\Modification\" />
-  </ItemGroup>
-
 </Project>

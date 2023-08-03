@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;

@@ -4,6 +4,7 @@ using Proteomics;
 using System;
 using System.IO;
 using System.Linq;
+using MassSpectrometry;
 using UsefulProteomicsDatabases;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
