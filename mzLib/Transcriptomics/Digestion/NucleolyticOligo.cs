@@ -83,7 +83,7 @@ namespace Transcriptomics
         }
 
         internal IEnumerable<OligoWithSetMods> GetModified(IEnumerable<int> allKnownFixedMods,
-            RnaDigestionParameters digestionParams, List<int> variableModifications)
+            RnaDigestionParams digestionParams, List<int> variableModifications)
         {
             throw new NotImplementedException();
         }

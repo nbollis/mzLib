@@ -274,15 +274,15 @@ namespace Transcriptomics
 
         #region Digestion
 
-        public IEnumerable<OligoWithSetMods> Digest(RnaDigestionParameters digestionParameters, List<int> allKnownFixedMods,
+        public IEnumerable<OligoWithSetMods> Digest(RnaDigestionParams digestionParameters, List<int> allKnownFixedMods,
             List<int> variableModifications)
         {
             allKnownFixedMods ??= new();
             variableModifications ??= new();
 
 
-            var t = digestionParameters.Enzyme.GetUnmodifiedOligos(this, digestionParameters.MaxMissedCleavages,
-                digestionParameters.MinLength, digestionParameters.MaxLength);
+            var t = digestionParameters.Rnase.GetUnmodifiedOligos(this, digestionParameters.MaxMissedCleavages,
+                digestionParameters.MinPeptideLength, digestionParameters.MaxPeptideLength);
 
             throw new NotImplementedException();
         }

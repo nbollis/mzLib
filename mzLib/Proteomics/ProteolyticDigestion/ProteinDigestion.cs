@@ -15,7 +15,7 @@ namespace Proteomics.ProteolyticDigestion
         public ProteinDigestion(DigestionParams digestionParams, IEnumerable<Modification> allKnownFixedModifications, List<Modification> variableModifications)
         {
             DigestionParams = digestionParams;
-            Protease = digestionParams.Protease;
+            Protease = digestionParams.Protease as Protease;
             MaximumMissedCleavages = digestionParams.MaxMissedCleavages;
             InitiatorMethionineBehavior = digestionParams.InitiatorMethionineBehavior;
             MinPeptideLength = digestionParams.MinPeptideLength;

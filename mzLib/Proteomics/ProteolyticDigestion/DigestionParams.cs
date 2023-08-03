@@ -1,9 +1,10 @@
 ﻿using Proteomics.Fragmentation;
 using System;
+using System.ComponentModel.Design;
 
 namespace Proteomics.ProteolyticDigestion
 {
-    public class DigestionParams 
+    public class DigestionParams : DigestionParametersBase
     {
         // this parameterless constructor needs to exist to read the toml.
         // if you can figure out a way to get rid of it, feel free...
@@ -14,15 +15,11 @@ namespace Proteomics.ProteolyticDigestion
         public DigestionParams(string protease = "trypsin", int maxMissedCleavages = 2, int minPeptideLength = 7, int maxPeptideLength = int.MaxValue,
             int maxModificationIsoforms = 1024, InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
             int maxModsForPeptides = 2, CleavageSpecificity searchModeType = CleavageSpecificity.Full, FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both,
-            bool generateUnlabeledProteinsForSilac = true, bool keepNGlycopeptide = false, bool keepOGlycopeptide = false)
+            bool generateUnlabeledProteinsForSilac = true, bool keepNGlycopeptide = false, bool keepOGlycopeptide = false) 
+            : base(maxMissedCleavages, minPeptideLength, maxPeptideLength, maxModificationIsoforms, maxModsForPeptides)
         {
             Protease = ProteaseDictionary.Dictionary[protease];
-            MaxMissedCleavages = maxMissedCleavages;
-            MinPeptideLength = minPeptideLength;
-            MaxPeptideLength = maxPeptideLength;
-            MaxModificationIsoforms = maxModificationIsoforms;
             InitiatorMethionineBehavior = initiatorMethionineBehavior;
-            MaxModsForPeptide = maxModsForPeptides;
             SearchModeType = searchModeType;
             FragmentationTerminus = fragmentationTerminus;
             RecordSpecificProtease();
@@ -30,14 +27,13 @@ namespace Proteomics.ProteolyticDigestion
             KeepNGlycopeptide = keepNGlycopeptide;
             KeepOGlycopeptide = keepOGlycopeptide;
         }
-
-        public int MaxMissedCleavages { get; private set; }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; private set; }
-        public int MinPeptideLength { get; private set; }
-        public int MaxPeptideLength { get; private set; }
-        public int MaxModificationIsoforms { get; private set; }
-        public int MaxModsForPeptide { get; private set; }
-        public Protease Protease { get; private set; }
+
+        public Protease Protease
+        {
+            get => (Protease)Enzyme;
+            private set => Enzyme = value;
+        }
         public CleavageSpecificity SearchModeType { get; private set; } //for fast semi and nonspecific searching of proteases
         public FragmentationTerminus FragmentationTerminus { get; private set; } //for fast semi searching of proteases
         public Protease SpecificProtease { get; private set; } //for fast semi and nonspecific searching of proteases

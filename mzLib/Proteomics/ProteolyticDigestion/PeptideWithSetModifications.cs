@@ -13,7 +13,7 @@ namespace Proteomics.ProteolyticDigestion
     public class PeptideWithSetModifications : ProteolyticPeptide, IPrecursor
     {
         public string FullSequence { get; private set; } //sequence with modifications
-        public readonly int NumFixedMods;
+        public int NumFixedMods { get; }
         // Parameter to store a hash code corresponding to a Decoy or a Target peptide
         // If the peptide in question is a decoy, this pairs it to the target it was generated from
         // If the peptide in question is a target, this pairs it to its corresponding decoy 
@@ -116,7 +116,8 @@ namespace Proteomics.ProteolyticDigestion
             }
 
         }
-        
+
+        public ChemicalFormula ThisChemicalFormula => FullChemicalFormula;
         public ChemicalFormula FullChemicalFormula
         {
             get
@@ -217,7 +218,8 @@ namespace Proteomics.ProteolyticDigestion
         /// Generates theoretical fragments for given dissociation type for this peptide. 
         /// The "products" parameter is filled with these fragments.
         /// </summary>
-        public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<IProduct> products)
+        public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus,
+            List<IProduct> products)
         {
             // This code is specifically written to be memory- and CPU -efficient because it is 
             // called millions of times for a typical search (i.e., at least once per peptide). 
@@ -1095,7 +1097,12 @@ namespace Proteomics.ProteolyticDigestion
         {
             if (CleavageSpecificityForFdrCategory == CleavageSpecificity.Unknown)
             {
-                CleavageSpecificityForFdrCategory = DigestionParams.SpecificProtease.GetCleavageSpecificity(Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein, DigestionParams.InitiatorMethionineBehavior == InitiatorMethionineBehavior.Retain);
+                CleavageSpecificityForFdrCategory = (DigestionParams.SpecificProtease as Protease)?
+                                                    .GetCleavageSpecificity(Protein, OneBasedStartResidueInProtein,
+                                                        OneBasedEndResidueInProtein,
+                                                        DigestionParams.InitiatorMethionineBehavior ==
+                                                        InitiatorMethionineBehavior.Retain) ??
+                                                    throw new NullReferenceException("Digestion Agent is not a protease");
                 PeptideDescription = CleavageSpecificityForFdrCategory.ToString();
             }
         }

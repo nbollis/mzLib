@@ -8,23 +8,23 @@ namespace MassSpectrometry
 {
     public abstract class DigestionParametersBase
     {
-        protected DigestionParametersBase(int maxMissedCleavages, int minLength, int maxLength, int maxModificationIsoforms, int maxMods, CleavageSpecificity searchModeType)
+        protected DigestionParametersBase(int maxMissedCleavages, int minLength, int maxLength, int maxModificationIsoforms, 
+            int maxMods)
         {
             MaxMissedCleavages = maxMissedCleavages;
-            MinLength = minLength;
-            MaxLength = maxLength;
+            MinPeptideLength = minLength;
+            MaxPeptideLength = maxLength;
             MaxModificationIsoforms = maxModificationIsoforms;
-            MaxMods = maxMods;
-            SearchModeType = searchModeType;
+            MaxModsForPeptide = maxMods;
         }
 
 
         public int MaxMissedCleavages { get; private set; }
-        public int MinLength { get; private set; }
-        public int MaxLength { get; private set; }
+        public int MinPeptideLength { get; private set; }
+        public int MaxPeptideLength { get; private set; }
         public int MaxModificationIsoforms { get; private set; }
-        public int MaxMods { get; private set; }
-        public CleavageSpecificity SearchModeType { get; private set; }
+        public int MaxModsForPeptide { get; private set; }
+        protected DigestionAgent Enzyme { get; set; }
         
     }
 }

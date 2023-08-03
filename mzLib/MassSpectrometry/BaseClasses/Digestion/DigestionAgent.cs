@@ -6,18 +6,22 @@ using System.Threading.Tasks;
 
 namespace MassSpectrometry
 {
-    public abstract class DigestionEnzyme 
+    public abstract class DigestionAgent 
     {
-        protected DigestionEnzyme(string name, CleavageSpecificity cleavageSpecificity, List<DigestionMotif> motifList)
+        protected DigestionAgent(string name, CleavageSpecificity cleavageSpecificity, List<DigestionMotif> motifList, Modification cleavageMod)
         {
             Name = name;
             CleavageSpecificity = cleavageSpecificity;
             DigestionMotifs = motifList ?? new List<DigestionMotif>();
+            CleavageMod = cleavageMod;
         }
 
         public string Name { get; init; }
         public CleavageSpecificity CleavageSpecificity { get; init; }
         public List<DigestionMotif> DigestionMotifs { get; init; }
+        public Modification CleavageMod { get; set; }
+
+
 
         public override string ToString()
         {

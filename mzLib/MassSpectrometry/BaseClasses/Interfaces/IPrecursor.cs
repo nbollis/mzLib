@@ -7,9 +7,22 @@ using Chemistry;
 
 namespace MassSpectrometry
 {
-    public interface IPrecursor : IHasMass
+    public interface IPrecursor : IHasChemicalFormula
     {
+        public string FullSequence { get;   }
+        public double MostAbundantMonoisotopicMass { get; }
+        public Dictionary<int, Modification> AllModsOneIsNterminus { get; }
+        public int NumMods { get; }
+        public int NumFixedMods { get; }
+        public int NumVariableMods { get; }
+
+
         public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<IProduct> products);
+
+        public virtual void DetermineFullSequence()
+        {
+
+        }
     }
 
     public interface IBioPolymer : IHasMass

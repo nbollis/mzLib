@@ -4,15 +4,14 @@ using System.Linq;
 
 namespace Proteomics.ProteolyticDigestion
 {
-    public class Protease : DigestionEnzyme
+    public class Protease : DigestionAgent
     {
         public Protease(string name, CleavageSpecificity cleavageSpecificity, string psiMSAccessionNumber,
             string psiMSName, List<DigestionMotif> motifList, Modification modDetails = null) : base(name,
-            cleavageSpecificity, motifList)
+            cleavageSpecificity, motifList, modDetails)
         {
             PsiMsAccessionNumber = psiMSAccessionNumber;
             PsiMsName = psiMSName;
-            CleavageMod = modDetails;
         }
 
         public string PsiMsAccessionNumber { get; }

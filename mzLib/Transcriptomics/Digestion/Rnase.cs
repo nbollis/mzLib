@@ -7,10 +7,10 @@ using MassSpectrometry;
 
 namespace Transcriptomics
 {
-    public class Rnase : DigestionEnzyme, IEquatable<Rnase>
+    public class Rnase : DigestionAgent, IEquatable<Rnase>
     {
-        public Rnase(string name, CleavageSpecificity cleaveSpecificity, List<DigestionMotif> motifList) :
-            base(name, cleaveSpecificity, motifList)
+        public Rnase(string name, CleavageSpecificity cleaveSpecificity, List<DigestionMotif> motifList, Modification cleavageMod = null) :
+            base(name, cleaveSpecificity, motifList, cleavageMod)
         {
             Name = name;
             CleavageSpecificity = cleaveSpecificity;
