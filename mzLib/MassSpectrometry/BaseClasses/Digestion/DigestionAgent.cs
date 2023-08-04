@@ -21,8 +21,6 @@ namespace MassSpectrometry
         public List<DigestionMotif> DigestionMotifs { get; init; }
         public Modification CleavageMod { get; set; }
 
-
-
         public override string ToString()
         {
             return Name;

@@ -42,7 +42,7 @@ namespace Proteomics.ProteolyticDigestion
             _allModsOneIsNterminus = allModsOneIsNterminus;
             NumFixedMods = numFixedMods;
             _digestionParams = digestionParams;
-            DetermineFullSequence();
+            FullSequence = (this as IPrecursor).DetermineFullSequence();
             ProteinAccession = protein.Accession;
             UpdateCleavageSpecificity();
             PairedTargetDecoyHash = pairedTargetDecoyHash; // Added PairedTargetDecoyHash as a nullable integer
@@ -149,7 +149,9 @@ namespace Proteomics.ProteolyticDigestion
                 {
                     IsotopicDistribution dist = IsotopicDistribution.GetDistribution(this.FullChemicalFormula);
                     double maxIntensity = dist.Intensities.Max();
-                    _mostAbundantMonoisotopicMass = (double)ClassExtensions.RoundedDouble(dist.Masses.ToList()[dist.Intensities.ToList().IndexOf(maxIntensity)]);
+                    _mostAbundantMonoisotopicMass =
+                        (double)ClassExtensions.RoundedDouble(
+                            dist.Masses.ToList()[dist.Intensities.ToList().IndexOf(maxIntensity)]);
                 }
                 return (double)ClassExtensions.RoundedDouble(_mostAbundantMonoisotopicMass.Value);
             }
@@ -1061,36 +1063,6 @@ namespace Proteomics.ProteolyticDigestion
                 }
             }
             return sb.ToString();
-        }
-
-        private void DetermineFullSequence()
-        {
-            var subsequence = new StringBuilder();
-
-            // modification on peptide N-terminus
-            if (AllModsOneIsNterminus.TryGetValue(1, out Modification mod))
-            {
-                subsequence.Append('[' + mod.ModificationType + ":" + mod.IdWithMotif + ']');
-            }
-
-            for (int r = 0; r < Length; r++)
-            {
-                subsequence.Append(this[r]);
-
-                // modification on this residue
-                if (AllModsOneIsNterminus.TryGetValue(r + 2, out mod))
-                {
-                    subsequence.Append('[' + mod.ModificationType + ":" + mod.IdWithMotif + ']');
-                }
-            }
-
-            // modification on peptide C-terminus
-            if (AllModsOneIsNterminus.TryGetValue(Length + 2, out mod))
-            {
-                subsequence.Append('[' + mod.ModificationType + ":" + mod.IdWithMotif + ']');
-            }
-
-            FullSequence = subsequence.ToString();
         }
 
         private void UpdateCleavageSpecificity()

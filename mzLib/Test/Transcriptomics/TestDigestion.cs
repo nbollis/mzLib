@@ -55,35 +55,25 @@ namespace Test.Transcriptomics
             // 6bp Rnase A, 1 missed cleavage
             yield return new RnaDigestionTestCase("GUACUG", "RNase A",
                 1, 1, 6, 7,
-                new[] { 669.082, 652.103, 324.035, 283.091 },
+                new[] { 669.082, 652.103, 324.035, 283.091, 1303.175, 958.128, 589.116 },
                 new[] { "GU", "AC", "U", "G", "GUAC", "ACU", "UG" });
             // 6bp Rnase A, 2 missed cleavages
             yield return new RnaDigestionTestCase("GUACUG", "RNase A",
                 2, 1, 6, 9,
-                new[] { 669.082, 652.103, 324.035, 283.091 },
+                new[] { 669.082, 652.103, 324.035, 283.091, 1303.175, 958.128, 589.116, 1609.200, 1223.209 },
                 new[] { "GU", "AC", "U", "G", "GUAC", "ACU", "UG", "GUACU", "ACUG" });
+            // 20bp top-down
+            yield return new RnaDigestionTestCase("GUACUGCCUCUAGUGAAGCA", "top-down",
+                0, 1, int.MaxValue, 1,
+                new[] { 6363.871 },
+                new[] { "GUACUGCCUCUAGUGAAGCA" });
+            // 20bp Rnase T1, normal
+            yield return new RnaDigestionTestCase("GUACUGCCUCUAGUGAAGCA", "RNase T1",
+                0, 1, int.MaxValue, 6,
+                new[] { 363.057, 1609.200, 2219.282, 669.082, 1021.161, 572.137 },
+                new[] { "G", "UACUG", "CCUCUAG", "UG", "AAG", "CA" });
 
-            // TODO: Add Correct masses
-            // 6bp Rnase U2
-            yield return new RnaDigestionTestCase("GUACUG", "RNase U2",
-                0, 1, 6, 3,
-                new[] { 998.134, 894.157 },
-                new[] { "G", "UA", "CUG" });
-            // 6bp Rnase T2
-            yield return new RnaDigestionTestCase("GUACUG", "RNase T2",
-                0, 1, 6, 6,
-                new[] { 998.134, 894.157 },
-                new[] { "G", "U", "A", "C", "U", "G" });
-            // 6bp Rnase 1
-            yield return new RnaDigestionTestCase("GUACUG", "RNase 1",
-                0, 1, 6, 6,
-                new[] { 998.134, 894.157 },
-                new[] { "G", "U", "A", "C", "U", "G" });
-            // 6bp Rnase PhyM
-            yield return new RnaDigestionTestCase("GUACUG", "RNase PhyM",
-                0, 1, 6, 4,
-                new[] { 998.134, 894.157 },
-                new[] { "GU", "A", "CU","G" });
+  
         }
 
         public static string rnaseTsvpath = @"C:\Users\Nic\source\repos\mzLib\mzLib\Transcriptomics\Digestion\rnases.tsv";
@@ -105,7 +95,7 @@ namespace Test.Transcriptomics
 
         [Test]
         [TestCaseSource(nameof(GetTestCases))]
-        public void TestGetUnmodifiedPeptideCounts(RnaDigestionTestCase testCase)
+        public void TestRnase_GetUnmodifiedOligos_Counts(RnaDigestionTestCase testCase)
         {
             RNA rna = new RNA(testCase.BaseSequence);
             Rnase rnase = RnaseDictionary.Dictionary[testCase.Enzyme];
@@ -116,7 +106,7 @@ namespace Test.Transcriptomics
 
         [Test]
         [TestCaseSource(nameof(GetTestCases))]
-        public void TestGetUnmodifiedPeptidesSequence(RnaDigestionTestCase testCase)
+        public void TestRnase_GetUnmodifiedOligo_Sequence(RnaDigestionTestCase testCase)
         {
 
             RNA rna = new RNA(testCase.BaseSequence);
@@ -154,7 +144,7 @@ namespace Test.Transcriptomics
         }
 
         [Test]
-        public void TestRnaseUnmodifiedOligosException()
+        public void TestRnase_UnmodifiedOligos_Exception()
         {
             Rnase rnase = new Rnase("Bad", CleavageSpecificity.SingleC, new List<DigestionMotif>());
             Assert.Throws<ArgumentException>(() => { rnase.GetUnmodifiedOligos(new RNA("GUACUG"), 0, 1, 6); });
@@ -238,6 +228,73 @@ namespace Test.Transcriptomics
             Assert.That(oligo.PreviousNucleicAcid, Is.EqualTo('-'));
             Assert.That(oligo.ToString(), Is.EqualTo(oligo.BaseSequence));
         }
+
+        #endregion
+
+        #region OligoWithSetMods
+
+        // TODO: this class
+
+
+
+        #endregion
+
+        #region NucleicAcid
+
+
+        [Test]
+        [TestCaseSource(nameof(GetTestCases))]
+        public void TestNucleicAcid_Digestion_WithoutMods_Counts(RnaDigestionTestCase testCase)
+        {
+            var rna = new RNA(testCase.BaseSequence);
+            var digestionParams = new RnaDigestionParams(testCase.Enzyme, testCase.MissedCleavages, testCase.MinLength,
+                testCase.MaxLength);
+
+            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), new List<Modification>());
+            Assert.That(digestionProducts.Count(), Is.EqualTo(testCase.DigestionProductCount));
+        }
+
+        [Test]
+        [TestCaseSource(nameof(GetTestCases))]
+        public void TestNucleicAcid_Digestion_WithoutMods_Sequences(RnaDigestionTestCase testCase)
+        {
+            var rna = new RNA(testCase.BaseSequence);
+            var digestionParams = new RnaDigestionParams(testCase.Enzyme, testCase.MissedCleavages, testCase.MinLength,
+                testCase.MaxLength);
+
+            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .ToList();
+
+            Assert.That(digestionProducts.Count, Is.EqualTo(testCase.Sequences.Length));
+            for (var i = 0; i < digestionProducts.Count; i++)
+            {
+                var product = digestionProducts[i];
+                var testCaseCaseSequence = testCase.Sequences[i];
+                Assert.That(product.BaseSequence == testCaseCaseSequence);
+                Assert.That(product.FullSequence == testCaseCaseSequence);
+            }
+        }
+
+        [Test]
+        [TestCaseSource(nameof(GetTestCases))]
+        public void TestNucleicAcid_Digestion_WithoutMods_MonoMasses(RnaDigestionTestCase testCase)
+        {
+            var rna = new RNA(testCase.BaseSequence);
+            var digestionParams = new RnaDigestionParams(testCase.Enzyme, testCase.MissedCleavages, testCase.MinLength,
+                testCase.MaxLength);
+
+            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .ToList();
+
+            Assert.That(digestionProducts.Count, Is.EqualTo(testCase.Sequences.Length));
+            for (var i = 0; i < digestionProducts.Count; i++)
+            {
+                var productMass = digestionProducts[i].MonoisotopicMass;
+                var testCaseCaseMass = testCase.MonoMasses[i];
+                Assert.That(productMass, Is.EqualTo(testCaseCaseMass).Within(0.01));
+            }
+        }
+
 
         #endregion
     }

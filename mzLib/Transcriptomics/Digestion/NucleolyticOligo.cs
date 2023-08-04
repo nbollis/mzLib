@@ -4,21 +4,31 @@ using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
+using Chemistry;
 using MassSpectrometry;
 
 namespace Transcriptomics
 {
+    /// <summary>
+    /// The most basic form of a digested oligo, this class does not care about mass or formula, just base sequence
+    /// </summary>
     public class NucleolyticOligo
     {
         internal NucleolyticOligo(NucleicAcid nucleicAcid, int oneBaseStartResidueInNucleicAcid,
-            int oneBasedEndResidueInNucleicAcid, int missedCleavages, CleavageSpecificity cleavageSpecificity)
+            int oneBasedEndResidueInNucleicAcid, int missedCleavages, CleavageSpecificity cleavageSpecificity,
+            IHasChemicalFormula? fivePrimeTerminus, IHasChemicalFormula? threePrimeTerminus)
         {
             NucleicAcid = nucleicAcid;
             OneBasedStartResidueInNucleicAcid = oneBaseStartResidueInNucleicAcid;
             OneBasedEndResidueInNucleicAcid = oneBasedEndResidueInNucleicAcid;
             MissedCleavages = missedCleavages;
             CleavesSpecificityForFdrCategory = cleavageSpecificity;
+            _fivePrimeTerminus = fivePrimeTerminus ?? NucleicAcid.DefaultFivePrimeTerminus;
+            _threePrimeTerminus = threePrimeTerminus ?? NucleicAcid.DefaultThreePrimeTerminus;
         }
+
+        protected IHasChemicalFormula _fivePrimeTerminus;
+        protected IHasChemicalFormula _threePrimeTerminus;
 
         [NonSerialized] private NucleicAcid _nucleicAcid;
         /// <summary>
@@ -29,6 +39,8 @@ namespace Transcriptomics
             get => _nucleicAcid;
             protected set => _nucleicAcid = value;
         }
+
+        public int Length => BaseSequence.Length;
 
         private string _baseSequence;
 
@@ -41,7 +53,6 @@ namespace Transcriptomics
                     OneBasedEndResidueInNucleicAcid - OneBasedStartResidueInNucleicAcid + 1);
             }
         }
-
 
         /// <summary>
         /// Residue number at which the oligo begins 
@@ -82,10 +93,15 @@ namespace Transcriptomics
             return BaseSequence;
         }
 
-        internal IEnumerable<OligoWithSetMods> GetModified(IEnumerable<int> allKnownFixedMods,
-            RnaDigestionParams digestionParams, List<int> variableModifications)
+        internal IEnumerable<OligoWithSetMods> GetModifiedOligos(IEnumerable<Modification> allKnownFixedMods,
+            RnaDigestionParams digestionParams, List<Modification> variableModifications)
         {
-            throw new NotImplementedException();
+            // TODO: Mods
+
+            yield return new OligoWithSetMods(NucleicAcid, digestionParams, OneBasedStartResidueInNucleicAcid,
+                OneBasedEndResidueInNucleicAcid, MissedCleavages, CleavesSpecificityForFdrCategory,
+                new Dictionary<int, Modification>(), 0, _fivePrimeTerminus,
+                _threePrimeTerminus);
         }
     }
 }

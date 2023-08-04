@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MassSpectrometry;
-using MassSpectrometry.BaseClasses.Digestion;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Test

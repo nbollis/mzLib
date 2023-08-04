@@ -14,7 +14,7 @@ namespace Transcriptomics
     /// <summary>
     /// A linear polymer of Nucleic acids
     /// </summary>
-    public abstract class NucleicAcid : INucleicAcid, IEquatable<NucleicAcid>, IHasMass
+    public abstract class NucleicAcid : /*IBioPolymer,*/ INucleicAcid, IEquatable<NucleicAcid>
     {
 
         #region Static Properties
@@ -63,20 +63,14 @@ namespace Transcriptomics
         #region Private Properties
 
         /// <summary>
-        /// The 5-Prime chemical formula cap. This is different from the 5-prime terminus modification.
+        /// The 5-Prime chemical formula cap
         /// </summary>
         private IHasChemicalFormula _5PrimeTerminus;
 
         /// <summary>
-        /// The 3-Prime chemical formula cap. This is different from the 3-prime terminus modification.
+        /// The 3-Prime chemical formula cap
         /// </summary>
         private IHasChemicalFormula _3PrimeTerminus;
-
-        /// <summary>
-        /// All of the modifications indexed by position from 5- to 3-prime termini. This array is 2 bigger than the nucleic acid array
-        /// as index 0 and Count - 1 represent the 5- and 3-prime terminus, respectively
-        /// </summary>
-        private IHasMass[] _modifications;
 
         /// <summary>
         /// All of the nucleic acid residues indexed by position from 5- to 3-prime.
@@ -92,15 +86,10 @@ namespace Transcriptomics
         /// The nucleic acid sequence. Is ignored if 'StoreSequenceString' is false
         /// </summary>
         private string _sequence;
-
+        
         #endregion
 
         #region Internal Properties
-
-        /// <summary>
-        /// The internal data store for the modifications (2 larger than the length to handle the 5' and 3' termini)
-        /// </summary>
-        internal IHasMass[] Modifications { get; }
 
         /// <summary>
         /// The internal data store for the nucleic acids
@@ -144,6 +133,8 @@ namespace Transcriptomics
         /// </summary>
         public Nucleotide[] NucleicAcidArray => _nucleicAcids;
 
+        public ChemicalFormula ThisChemicalFormula => GetChemicalFormula();
+
         #endregion
 
         #region Nucleic Acid Sequence
@@ -165,13 +156,7 @@ namespace Transcriptomics
             }
         }
 
-        public char this[int zeroBasedIndex]
-        {
-            get
-            {
-                return BaseSequence[zeroBasedIndex];
-            }
-        }
+        public char this[int zeroBasedIndex] => BaseSequence[zeroBasedIndex];
 
         #endregion
 
@@ -266,25 +251,29 @@ namespace Transcriptomics
 
         #endregion
 
-        #region Modifications
-
-        // TODO:
-
-        #endregion
 
         #region Digestion
 
-        public IEnumerable<OligoWithSetMods> Digest(RnaDigestionParams digestionParameters, List<int> allKnownFixedMods,
-            List<int> variableModifications)
+        public IEnumerable<OligoWithSetMods> Digest(DigestionParametersBase digestionParameters, List<Modification> allKnownFixedMods,
+            List<Modification> variableModifications)
         {
+            RnaDigestionParams digestionParams = digestionParameters as RnaDigestionParams ??
+                                                    throw new ArgumentException(
+                                                        "Digestion parameters must be of type RnaDigestionParams");
             allKnownFixedMods ??= new();
             variableModifications ??= new();
 
-
-            var t = digestionParameters.Rnase.GetUnmodifiedOligos(this, digestionParameters.MaxMissedCleavages,
-                digestionParameters.MinPeptideLength, digestionParameters.MaxPeptideLength);
-
-            throw new NotImplementedException();
+            // digest based upon base sequence
+            foreach (var unmodifiedOligo in digestionParams.Rnase.GetUnmodifiedOligos(this, digestionParams.MaxMissedCleavages,
+                         digestionParams.MinPeptideLength, digestionParams.MaxPeptideLength))
+            {
+                // add fixed and variable mods to base sequence digestion products
+                foreach (var modifiedOligo in unmodifiedOligo.GetModifiedOligos(allKnownFixedMods, digestionParams,
+                             variableModifications))
+                {
+                    yield return modifiedOligo;
+                }
+            }
         }
 
         #endregion
@@ -326,7 +315,7 @@ namespace Transcriptomics
 
         #region Private Methods
 
-        private bool ReplaceTerminus(ref IHasChemicalFormula terminus, IHasChemicalFormula value)
+        bool ReplaceTerminus(ref IHasChemicalFormula terminus, IHasChemicalFormula value)
         {
             if (Equals(value, terminus))
                 return false;
@@ -359,12 +348,10 @@ namespace Transcriptomics
 
             StringBuilder sb = null;
             sb = new StringBuilder(sequence.Length);
-
-            StringBuilder modSb = new StringBuilder(10);
+            
             foreach (char letter in sequence)
             {
                 Nucleotide residue;
-                //char upperletter = char.ToUpper(letter); // moved to nucleic acid dictionary
                 if (Nucleotide.TryGetResidue(letter, out residue))
                 {
                     _nucleicAcids[index++] = residue;
@@ -393,8 +380,6 @@ namespace Transcriptomics
             Length = index;
             MonoisotopicMass += monoMass;
             Array.Resize(ref _nucleicAcids, Length);
-            if (_modifications != null)
-                Array.Resize(ref _modifications, Length + 2);
 
             return true;
         }

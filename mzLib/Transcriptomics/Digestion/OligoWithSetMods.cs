@@ -4,18 +4,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Chemistry;
+using Easy.Common.Extensions;
 using MassSpectrometry;
+using MathNet.Numerics;
 
 namespace Transcriptomics
 {
-    public class OligoWithSetMods : NucleolyticOligo, IPrecursor
+    public class OligoWithSetMods : NucleolyticOligo, IPrecursor, INucleicAcid
     {
-        internal OligoWithSetMods(NucleicAcid nucleicAcid, int oneBaseStartResidueInNucleicAcid,
-            int oneBasedEndResidueInNucleicAcid, int missedCleavages, CleavageSpecificity cleavageSpecificity) : base(
+        public OligoWithSetMods(NucleicAcid nucleicAcid, RnaDigestionParams digestionParams, int oneBaseStartResidueInNucleicAcid,
+            int oneBasedEndResidueInNucleicAcid, int missedCleavages, CleavageSpecificity cleavageSpecificity,
+            Dictionary<int, Modification> allModsOneIsNTerminus, int numFixedMods, IHasChemicalFormula? fivePrimeTerminus = null, IHasChemicalFormula? threePrimeTerminus = null ) : base(
             nucleicAcid, oneBaseStartResidueInNucleicAcid, oneBasedEndResidueInNucleicAcid, missedCleavages,
-            cleavageSpecificity)
+            cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
         {
-
+            _digestionParams = digestionParams;
+            _allModsOneIsNterminus = allModsOneIsNTerminus;
+            NumFixedMods = numFixedMods;
+            FullSequence = (this as IPrecursor).DetermineFullSequence();
         }
 
         private RnaDigestionParams _digestionParams;
@@ -27,13 +33,40 @@ namespace Transcriptomics
         public string FullSequence { get; private set; }
         public RnaDigestionParams DigestionParams => _digestionParams;
 
+        public IHasChemicalFormula FivePrimeTerminus
+        {
+            get => _fivePrimeTerminus;
+            set
+            {
+                _fivePrimeTerminus = value;
+                _monoisotopicMass = null;
+                _thisChemicalFormula = null;
+                _mostAbundantMonoisotopicMass = null;
+            }
+        }
+
+        public IHasChemicalFormula ThreePrimeTerminus
+        {
+            get => _threePrimeTerminus;
+            set
+            {
+                _threePrimeTerminus = value;
+                _monoisotopicMass = null;
+                _thisChemicalFormula = null;
+                _mostAbundantMonoisotopicMass = null;
+            }
+        }
+
         public double MonoisotopicMass
         {
             get
             {
                 if (_monoisotopicMass is null)
                 {
-                    throw new NotImplementedException();
+                    _monoisotopicMass = BaseSequence.Sum(nuc => Nucleotide.GetResidue(nuc).MonoisotopicMass) +
+                                        AllModsOneIsNterminus.Values.Sum(mod => mod.MonoisotopicMass.Value) +
+                                        FivePrimeTerminus.MonoisotopicMass +
+                                        ThreePrimeTerminus.MonoisotopicMass;
                 }
                 return _monoisotopicMass.Value;
             }
@@ -45,9 +78,19 @@ namespace Transcriptomics
             {
                 if (_thisChemicalFormula is null)
                 {
-                    throw new NotImplementedException();
+                    var fullFormula = new RNA(BaseSequence, FivePrimeTerminus, ThreePrimeTerminus).GetChemicalFormula();
+                    foreach (var mod in AllModsOneIsNterminus.Values)
+                    {
+                        if (mod.ChemicalFormula is null)
+                        {
+                            fullFormula = null;
+                            break;
+                        }
+                        fullFormula.Add(mod.ChemicalFormula);
+                    }
+                    _thisChemicalFormula = fullFormula;
                 }
-                return _thisChemicalFormula;
+                return _thisChemicalFormula!;
             }
         }
 
@@ -57,9 +100,11 @@ namespace Transcriptomics
             {
                 if (_mostAbundantMonoisotopicMass is null)
                 {
-                    throw new NotImplementedException();
+                    var distribution = IsotopicDistribution.GetDistribution(ThisChemicalFormula);
+                    double maxIntensity = distribution.Intensities.Max();
+                    _mostAbundantMonoisotopicMass =
+                        distribution.Masses[distribution.Intensities.IndexOf(maxIntensity)].Round(9);
                 }
-
                 return _mostAbundantMonoisotopicMass.Value;
             }
         }

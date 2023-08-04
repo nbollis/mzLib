@@ -16,7 +16,6 @@ namespace Proteomics.ProteolyticDigestion
 
         public string PsiMsAccessionNumber { get; }
         public string PsiMsName { get; }
-        public Modification CleavageMod { get; set; }
 
         public override string ToString()
         {

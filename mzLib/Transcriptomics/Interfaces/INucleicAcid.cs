@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Chemistry;
 
 namespace Transcriptomics
 {
-    public interface INucleicAcid
+    public interface INucleicAcid : IHasChemicalFormula
     {
         /// <summary>
         /// The amino acid sequence
@@ -17,5 +18,10 @@ namespace Transcriptomics
         /// The length of the amino acid sequence
         /// </summary>
         int Length { get; }
+
+        IHasChemicalFormula FivePrimeTerminus { get; set; }
+
+        IHasChemicalFormula ThreePrimeTerminus { get; set; }
+        
     }
 }
