@@ -78,71 +78,14 @@ namespace Transcriptomics
                         int oneBasedStartResidue = oneBasedIndicesToCleaveAfter[i] + 1;
                         int oneBasedEndResidue = oneBasedIndicesToCleaveAfter[i + missedCleavages + 1];
 
-                        IHasChemicalFormula fivePrimeTerminus;
-                        IHasChemicalFormula threePrimeTerminus;
+                        // contains original 5' terminus ? keep it : set to OH
+                        IHasChemicalFormula fivePrimeTerminus = oneBasedStartResidue == 1 ? nucleicAcid.FivePrimeTerminus : ChemicalFormula.ParseFormula("O-3P-1");
 
-
-
-                        // contains original 5' terminus
-                        if (oneBasedStartResidue == 1)
-                            fivePrimeTerminus = nucleicAcid.FivePrimeTerminus;
-                        
-                        else
-                            fivePrimeTerminus = ChemicalFormula.ParseFormula("O-3P-1");
-
-                        // contains original 3' terminus
-                        if (oneBasedEndResidue == nucleicAcid.Length)
-                            threePrimeTerminus = nucleicAcid.ThreePrimeTerminus;
-                        else
-                            threePrimeTerminus = ChemicalFormula.ParseFormula("H2O4P");
-
+                        // contains original 3' terminus ? keep it : set to phosphate
+                        IHasChemicalFormula threePrimeTerminus = oneBasedEndResidue == nucleicAcid.Length ? nucleicAcid.ThreePrimeTerminus : ChemicalFormula.ParseFormula("H2O4P");
 
                         yield return new NucleolyticOligo(nucleicAcid, oneBasedStartResidue, oneBasedEndResidue,
                             missedCleavages, CleavageSpecificity.Full, fivePrimeTerminus, threePrimeTerminus);
-
-
-
-
-
-
-
-
-
-
-
-                        //// no digestion occurs
-                        //if (oneBasedEndResidue - oneBasedStartResidue == nucleicAcid.Length - 1)
-                        //{
-                        //    fivePrimeTerminus = nucleicAcid.FivePrimeTerminus;
-                        //    threePrimeTerminus = nucleicAcid.ThreePrimeTerminus;
-
-                        //    yield return new NucleolyticOligo(nucleicAcid, oneBasedStartResidue, oneBasedEndResidue,
-                        //        missedCleavages, CleavageSpecificity.Full, fivePrimeTerminus, threePrimeTerminus);
-                        //}
-
-                        //// contains original 5' terminus
-                        //else if (oneBasedStartResidue == 1)
-                        //{
-                        //    fivePrimeTerminus = nucleicAcid.FivePrimeTerminus;
-                        //    threePrimeTerminus = ChemicalFormula.ParseFormula("H2O4P");
-                        //}
-
-                        //// contains original 3' terminus
-                        //else if (oneBasedEndResidue == nucleicAcid.Length)
-                        //{
-                        //    fivePrimeTerminus = ChemicalFormula.ParseFormula("OH");
-                        //    threePrimeTerminus = nucleicAcid.ThreePrimeTerminus;
-                        //}
-
-                        //// central digestion product
-                        //else
-                        //{
-                        //    fivePrimeTerminus = NucleicAcid.DefaultFivePrimeTerminus;
-                        //    threePrimeTerminus = ChemicalFormula.ParseFormula("HO3P");
-                        //}
-
-                        //yield return new NucleolyticOligo(nucleicAcid, oneBasedStartResidue, oneBasedEndResidue,
-                        //    missedCleavages, CleavageSpecificity.Full, fivePrimeTerminus, threePrimeTerminus);
                     }
                 }
             }
