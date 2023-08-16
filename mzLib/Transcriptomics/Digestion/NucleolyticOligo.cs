@@ -14,15 +14,15 @@ namespace Transcriptomics
     /// </summary>
     public class NucleolyticOligo
     {
-        internal NucleolyticOligo(NucleicAcid nucleicAcid, int oneBaseStartResidueInNucleicAcid,
-            int oneBasedEndResidueInNucleicAcid, int missedCleavages, CleavageSpecificity cleavageSpecificity,
+        internal NucleolyticOligo(NucleicAcid nucleicAcid, int oneBaseStartResidue,
+            int oneBasedEndResidue, int missedCleavages, CleavageSpecificity cleavageSpecificity,
             IHasChemicalFormula? fivePrimeTerminus, IHasChemicalFormula? threePrimeTerminus)
         {
             NucleicAcid = nucleicAcid;
-            OneBasedStartResidueInNucleicAcid = oneBaseStartResidueInNucleicAcid;
-            OneBasedEndResidueInNucleicAcid = oneBasedEndResidueInNucleicAcid;
+            OneBasedStartResidue = oneBaseStartResidue;
+            OneBasedEndResidue = oneBasedEndResidue;
             MissedCleavages = missedCleavages;
-            CleavesSpecificityForFdrCategory = cleavageSpecificity;
+            CleavageSpecificityForFdrCategory = cleavageSpecificity;
             _fivePrimeTerminus = fivePrimeTerminus ?? NucleicAcid.DefaultFivePrimeTerminus;
             _threePrimeTerminus = threePrimeTerminus ?? NucleicAcid.DefaultThreePrimeTerminus;
         }
@@ -49,20 +49,20 @@ namespace Transcriptomics
             get
             {
                 return _baseSequence ??= NucleicAcid.BaseSequence.Substring(
-                    OneBasedStartResidueInNucleicAcid - 1,
-                    OneBasedEndResidueInNucleicAcid - OneBasedStartResidueInNucleicAcid + 1);
+                    OneBasedStartResidue - 1,
+                    OneBasedEndResidue - OneBasedStartResidue + 1);
             }
         }
 
         /// <summary>
         /// Residue number at which the oligo begins 
         /// </summary>
-        public int OneBasedStartResidueInNucleicAcid { get; init; }
+        public int OneBasedStartResidue { get; init; }
 
         /// <summary>
         /// Residue number at which the oligo ends
         /// </summary>
-        public int OneBasedEndResidueInNucleicAcid { get; init; }
+        public int OneBasedEndResidue { get; init; }
 
         /// <summary>
         /// The number of missed cleavages this oligo has with respect to the digesting Rnase
@@ -72,20 +72,20 @@ namespace Transcriptomics
         /// <summary>
         /// Structured explanation of the source
         /// </summary>
-        public CleavageSpecificity CleavesSpecificityForFdrCategory { get; init; }
+        public CleavageSpecificity CleavageSpecificityForFdrCategory { get; set; }
 
         /// <summary>
         /// The one letter symbol of the nucleotide which precedes this fragment on the original Nucleic Acid
         /// </summary>
-        public virtual char PreviousNucleicAcid => OneBasedStartResidueInNucleicAcid > 1
-            ? NucleicAcid[OneBasedStartResidueInNucleicAcid - 2]
+        public virtual char PreviousNucleicAcid => OneBasedStartResidue > 1
+            ? NucleicAcid[OneBasedStartResidue - 2]
             : '-';
 
         /// <summary>
         /// The one letter symbol of the nucleotide which comes after this fragment on the original Nucleic Acid
         /// </summary>
-        public virtual char NextNucleicAcid => OneBasedEndResidueInNucleicAcid < NucleicAcid.Length
-            ? NucleicAcid[OneBasedEndResidueInNucleicAcid]
+        public virtual char NextNucleicAcid => OneBasedEndResidue < NucleicAcid.Length
+            ? NucleicAcid[OneBasedEndResidue]
             : '-';
 
         public override string ToString()
@@ -98,8 +98,8 @@ namespace Transcriptomics
         {
             // TODO: Mods
 
-            yield return new OligoWithSetMods(NucleicAcid, digestionParams, OneBasedStartResidueInNucleicAcid,
-                OneBasedEndResidueInNucleicAcid, MissedCleavages, CleavesSpecificityForFdrCategory,
+            yield return new OligoWithSetMods(NucleicAcid, digestionParams, OneBasedStartResidue,
+                OneBasedEndResidue, MissedCleavages, CleavageSpecificityForFdrCategory,
                 new Dictionary<int, Modification>(), 0, _fivePrimeTerminus,
                 _threePrimeTerminus);
         }

@@ -7,11 +7,30 @@ using Chemistry;
 
 namespace MassSpectrometry
 {
+    /// <summary>
+    /// Interface for precursor ions
+    /// </summary>
+    /// <remarks>
+    /// Proteins -> PeptideWithSetModifications : ProteolyticPeptide
+    /// Nucleic Acids -> OligoWithSetMods : NucleolyticOligo
+    /// </remarks>
     public interface IPrecursor : IHasChemicalFormula
     {
         string BaseSequence { get; }
         string FullSequence { get; }
         double MostAbundantMonoisotopicMass { get; }
+        string SequenceWithChemicalFormulas { get; }
+
+        int OneBasedStartResidue { get; }
+        int OneBasedEndResidue { get; }
+        CleavageSpecificity CleavageSpecificityForFdrCategory { get; set; }
+
+
+
+        IDigestionParams DigestionParams { get; }
+
+
+
         Dictionary<int, Modification> AllModsOneIsNterminus { get; }
         int NumMods { get; }
         int NumFixedMods { get; }
@@ -19,6 +38,8 @@ namespace MassSpectrometry
         int Length { get; }
         char this[int zeroBasedIndex] => BaseSequence[zeroBasedIndex];
 
+
+        IBioPolymer Parent { get; }
 
         public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<IProduct> products);
 
@@ -52,6 +73,4 @@ namespace MassSpectrometry
             return subSequence.ToString();
         }
     }
-
-    
 }

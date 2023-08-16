@@ -12,10 +12,10 @@ namespace Transcriptomics
 {
     public class OligoWithSetMods : NucleolyticOligo, IPrecursor, INucleicAcid
     {
-        public OligoWithSetMods(NucleicAcid nucleicAcid, RnaDigestionParams digestionParams, int oneBaseStartResidueInNucleicAcid,
-            int oneBasedEndResidueInNucleicAcid, int missedCleavages, CleavageSpecificity cleavageSpecificity,
+        public OligoWithSetMods(NucleicAcid nucleicAcid, RnaDigestionParams digestionParams, int oneBaseStartResidue,
+            int oneBasedEndResidue, int missedCleavages, CleavageSpecificity cleavageSpecificity,
             Dictionary<int, Modification> allModsOneIsNTerminus, int numFixedMods, IHasChemicalFormula? fivePrimeTerminus = null, IHasChemicalFormula? threePrimeTerminus = null ) : base(
-            nucleicAcid, oneBaseStartResidueInNucleicAcid, oneBasedEndResidueInNucleicAcid, missedCleavages,
+            nucleicAcid, oneBaseStartResidue, oneBasedEndResidue, missedCleavages,
             cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
         {
             _digestionParams = digestionParams;
@@ -31,8 +31,8 @@ namespace Transcriptomics
         private double? _mostAbundantMonoisotopicMass;
 
         public string FullSequence { get; private set; }
-        public RnaDigestionParams DigestionParams => _digestionParams;
-
+        public IDigestionParams DigestionParams => _digestionParams;
+        public IBioPolymer Parent => NucleicAcid;
         public IHasChemicalFormula FivePrimeTerminus
         {
             get => _fivePrimeTerminus;
@@ -108,6 +108,8 @@ namespace Transcriptomics
                 return _mostAbundantMonoisotopicMass.Value;
             }
         }
+
+        public string SequenceWithChemicalFormulas => throw new NotImplementedException();
 
         public Dictionary<int, Modification> AllModsOneIsNterminus => _allModsOneIsNterminus;
         public int NumMods => AllModsOneIsNterminus.Count;

@@ -18,7 +18,7 @@ namespace MassSpectrometry
         public int AminoAcidPosition => ResiduePosition;
         public ProductType? SecondaryProductType { get; } //used for internal fragment ions
         public int SecondaryFragmentNumber { get; } //used for internal fragment ions
-        public double MonoisotopicMass => NeutralMass;
+        public new double MonoisotopicMass => NeutralMass;
         public string Annotation => GetAnnotation();
 
         public string GetAnnotation()

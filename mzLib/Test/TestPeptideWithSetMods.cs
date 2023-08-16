@@ -44,12 +44,12 @@ namespace Test
             DigestionParams digest1 = new DigestionParams(protease: "trypsin", maxMissedCleavages: 0, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             DigestionParams digest2 = new DigestionParams(protease: "Lys-C (cleave before proline)", maxMissedCleavages: 0, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
 
-            PeptideWithSetModifications pep1 = myProtein.Digest(digest1, new List<Modification>(), new List<Modification>()).First();
-            PeptideWithSetModifications pep2 = myProtein.Digest(digest2, new List<Modification>(), new List<Modification>()).First();
+            IPrecursor pep1 = myProtein.Digest(digest1, new List<Modification>(), new List<Modification>()).First();
+            IPrecursor pep2 = myProtein.Digest(digest2, new List<Modification>(), new List<Modification>()).First();
 
             Assert.That(pep1.FullSequence.Equals(pep2.FullSequence));
-            Assert.That(pep1.Protein.Equals(pep2.Protein));
-            Assert.That(!pep1.DigestionParams.Protease.Equals(pep2.DigestionParams.Protease));
+            Assert.That(pep1.Parent.Equals(pep2.Parent));
+            Assert.That(!pep1.DigestionParams.Enzyme.Equals(pep2.DigestionParams.Enzyme));
             Assert.That(!pep1.Equals(pep2));
             Assert.That(!pep1.GetHashCode().Equals(pep2.GetHashCode()));
         }
@@ -103,8 +103,8 @@ namespace Test
             //Semi
             DigestionParams semiNParams = new DigestionParams("Asp-N", 3, 7, 50, searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.N);
             DigestionParams semiCParams = new DigestionParams("Asp-N", 3, 7, 50, searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: FragmentationTerminus.C);
-            List<PeptideWithSetModifications> nPwsms = Q07065.Digest(semiNParams, null, null).ToList();
-            List<PeptideWithSetModifications> cPwsms = Q07065.Digest(semiCParams, null, null).ToList();
+            List<IPrecursor> nPwsms = Q07065.Digest(semiNParams, null, null).ToList();
+            List<IPrecursor> cPwsms = Q07065.Digest(semiCParams, null, null).ToList();
             Assert.IsFalse(nPwsms.Any(x => x.Length > semiNParams.MaxPeptideLength));
             Assert.IsFalse(cPwsms.Any(x => x.Length > semiCParams.MaxPeptideLength));
             Assert.IsTrue(nPwsms.Any(x => x.Length == semiNParams.MaxPeptideLength));
@@ -186,7 +186,7 @@ namespace Test
                         Assert.IsTrue(pep.CleavageSpecificityForFdrCategory == CleavageSpecificity.Semi);
                     }
                     //try to remake the pwsm with unknown specificity... was it assigned the correct specificity?
-                    PeptideWithSetModifications pwsmRemake = new PeptideWithSetModifications(fiveCleavages, semiDigestionParams, pep.OneBasedStartResidueInProtein, pep.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 3, pep.AllModsOneIsNterminus, 0);
+                    PeptideWithSetModifications pwsmRemake = new PeptideWithSetModifications(fiveCleavages, semiDigestionParams, pep.OneBasedStartResidue, pep.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 3, pep.AllModsOneIsNterminus, 0);
                     Assert.IsTrue(pwsmRemake.CleavageSpecificityForFdrCategory == pep.CleavageSpecificityForFdrCategory);
 
                     //Repeat the above going from the other direction (fixed N)
@@ -204,7 +204,7 @@ namespace Test
                         Assert.IsTrue(pep.CleavageSpecificityForFdrCategory == CleavageSpecificity.Semi);
                     }
                     //try to remake the pwsm with unknown specificity... was it assigned the correct specificity?
-                    pwsmRemake = new PeptideWithSetModifications(fiveCleavages, semiDigestionParams, pep.OneBasedStartResidueInProtein, pep.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 3, pep.AllModsOneIsNterminus, 0);
+                    pwsmRemake = new PeptideWithSetModifications(fiveCleavages, semiDigestionParams, pep.OneBasedStartResidue, pep.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 3, pep.AllModsOneIsNterminus, 0);
                     Assert.IsTrue(pwsmRemake.CleavageSpecificityForFdrCategory == pep.CleavageSpecificityForFdrCategory);
                 }
             }
@@ -269,7 +269,7 @@ namespace Test
 
             //test classic nonspecific
             DigestionParams classicNonspecificDigest = new DigestionParams("non-specific", 50);
-            List<PeptideWithSetModifications> classicNonspecificPeptides = fiveCleavages.Digest(classicNonspecificDigest, null, null).ToList();
+            List<IPrecursor> classicNonspecificPeptides = fiveCleavages.Digest(classicNonspecificDigest, null, null).ToList();
             Assert.IsTrue(classicNonspecificPeptides.Count == 78);
         }
 
@@ -302,8 +302,8 @@ namespace Test
 
             List<Modification> empty = new List<Modification>();
             List<Modification> allMods = new List<Modification> { nTermMod, cTermMod };
-            List<PeptideWithSetModifications> nPeps = proteinWithMods.Digest(singleN, empty, empty).ToList();
-            List<PeptideWithSetModifications> cPeps = proteinWithMods.Digest(singleC, empty, empty).ToList();
+            List<IPrecursor> nPeps = proteinWithMods.Digest(singleN, empty, empty).ToList();
+            List<IPrecursor> cPeps = proteinWithMods.Digest(singleC, empty, empty).ToList();
             Assert.IsTrue(nPeps.Count == cPeps.Count);
             Assert.IsTrue(cPeps.Count == 17);
 
@@ -326,8 +326,8 @@ namespace Test
             //Test single proteases with specific protease
             DigestionParams specificNonN = new DigestionParams(protease: "Asp-N", searchModeType: CleavageSpecificity.None, fragmentationTerminus: FragmentationTerminus.N);
             DigestionParams specificNonC = new DigestionParams(protease: "Asp-N", searchModeType: CleavageSpecificity.None, fragmentationTerminus: FragmentationTerminus.C);
-            List<PeptideWithSetModifications> nSpecificPeps = proteinWithMods.Digest(specificNonN, empty, empty).ToList();
-            List<PeptideWithSetModifications> cSpecificPeps = proteinWithMods.Digest(specificNonC, empty, empty).ToList();
+            List<IPrecursor> nSpecificPeps = proteinWithMods.Digest(specificNonN, empty, empty).ToList();
+            List<IPrecursor> cSpecificPeps = proteinWithMods.Digest(specificNonC, empty, empty).ToList();
             Assert.IsTrue(nSpecificPeps.Count == cSpecificPeps.Count);
             Assert.IsTrue(cSpecificPeps.Count == 17);
 
@@ -353,7 +353,7 @@ namespace Test
 
             //SingleN tests
 
-            List<PeptideWithSetModifications> peptides = tinyProteinWithCleavages.Digest(dpN, empty, empty).ToList();
+            List<IPrecursor> peptides = tinyProteinWithCleavages.Digest(dpN, empty, empty).ToList();
             Assert.IsTrue(peptides.Count == 14);
             peptides = tinyProteinWithoutCleavages.Digest(dpN, empty, empty).ToList();
             Assert.IsTrue(peptides.Count == 11);
@@ -443,7 +443,7 @@ namespace Test
 
             DigestionParams digest1 = new DigestionParams(protease: "trypsin", maxMissedCleavages: 0, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
 
-            PeptideWithSetModifications pep2 = myProtein.Digest(digest1, new List<Modification>(), new List<Modification>()).First();
+            IPrecursor pep2 = myProtein.Digest(digest1, new List<Modification>(), new List<Modification>()).First();
 
             int twoHashCode = pep2.GetHashCode();
 
@@ -460,7 +460,7 @@ namespace Test
             };
             Protein protein = new Protein("MACDEFGHIKLMNOPQRSTVWYMACDEFGHIKLMNOPQRSTVWYMACDEFGHIKLMNOPQRSTVWY", "testProtein", "Mus", proteolysisProducts: proteolysisProducts);
             DigestionParams topdownParams = new DigestionParams("top-down");
-            List<PeptideWithSetModifications> peptides = protein.Digest(topdownParams, null, null).ToList();
+            List<IPrecursor> peptides = protein.Digest(topdownParams, null, null).ToList();
             Assert.IsTrue(peptides.Count == 3);
         }
 
@@ -504,8 +504,8 @@ namespace Test
             Protein P56381 = new Protein("MVAYWRQAGLSYIRYSQICAKAVRDALKTEFKANAEKTSGSNVKIVKVKKE", "P56381");
             DigestionParams singleN = new DigestionParams(protease: "Asp-N", maxMissedCleavages: 3, minPeptideLength: 7, maxPeptideLength: 50, searchModeType: CleavageSpecificity.None, fragmentationTerminus: FragmentationTerminus.N);
             DigestionParams singleC = new DigestionParams(protease: "Asp-N", maxMissedCleavages: 3, minPeptideLength: 7, maxPeptideLength: 50, searchModeType: CleavageSpecificity.None, fragmentationTerminus: FragmentationTerminus.C);
-            List<PeptideWithSetModifications> nPwsms = P56381.Digest(singleN, null, null).ToList();
-            List<PeptideWithSetModifications> cPwsms = P56381.Digest(singleC, null, null).ToList();
+            List<IPrecursor> nPwsms = P56381.Digest(singleN, null, null).ToList();
+            List<IPrecursor> cPwsms = P56381.Digest(singleC, null, null).ToList();
             Assert.IsTrue(nPwsms.Count == cPwsms.Count);
             Assert.IsTrue(nPwsms.Count == P56381.Length - singleN.MinPeptideLength + 1);
         }
@@ -678,24 +678,24 @@ namespace Test
 
             List<Modification> digestMods = new List<Modification>();
 
-            var protein0_peptide = protein0_variant.Digest(dp, digestMods, digestMods).ElementAt(0);
-            var protein0_peptide2 = protein0_variant.Digest(dp2, digestMods, digestMods).ElementAt(0);
-            var protein1_peptide = protein1_variant.Digest(dp, digestMods, digestMods).ElementAt(2);
-            var protein2_peptide = protein2_variant.Digest(dp, digestMods, digestMods).ElementAt(0);
-            var protein3_peptide = protein3_variant.Digest(dp, digestMods, digestMods).ElementAt(0);
-            var protein4_peptide = protein4_variant.Digest(dp, digestMods, digestMods).ElementAt(2);
-            var protein5_peptide = protein5_variant.Digest(dp, digestMods, digestMods).ElementAt(2);
-            var protein6_peptide = protein6_variant.Digest(dp, digestMods, digestMods).ElementAt(2);
-            var protein7_peptide = protein7_variant.Digest(dp, digestMods, digestMods).ElementAt(1);
-            var protein8_peptide = protein8_variant.Digest(dp, digestMods, digestMods).ElementAt(1);
-            var protein9_peptide = protein9_variant.Digest(dp, digestMods, digestMods).ElementAt(0);
-            var protein10_peptide = protein10_variant.Digest(dp, digestMods, digestMods).ElementAt(0);
-            var protein11_peptide = protein11_variant.Digest(dp2, digestMods, digestMods).ElementAt(0);
-            var protein11_peptide2 = protein11_variant.Digest(dp, digestMods, digestMods).ElementAt(0);
-            var protein12_peptide = protein12_variant.Digest(dp, digestMods, digestMods).ElementAt(0);
-            var protein13_peptide = protein13_variant.Digest(dp2, digestMods, digestMods).ElementAt(0);
-            var protein14_peptide = protein14_variant.Digest(dp3, digestMods, digestMods).ElementAt(0);
-            var protein15_peptide = protein15_variant.Digest(dp3, digestMods, digestMods).ElementAt(0);
+            var protein0_peptide = protein0_variant.Digest(dp, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein0_peptide2 = protein0_variant.Digest(dp2, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein1_peptide = protein1_variant.Digest(dp, digestMods, digestMods).ElementAt(2) as PeptideWithSetModifications;
+            var protein2_peptide = protein2_variant.Digest(dp, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein3_peptide = protein3_variant.Digest(dp, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein4_peptide = protein4_variant.Digest(dp, digestMods, digestMods).ElementAt(2) as PeptideWithSetModifications;
+            var protein5_peptide = protein5_variant.Digest(dp, digestMods, digestMods).ElementAt(2) as PeptideWithSetModifications;
+            var protein6_peptide = protein6_variant.Digest(dp, digestMods, digestMods).ElementAt(2) as PeptideWithSetModifications;
+            var protein7_peptide = protein7_variant.Digest(dp, digestMods, digestMods).ElementAt(1) as PeptideWithSetModifications;
+            var protein8_peptide = protein8_variant.Digest(dp, digestMods, digestMods).ElementAt(1) as PeptideWithSetModifications;
+            var protein9_peptide = protein9_variant.Digest(dp, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein10_peptide = protein10_variant.Digest(dp, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein11_peptide = protein11_variant.Digest(dp2, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein11_peptide2 = protein11_variant.Digest(dp, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein12_peptide = protein12_variant.Digest(dp, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein13_peptide = protein13_variant.Digest(dp2, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein14_peptide = protein14_variant.Digest(dp3, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
+            var protein15_peptide = protein15_variant.Digest(dp3, digestMods, digestMods).ElementAt(0) as PeptideWithSetModifications;
 
             Assert.AreEqual((true, true), protein0_peptide.IntersectsAndIdentifiesVariation(protein0_variant.AppliedSequenceVariations.ElementAt(0)));
             Assert.AreEqual((true, true), protein0_peptide2.IntersectsAndIdentifiesVariation(protein0_variant.AppliedSequenceVariations.ElementAt(0)));
@@ -931,7 +931,7 @@ namespace Test
 
             foreach (Protein p in proteins)
             {
-                List<PeptideWithSetModifications> targetPeptides = p.Digest(new DigestionParams(), fixedMods, variableMods, null, null).ToList();
+                List<IPrecursor> targetPeptides = p.Digest(new DigestionParams(), fixedMods, variableMods, null, null).ToList();
                 foreach (PeptideWithSetModifications targetPeptide in targetPeptides)
                 {
                     totalPeptides++;
@@ -969,9 +969,9 @@ namespace Test
 
             foreach (Protein p in proteins)
             {
-                List<PeptideWithSetModifications> targetPeptides = p.Digest(new DigestionParams(), fixedMods, variableMods, null, null).ToList();
+                List<IPrecursor> targetPeptides = p.Digest(new DigestionParams(), fixedMods, variableMods, null, null).ToList();
 
-                foreach (PeptideWithSetModifications targetPeptide in targetPeptides)
+                foreach (IPrecursor targetPeptide in targetPeptides)
                 {
                     if (targets.ContainsKey(targetPeptide.BaseSequence))
                     {
@@ -987,10 +987,11 @@ namespace Test
             int matchingDecoys = 0;
             foreach (Protein p in proteins)
             {
-                List<PeptideWithSetModifications> targetPeptides = p.Digest(new DigestionParams(), fixedMods, variableMods, null, null).ToList();
+                List<IPrecursor> targetPeptides = p.Digest(new DigestionParams(), fixedMods, variableMods, null, null).ToList();
 
-                foreach (PeptideWithSetModifications target in targetPeptides)
+                foreach (var precursor in targetPeptides)
                 {
+                    var target = (PeptideWithSetModifications)precursor;
                     int[] newAminoAcidPositions = new int[target.BaseSequence.Length];
                     string decoySequence = target.GetReverseDecoyFromTarget(newAminoAcidPositions).BaseSequence;
 
@@ -1011,7 +1012,7 @@ namespace Test
                 DecoyType.None, null, false, null, out var unknownModifications, addTruncations: true)[0];
 
             Protease protease = new Protease("top-down", CleavageSpecificity.None, "", "", new List<DigestionMotif>(), null);
-            List<PeptideWithSetModifications> insulinTruncations = insulin.Digest(new DigestionParams(protease: protease.Name), new List<Modification>(), new List<Modification>(), topDownTruncationSearch: true).ToList();
+            List<IPrecursor> insulinTruncations = insulin.Digest(new DigestionParams(protease: protease.Name), new List<Modification>(), new List<Modification>(), topDownTruncationSearch: true).ToList();
             Assert.AreEqual(68, insulinTruncations.Count);
         }
 
@@ -1023,9 +1024,9 @@ namespace Test
                 DecoyType.Reverse, null, false, null, out var unknownModifications, addTruncations: true);
 
             Protease protease = new Protease("top-down", CleavageSpecificity.None, "", "", new List<DigestionMotif>(), null);
-            List<PeptideWithSetModifications> insulintTargetTruncations = insulinProteins.Where(p=>!p.IsDecoy).First().Digest(new DigestionParams(protease: protease.Name), new List<Modification>(), new List<Modification>(), topDownTruncationSearch: true).ToList();
+            List<IPrecursor> insulintTargetTruncations = insulinProteins.Where(p=>!p.IsDecoy).First().Digest(new DigestionParams(protease: protease.Name), new List<Modification>(), new List<Modification>(), topDownTruncationSearch: true).ToList();
             Assert.AreEqual(68, insulintTargetTruncations.Count);
-            List<PeptideWithSetModifications> insulintDecoyTruncations = insulinProteins.Where(p => p.IsDecoy).First().Digest(new DigestionParams(protease: protease.Name), new List<Modification>(), new List<Modification>(), topDownTruncationSearch: true).ToList();
+            List<IPrecursor> insulintDecoyTruncations = insulinProteins.Where(p => p.IsDecoy).First().Digest(new DigestionParams(protease: protease.Name), new List<Modification>(), new List<Modification>(), topDownTruncationSearch: true).ToList();
             Assert.AreEqual(68, insulintDecoyTruncations.Count);
         }
 

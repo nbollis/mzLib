@@ -129,7 +129,7 @@ namespace Test
         public void SilacLabelTest()
         {
             Protein originalProtein = new Protein("ACDEFGHIKAKAK", "TEST");
-            List<PeptideWithSetModifications> originalDigest = originalProtein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).ToList();
+            List<IPrecursor> originalDigest = originalProtein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).ToList();
 
             //Multiple SILAC labels
             Residue lysine = Residue.GetResidue('K');
@@ -144,7 +144,7 @@ namespace Test
                 new SilacLabel('K','a', heavyLabel.ThisChemicalFormula.Formula, heavyLabel.MonoisotopicMass - lysine.MonoisotopicMass),
                 new SilacLabel('K','b', heavierLabel.ThisChemicalFormula.Formula, heavierLabel.MonoisotopicMass - lysine.MonoisotopicMass)
             };
-            List<PeptideWithSetModifications> silacDigest = originalProtein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>(), silacLabels).ToList();
+            List<IPrecursor> silacDigest = originalProtein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>(), silacLabels).ToList();
             Assert.IsTrue(originalDigest.Count * 3 == silacDigest.Count); //check that each peptide now has a light, heavy, and heavier compliment
 
             double silacPeptideLightMonoisotopicMass = silacDigest.Where(x => x.BaseSequence.Contains("K")).First().MonoisotopicMass;
@@ -612,7 +612,7 @@ namespace Test
             // has the same properties as before it was serialized. This peptide is unmodified and generated from digesting a protein
             Protein protein = new Protein("PEPTIDE", "Accession1", name: "MyProtein");
 
-            PeptideWithSetModifications peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
+            IPrecursor peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
             PeptideWithSetModifications deserializedPeptide = null;
 
             string dir = System.IO.Path.Combine(TestContext.CurrentContext.TestDirectory, "TestSerializationPeptideFromProtein");
@@ -636,7 +636,7 @@ namespace Test
 
             Assert.That(peptide.DigestionParams.Equals(deserializedPeptide.DigestionParams));
             Assert.That(peptide.Equals(deserializedPeptide));
-            Assert.That(deserializedPeptide.Protein.Name == peptide.Protein.Name);
+            Assert.That(deserializedPeptide.Protein.Name == peptide.Parent.Name);
             Assert.That(deserializedPeptide.MonoisotopicMass == peptide.MonoisotopicMass);
             Assert.That(deserializedPeptide.SequenceWithChemicalFormulas == peptide.SequenceWithChemicalFormulas);
 
@@ -671,7 +671,7 @@ namespace Test
 
             Protein protein = new Protein("PEPTIDE", "Accession1", name: "MyProtein", oneBasedModifications: mods);
 
-            PeptideWithSetModifications peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(v => v.AllModsOneIsNterminus.Count == 1).First();
+            IPrecursor peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First(v => v.AllModsOneIsNterminus.Count == 1);
             PeptideWithSetModifications deserializedPeptide = null;
 
             string dir = System.IO.Path.Combine(TestContext.CurrentContext.TestDirectory, "TestSerializationPeptideFromProteinWithMod");
@@ -696,7 +696,7 @@ namespace Test
             deserializedPeptide.SetNonSerializedPeptideInfo(stringToMod, new Dictionary<string, Protein> { { protein.Accession, protein } }, peptide.DigestionParams);
 
             Assert.That(peptide.Equals(deserializedPeptide));
-            Assert.That(deserializedPeptide.Protein.Name == peptide.Protein.Name);
+            Assert.That(deserializedPeptide.Protein.Name == peptide.Parent.Name);
             Assert.That(deserializedPeptide.MonoisotopicMass == peptide.MonoisotopicMass);
             Assert.That(deserializedPeptide.SequenceWithChemicalFormulas == peptide.SequenceWithChemicalFormulas);
 
@@ -720,7 +720,7 @@ namespace Test
             Dictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>> { { 1, new List<Modification> { nTermMod } } };
 
             Protein protein = new Protein("PEPTIDE", "", oneBasedModifications: mods);
-            PeptideWithSetModifications peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(p => p.AllModsOneIsNterminus.Count == 1).First();
+            IPrecursor peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(p => p.AllModsOneIsNterminus.Count == 1).First();
             Assert.That(peptide.FullSequence == "[testModType:acetylation on P]PEPTIDE");
 
             var fragments = new List<IProduct>();
@@ -739,7 +739,7 @@ namespace Test
             Dictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>> { { 7, new List<Modification> { cTermMod } } };
 
             Protein protein = new Protein("PEPTIDE", "", oneBasedModifications: mods);
-            PeptideWithSetModifications peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(p => p.AllModsOneIsNterminus.Count == 1).First();
+            IPrecursor peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).Where(p => p.AllModsOneIsNterminus.Count == 1).First();
             Assert.That(peptide.FullSequence == "PEPTIDE[testModType:acetylation on E]");
 
             var fragments = new List<IProduct>();

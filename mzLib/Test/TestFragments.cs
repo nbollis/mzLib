@@ -886,10 +886,10 @@ namespace Test
             };
 
             protein = new Protein(sequence: "PEPTIDE", accession: "accession", oneBasedModifications: i);
-            IEnumerable<PeptideWithSetModifications> pwsmList = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>());
+            IEnumerable<IPrecursor> pwsmList = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>());
 
-            PeptideWithSetModifications modifiedPwsm = pwsmList.Where(z => z.AllModsOneIsNterminus.Count == 1).First();
-            PeptideWithSetModifications unmodifiedPwsm = pwsmList.Where(z => z.AllModsOneIsNterminus.Count == 0).First();
+            IPrecursor modifiedPwsm = pwsmList.First(z => z.AllModsOneIsNterminus.Count == 1);
+            IPrecursor unmodifiedPwsm = pwsmList.First(z => z.AllModsOneIsNterminus.Count == 0);
 
             List<IProduct> modifiedPwsmFragments = new List<IProduct>();
             modifiedPwsm.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedPwsmFragments);
@@ -923,9 +923,9 @@ namespace Test
         public static void Test_ETD_ECD_EThcD_Fragmentation_No_FragmentsAtProline(DissociationType dissociationType, int fragmentCount)
         {
             Protein protein = new Protein(sequence: "PEPTIDE", accession: "accession");
-            IEnumerable<PeptideWithSetModifications> pwsmList = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>());
-            IEnumerable<PeptideWithSetModifications> digestionProducts = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>());
-            PeptideWithSetModifications myPeptide = digestionProducts.First();
+            IEnumerable<IPrecursor> pwsmList = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>());
+            IEnumerable<IPrecursor> digestionProducts = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>());
+            IPrecursor myPeptide = digestionProducts.First();
             List<IProduct> myFragments = new List<IProduct>();
             myPeptide.Fragment(dissociationType, FragmentationTerminus.Both, myFragments);
             Assert.AreEqual(fragmentCount, myFragments.Count());

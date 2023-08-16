@@ -14,7 +14,7 @@ namespace Transcriptomics
     /// <summary>
     /// A linear polymer of Nucleic acids
     /// </summary>
-    public abstract class NucleicAcid : /*IBioPolymer,*/ INucleicAcid, IEquatable<NucleicAcid>
+    public abstract class NucleicAcid : IBioPolymer, INucleicAcid, IEquatable<NucleicAcid>
     {
 
         #region Static Properties
@@ -123,6 +123,14 @@ namespace Transcriptomics
         /// </summary>
         public int Length { get; private set; }
 
+
+        // TODO: These interface members
+        public string DatabaseFilePath { get; }
+        public bool IsDecoy { get; }
+        public bool IsContaminant { get; }
+        public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }
+
+
         /// <summary>
         /// The total monoisotopic mass of this peptide and all of its modifications
         /// </summary>
@@ -138,6 +146,8 @@ namespace Transcriptomics
         #endregion
 
         #region Nucleic Acid Sequence
+
+        public string Name { get; }
 
         /// <summary>
         /// Gets the base nucleic acid sequence
@@ -254,12 +264,13 @@ namespace Transcriptomics
 
         #region Digestion
 
-        public IEnumerable<OligoWithSetMods> Digest(DigestionParametersBase digestionParameters, List<Modification> allKnownFixedMods,
-            List<Modification> variableModifications)
+        public IEnumerable<IPrecursor> Digest(IDigestionParams digestionParameters, List<Modification> allKnownFixedMods,
+            List<Modification> variableModifications, List<SilacLabel> silacLabels = null, (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = null, 
+            bool topDownTruncationSearch = false)
         {
-            RnaDigestionParams digestionParams = digestionParameters as RnaDigestionParams ??
-                                                    throw new ArgumentException(
-                                                        "Digestion parameters must be of type RnaDigestionParams");
+            if (digestionParameters is not RnaDigestionParams digestionParams)
+                throw new ArgumentException(
+                    "DigestionParameters must be of type DigestionParams for protein digestion");
             allKnownFixedMods ??= new();
             variableModifications ??= new();
 

@@ -554,13 +554,13 @@ namespace Test
                 new ProteolysisProduct(90, 110, "")
             });
             DigestionParams dp = new DigestionParams(maxMissedCleavages: 10, minPeptideLength: 1, maxPeptideLength: 120); //this should allow for all peptides to be generated
-            List<PeptideWithSetModifications> pwsms = humanInsulin.Digest(dp, null, null).ToList();
-            HashSet<PeptideWithSetModifications> hashset = new HashSet<PeptideWithSetModifications>(pwsms);
+            List<IPrecursor> pwsms = humanInsulin.Digest(dp, null, null).ToList();
+            HashSet<IPrecursor> hashset = new HashSet<IPrecursor>(pwsms);
             //check that all the full length proteolysis products were made
-            Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidueInProtein == 1 && x.OneBasedEndResidueInProtein == 24));
-            Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidueInProtein == 25 && x.OneBasedEndResidueInProtein == 54));
-            Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidueInProtein == 57 && x.OneBasedEndResidueInProtein == 87));
-            Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidueInProtein == 90 && x.OneBasedEndResidueInProtein == 110));
+            Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidue == 1 && x.OneBasedEndResidue == 24));
+            Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidue == 25 && x.OneBasedEndResidue == 54));
+            Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidue == 57 && x.OneBasedEndResidue == 87));
+            Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidue == 90 && x.OneBasedEndResidue == 110));
             //check that all the correct peptides were made
             Assert.IsTrue(hashset.Count == 52);
             //check that there are no duplicates
@@ -568,8 +568,8 @@ namespace Test
             //Speedy semi specific test
             DigestionParams speedySemiN = new DigestionParams("trypsin", 10, 29, 30, 1024, InitiatorMethionineBehavior.Retain, 2, CleavageSpecificity.Semi, FragmentationTerminus.N);
             DigestionParams speedySemiC = new DigestionParams("trypsin", 10, 29, 30, 1024, InitiatorMethionineBehavior.Retain, 2, CleavageSpecificity.Semi, FragmentationTerminus.C);
-            List<PeptideWithSetModifications> pwsmsN = humanInsulin.Digest(speedySemiN, null, null).ToList();
-            List<PeptideWithSetModifications> pwsmsC = humanInsulin.Digest(speedySemiC, null, null).ToList();
+            List<IPrecursor> pwsmsN = humanInsulin.Digest(speedySemiN, null, null).ToList();
+            List<IPrecursor> pwsmsC = humanInsulin.Digest(speedySemiC, null, null).ToList();
             Assert.IsTrue(pwsmsN.Count == 7);
             Assert.IsTrue(pwsmsC.Count == 9);
             Assert.IsFalse(pwsmsN.Any(x => x.Length > speedySemiN.MaxPeptideLength));
