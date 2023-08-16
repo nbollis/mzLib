@@ -19,9 +19,9 @@ namespace Proteomics.ProteolyticDigestion
         {
             Protease = ProteaseDictionary.Dictionary[protease];
             MaxMissedCleavages = maxMissedCleavages;
-            MinPeptideLength = minPeptideLength;
-            MaxPeptideLength = maxPeptideLength;
-            MaxModsForPeptide = maxModsForPeptides;
+            MinLength = minPeptideLength;
+            MaxLength = maxPeptideLength;
+            MaxMods = maxModsForPeptides;
             MaxModificationIsoforms = maxModificationIsoforms;
             InitiatorMethionineBehavior = initiatorMethionineBehavior;
             SearchModeType = searchModeType;
@@ -33,10 +33,10 @@ namespace Proteomics.ProteolyticDigestion
         }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; private set; }
         public int MaxMissedCleavages { get; set; }
-        public int MinPeptideLength { get; set; }
-        public int MaxPeptideLength { get; set; }
+        public int MinLength { get; set; }
+        public int MaxLength { get; set; }
         public int MaxModificationIsoforms { get; set; }
-        public int MaxModsForPeptide { get; set; }
+        public int MaxMods { get; set; }
 
         public DigestionAgent Enzyme => Protease;
         public Protease Protease { get; private set; }
@@ -51,11 +51,11 @@ namespace Proteomics.ProteolyticDigestion
         {
             return obj is DigestionParams a
                 && MaxMissedCleavages.Equals(a.MaxMissedCleavages)
-                && MinPeptideLength.Equals(a.MinPeptideLength)
-                && MaxPeptideLength.Equals(a.MaxPeptideLength)
+                && MinLength.Equals(a.MinLength)
+                && MaxLength.Equals(a.MaxLength)
                 && InitiatorMethionineBehavior.Equals(a.InitiatorMethionineBehavior)
                 && MaxModificationIsoforms.Equals(a.MaxModificationIsoforms)
-                && MaxModsForPeptide.Equals(a.MaxModsForPeptide)
+                && MaxMods.Equals(a.MaxMods)
                 && Protease.Equals(a.Protease)
                 && SearchModeType.Equals(a.SearchModeType)
                 && FragmentationTerminus.Equals(a.FragmentationTerminus)
@@ -70,13 +70,13 @@ namespace Proteomics.ProteolyticDigestion
                 MaxMissedCleavages.GetHashCode()
                 ^ InitiatorMethionineBehavior.GetHashCode()
                 ^ MaxModificationIsoforms.GetHashCode()
-                ^ MaxModsForPeptide.GetHashCode();
+                ^ MaxMods.GetHashCode();
         }
 
         public override string ToString()
         {
-            return MaxMissedCleavages + "," + InitiatorMethionineBehavior + "," + MinPeptideLength + "," + MaxPeptideLength + ","
-                + MaxModificationIsoforms + "," + MaxModsForPeptide + "," + SpecificProtease.Name + "," + SearchModeType + "," + FragmentationTerminus + ","
+            return MaxMissedCleavages + "," + InitiatorMethionineBehavior + "," + MinLength + "," + MaxLength + ","
+                + MaxModificationIsoforms + "," + MaxMods + "," + SpecificProtease.Name + "," + SearchModeType + "," + FragmentationTerminus + ","
                 + GeneratehUnlabeledProteinsForSilac + "," + KeepNGlycopeptide + "," + KeepOGlycopeptide;
         }
 

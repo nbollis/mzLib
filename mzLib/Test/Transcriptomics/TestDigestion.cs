@@ -173,8 +173,8 @@ namespace Test.Transcriptomics
             Assert.That(oligo.OneBasedEndResidue, Is.EqualTo(1));
             Assert.That(oligo.MissedCleavages, Is.EqualTo(0));
             Assert.That(oligo.CleavageSpecificityForFdrCategory, Is.EqualTo(CleavageSpecificity.Full));
-            Assert.That(oligo.NextNucleicAcid, Is.EqualTo('U'));
-            Assert.That(oligo.PreviousNucleicAcid, Is.EqualTo('-'));
+            Assert.That(oligo.NextResidue, Is.EqualTo('U'));
+            Assert.That(oligo.PreviousResidue, Is.EqualTo('-'));
             Assert.That(oligo.ToString(), Is.EqualTo(oligo.BaseSequence));
         }
 
@@ -192,8 +192,8 @@ namespace Test.Transcriptomics
             Assert.That(oligo.OneBasedEndResidue, Is.EqualTo(6));
             Assert.That(oligo.MissedCleavages, Is.EqualTo(0));
             Assert.That(oligo.CleavageSpecificityForFdrCategory, Is.EqualTo(CleavageSpecificity.Full));
-            Assert.That(oligo.NextNucleicAcid, Is.EqualTo('-'));
-            Assert.That(oligo.PreviousNucleicAcid, Is.EqualTo('A'));
+            Assert.That(oligo.NextResidue, Is.EqualTo('-'));
+            Assert.That(oligo.PreviousResidue, Is.EqualTo('A'));
             Assert.That(oligo.ToString(), Is.EqualTo(oligo.BaseSequence));
         }
 
@@ -211,8 +211,8 @@ namespace Test.Transcriptomics
             Assert.That(oligo.OneBasedEndResidue, Is.EqualTo(3));
             Assert.That(oligo.MissedCleavages, Is.EqualTo(0));
             Assert.That(oligo.CleavageSpecificityForFdrCategory, Is.EqualTo(CleavageSpecificity.Full));
-            Assert.That(oligo.NextNucleicAcid, Is.EqualTo('C'));
-            Assert.That(oligo.PreviousNucleicAcid, Is.EqualTo('G'));
+            Assert.That(oligo.NextResidue, Is.EqualTo('C'));
+            Assert.That(oligo.PreviousResidue, Is.EqualTo('G'));
             Assert.That(oligo.ToString(), Is.EqualTo(oligo.BaseSequence));
         }
         [Test]
@@ -229,8 +229,8 @@ namespace Test.Transcriptomics
             Assert.That(oligo.OneBasedEndResidue, Is.EqualTo(6));
             Assert.That(oligo.MissedCleavages, Is.EqualTo(0));
             Assert.That(oligo.CleavageSpecificityForFdrCategory, Is.EqualTo(CleavageSpecificity.Full));
-            Assert.That(oligo.NextNucleicAcid, Is.EqualTo('-'));
-            Assert.That(oligo.PreviousNucleicAcid, Is.EqualTo('-'));
+            Assert.That(oligo.NextResidue, Is.EqualTo('-'));
+            Assert.That(oligo.PreviousResidue, Is.EqualTo('-'));
             Assert.That(oligo.ToString(), Is.EqualTo(oligo.BaseSequence));
         }
 

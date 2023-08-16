@@ -15,17 +15,17 @@ namespace Transcriptomics
         {
             Rnase = RnaseDictionary.Dictionary[rnase];
             MaxMissedCleavages = maxMissedCleavages;
-            MinPeptideLength = minLength;
-            MaxPeptideLength = maxLength;
-            MaxModsForPeptide = maxModificationIsoforms;
+            MinLength = minLength;
+            MaxLength = maxLength;
+            MaxMods = maxModificationIsoforms;
             MaxModificationIsoforms = maxModificationIsoforms;
         }
 
         public int MaxMissedCleavages { get; set; }
-        public int MinPeptideLength { get; set; }
-        public int MaxPeptideLength { get; set; }
+        public int MinLength { get; set; }
+        public int MaxLength { get; set; }
         public int MaxModificationIsoforms { get; set; }
-        public int MaxModsForPeptide { get; set; }
+        public int MaxMods { get; set; }
         public DigestionAgent Enzyme => Rnase;
         public Rnase Rnase { get; private set; }
     }

@@ -35,7 +35,7 @@ namespace Proteomics.ProteolyticDigestion
         public CleavageSpecificity CleavageSpecificityForFdrCategory { get; set; } //structured explanation of source
         public int Length { get { return BaseSequence.Length; } } //how many residues long the peptide is
 
-        public virtual char PreviousAminoAcid
+        public virtual char PreviousResidue
         {
             get
             {
@@ -43,7 +43,7 @@ namespace Proteomics.ProteolyticDigestion
             }
         }
 
-        public virtual char NextAminoAcid
+        public virtual char NextResidue
         {
             get
             {
@@ -90,7 +90,7 @@ namespace Proteomics.ProteolyticDigestion
         {
             int peptideLength = OneBasedEndResidue - OneBasedStartResidue + 1;
             int maximumVariableModificationIsoforms = digestionParams.MaxModificationIsoforms;
-            int maxModsForPeptide = digestionParams.MaxModsForPeptide;
+            int maxModsForPeptide = digestionParams.MaxMods;
             var twoBasedPossibleVariableAndLocalizeableModifications = new Dictionary<int, List<Modification>>(peptideLength + 4);
 
             var pepNTermVariableMods = new List<Modification>();

@@ -77,14 +77,14 @@ namespace Transcriptomics
         /// <summary>
         /// The one letter symbol of the nucleotide which precedes this fragment on the original Nucleic Acid
         /// </summary>
-        public virtual char PreviousNucleicAcid => OneBasedStartResidue > 1
+        public virtual char PreviousResidue => OneBasedStartResidue > 1
             ? NucleicAcid[OneBasedStartResidue - 2]
             : '-';
 
         /// <summary>
         /// The one letter symbol of the nucleotide which comes after this fragment on the original Nucleic Acid
         /// </summary>
-        public virtual char NextNucleicAcid => OneBasedEndResidue < NucleicAcid.Length
+        public virtual char NextResidue => OneBasedEndResidue < NucleicAcid.Length
             ? NucleicAcid[OneBasedEndResidue]
             : '-';
 

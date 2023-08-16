@@ -8,7 +8,7 @@ using Chemistry;
 namespace MassSpectrometry
 {
     /// <summary>
-    /// Interface for precursor ions
+    /// Interface for modified and unmodified precursor ions
     /// </summary>
     /// <remarks>
     /// Proteins -> PeptideWithSetModifications : ProteolyticPeptide
@@ -24,6 +24,8 @@ namespace MassSpectrometry
         int OneBasedStartResidue { get; }
         int OneBasedEndResidue { get; }
         CleavageSpecificity CleavageSpecificityForFdrCategory { get; set; }
+        char PreviousResidue { get; }
+        char NextResidue { get; }
 
 
 

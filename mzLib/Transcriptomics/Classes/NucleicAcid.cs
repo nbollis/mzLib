@@ -276,7 +276,7 @@ namespace Transcriptomics
 
             // digest based upon base sequence
             foreach (var unmodifiedOligo in digestionParams.Rnase.GetUnmodifiedOligos(this, digestionParams.MaxMissedCleavages,
-                         digestionParams.MinPeptideLength, digestionParams.MaxPeptideLength))
+                         digestionParams.MinLength, digestionParams.MaxLength))
             {
                 // add fixed and variable mods to base sequence digestion products
                 foreach (var modifiedOligo in unmodifiedOligo.GetModifiedOligos(allKnownFixedMods, digestionParams,
