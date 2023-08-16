@@ -5,4 +5,5 @@ RNase A	"C|,U|"			full
 top-down				none			
 RNase 1	"G|,C|,A|,U|"			full			
 RNase PhyM	"A|,U|"			full			
-RNase U2	"G|,A|"			full			
+RNase U2	"G|,A|"			full		
+Cusativin	C|			full
