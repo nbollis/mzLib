@@ -167,7 +167,8 @@ namespace Transcriptomics
         /// <summary>
         /// Calculates all the fragments of the types you specify
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="type">product type to get neutral fragments from</param>
+        /// <param name="sequence">Sequence to generate fragments from, will be calculated from the parent if left null</param>
         /// <returns></returns>
         internal IEnumerable<IProduct> GetNeutralFragments(ProductType type, Nucleotide[]? sequence = null)
         {

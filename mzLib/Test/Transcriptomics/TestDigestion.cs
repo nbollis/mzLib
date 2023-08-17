@@ -110,7 +110,6 @@ namespace Test.Transcriptomics
         [TestCaseSource(nameof(GetTestCases))]
         public void TestRnase_GetUnmodifiedOligo_Sequence(RnaDigestionTestCase testCase)
         {
-
             RNA rna = new RNA(testCase.BaseSequence);
             Rnase rnase = RnaseDictionary.Dictionary[testCase.Enzyme];
             var digestionProducts =
@@ -237,8 +236,6 @@ namespace Test.Transcriptomics
 
         #region OligoWithSetMods
 
-        // TODO: this class
-
         private static (string Sequence, int FragmentNumber, ProductType Type, double Mass)[] DigestFragmentTestCases =>
             new (string Sequence, int FragmentNumber, ProductType Type, double Mass)[]
             {
@@ -348,6 +345,32 @@ namespace Test.Transcriptomics
 
         #endregion
 
+        #region DigestionParams
+
+        [Test]
+        [TestCaseSource(nameof(GetTestCases))]
+        public void TestDigestionParams_Properties(RnaDigestionTestCase testCase)
+        {
+            var rna = new RNA(testCase.BaseSequence);
+            var digestionParams = new RnaDigestionParams(testCase.Enzyme, testCase.MissedCleavages, testCase.MinLength,
+                testCase.MaxLength);
+
+            Assert.That(digestionParams.Enzyme, Is.EqualTo(RnaseDictionary.Dictionary[testCase.Enzyme]));
+            Assert.That(digestionParams.MaxMissedCleavages, Is.EqualTo(testCase.MissedCleavages));
+            Assert.That(digestionParams.MinLength, Is.EqualTo(testCase.MinLength));
+            Assert.That(digestionParams.MaxLength, Is.EqualTo(testCase.MaxLength));
+
+            digestionParams.MaxModificationIsoforms = 2048;
+            digestionParams.MaxMods = 3;
+            Assert.That(digestionParams.MaxModificationIsoforms, Is.EqualTo(2048));
+            Assert.That(digestionParams.MaxMods, Is.EqualTo(3));
+
+            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), new List<Modification>());
+            Assert.That(digestionProducts.Count(), Is.EqualTo(testCase.DigestionProductCount));
+        }
+
+        #endregion
+
         #region NucleicAcid
 
 
@@ -403,7 +426,6 @@ namespace Test.Transcriptomics
                 Assert.That(productMass, Is.EqualTo(testCaseCaseMass).Within(0.01));
             }
         }
-
 
         #endregion
     }
