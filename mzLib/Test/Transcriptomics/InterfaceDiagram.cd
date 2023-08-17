@@ -28,6 +28,7 @@
   <Class Name="Proteomics.Protein">
     <Position X="2.25" Y="6.25" Width="3.25" />
     <TypeIdentifier />
+    <Lollipop Position="0.2" />
   </Class>
   <Class Name="MassSpectrometry.DigestionAgent">
     <Position X="5.5" Y="15.75" Width="2" />
@@ -44,14 +45,12 @@
   <Class Name="Transcriptomics.RnaDigestionParams">
     <Position X="10.5" Y="19.25" Width="1.75" />
     <TypeIdentifier />
-  </Class>
-  <Class Name="MassSpectrometry.DigestionParametersBase">
-    <Position X="12" Y="15.75" Width="1.5" />
-    <TypeIdentifier />
+    <Lollipop Position="0.2" />
   </Class>
   <Class Name="Proteomics.ProteolyticDigestion.DigestionParams">
     <Position X="12.75" Y="19.25" Width="2.75" />
     <TypeIdentifier />
+    <Lollipop Position="0.2" />
   </Class>
   <Interface Name="MassSpectrometry.IProduct">
     <Position X="18.75" Y="2" Width="2.75" />
@@ -62,7 +61,11 @@
     <TypeIdentifier />
   </Interface>
   <Interface Name="MassSpectrometry.IPrecursor">
-    <Position X="11.75" Y="2" Width="2.5" />
+    <Position X="11.75" Y="0.5" Width="2.5" />
+    <TypeIdentifier />
+  </Interface>
+  <Interface Name="MassSpectrometry.IDigestionParams">
+    <Position X="11.75" Y="16.5" Width="2" />
     <TypeIdentifier />
   </Interface>
   <Font Name="Segoe UI" Size="9" />

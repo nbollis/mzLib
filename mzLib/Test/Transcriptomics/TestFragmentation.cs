@@ -25,7 +25,9 @@ namespace Test.Transcriptomics
         [TestCaseSource(nameof(GetSixMerIndividualFragmentTypeTestCases))]
         public void TestGetNeutralFragments(SixmerTestCase testCase)
         {
-            RNA rna = new(testCase.Sequence);
+            var rna = new RNA("GUACUG")
+                .Digest(new RnaDigestionParams(), new List<Modification>(), new List<Modification>())
+                .First() as OligoWithSetMods ?? throw new NullReferenceException();
 
             var neutralFragments = rna.GetNeutralFragments(testCase.Type).ToList();
             for (int i = 1; i < neutralFragments.Count; i++)
@@ -38,7 +40,9 @@ namespace Test.Transcriptomics
         [Test]
         public void TestFragmentation_Unmodified()
         {
-            RNA rna = new RNA("GUACUG");
+            var rna = new RNA("GUACUG")
+                .Digest(new RnaDigestionParams(), new List<Modification>(), new List<Modification>())
+                .First();
             List<IProduct> products = new();
 
             // both termini
@@ -61,7 +65,9 @@ namespace Test.Transcriptomics
         [TestCaseSource(nameof(GetSixMerIndividualFragmentTypeTestCases))]
         public void TestRnaFragments(SixmerTestCase testCase)
         {
-            RNA rna = new("GUACUG");
+            var rna = new RNA("GUACUG")
+                .Digest(new RnaDigestionParams(), new List<Modification>(), new List<Modification>())
+                .First() as OligoWithSetMods ?? throw new NullReferenceException();
             List<RnaProduct> products = rna.GetNeutralFragments(testCase.Type).Select(p => (RnaProduct)p).ToList();
 
             for (int i = 0; i < products.Count; i++)
@@ -88,7 +94,9 @@ namespace Test.Transcriptomics
         [TestCaseSource(nameof(GetSixMerIndividualFragmentTypeTestCases))]
         public void TestRnaFragmentNumbers(SixmerTestCase testCase)
         {
-            RNA rna = new("GUACUG");
+            var rna = new RNA("GUACUG")
+                .Digest(new RnaDigestionParams(), new List<Modification>(), new List<Modification>())
+                .First() as OligoWithSetMods ?? throw new NullReferenceException();
             List<RnaProduct> products = rna.GetNeutralFragments(testCase.Type).Select(p => (RnaProduct)p).ToList();
 
             for (int i = 0; i < products.Count; i++)

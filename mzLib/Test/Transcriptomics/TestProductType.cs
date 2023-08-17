@@ -245,7 +245,9 @@ namespace Test.Transcriptomics
         [TestCase(ProductType.z, ProductType.zWaterLoss)]
         public void EnsureWaterLossMassesAreCorrect(ProductType normal, ProductType waterLoss)
         {
-            RNA rna = new("GUACUG");
+            var rna = new RNA("GUACUG")
+                .Digest(new RnaDigestionParams(), new List<Modification>(), new List<Modification>())
+                .First() as OligoWithSetMods ?? throw new NullReferenceException();
 
             List<IProduct> normalFragments = rna.GetNeutralFragments(normal).ToList();
             List<IProduct> waterLossFragments = rna.GetNeutralFragments(waterLoss).ToList();

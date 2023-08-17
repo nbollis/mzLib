@@ -116,13 +116,98 @@ namespace Transcriptomics
         public int NumFixedMods { get; }
         public int NumVariableMods => NumMods - NumFixedMods;
 
-
+        /// <summary>
+        /// Generates theoretical fragments for given dissociation type for this peptide. 
+        /// The "products" parameter is filled with these fragments.
+        /// </summary>
         public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus,
             List<IProduct> products)
         {
+            products.Clear();
 
+            List<ProductType> fivePrimeProductTypes =
+                dissociationType.GetRnaTerminusSpecificProductTypesFromDissociation(FragmentationTerminus.FivePrime);
+            List<ProductType> threePrimeProductTypes =
+                dissociationType.GetRnaTerminusSpecificProductTypesFromDissociation(FragmentationTerminus.ThreePrime);
+
+            bool calculateFivePrime =
+                fragmentationTerminus is FragmentationTerminus.FivePrime or FragmentationTerminus.Both;
+            bool calculateThreePrime =
+                fragmentationTerminus is FragmentationTerminus.ThreePrime or FragmentationTerminus.Both;
+
+            if (calculateFivePrime)
+            {
+                foreach (var type in fivePrimeProductTypes)
+                {
+                    products.AddRange(GetNeutralFragments(type));
+                }
+            }
+
+            if (calculateThreePrime)
+            {
+                foreach (var type in threePrimeProductTypes)
+                {
+                    products.AddRange(GetNeutralFragments(type));
+                }
+            }
         }
 
-   
+        /// <summary>
+        /// Generates theoretical internal fragments for given dissociation type for this peptide. 
+        /// The "products" parameter is filled with these fragments.
+        /// The "minLengthOfFragments" parameter is the minimum number of nucleic acids for an internal fragment to be included
+        /// </summary>
+        public void FragmentInternally(DissociationType dissociationType, int minLengthOfFragments,
+            List<IProduct> products)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Calculates all the fragments of the types you specify
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        internal IEnumerable<IProduct> GetNeutralFragments(ProductType type)
+        {
+            // determine mass of piece remaining after fragmentation
+            double monoMass = type.GetRnaMassShiftFromProductType();
+
+            // determine mass of terminal cap and add to fragment
+            bool isThreePrimeTerminal = type.GetRnaTerminusType() == FragmentationTerminus.ThreePrime;
+            IHasChemicalFormula terminus = isThreePrimeTerminal ? ThreePrimeTerminus : FivePrimeTerminus;
+            monoMass += terminus.MonoisotopicMass;
+
+            // determine mass of each polymer component that is contained within the fragment and add to fragment
+            var parent = Parent as NucleicAcid ?? throw new NullReferenceException();
+            bool first = true; //set first to true to hand the terminus mod first
+            for (int i = 0; i <= BaseSequence.Length - 1; i++)
+            {
+
+                int naIndex = isThreePrimeTerminal ? Length - i : i - 1;
+                if (first)
+                {
+                    first = false; //set to false so only handled once
+                    continue;
+                }
+                monoMass += parent.NucleicAcids[naIndex].MonoisotopicMass;
+
+                if (i < 1)
+                    continue;
+
+                var previousNucleotide = parent.NucleicAcids[naIndex];
+
+                double neutralLoss = 0;
+                if (type.ToString().Contains("Base"))
+                {
+                    neutralLoss = previousNucleotide.BaseChemicalFormula.MonoisotopicMass;
+                }
+
+                yield return new RnaProduct(type,
+                    isThreePrimeTerminal ? FragmentationTerminus.ThreePrime : FragmentationTerminus.FivePrime,
+                    monoMass - neutralLoss, i,
+                    isThreePrimeTerminal ? BaseSequence.Length - i : i, 0, null, 0);
+            }
+        }
     }
 }

@@ -16,6 +16,7 @@ namespace MassSpectrometry
         string DatabaseFilePath { get; }
         bool IsDecoy { get; }
         bool IsContaminant { get; }
+        
 
         IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }
         IEnumerable<IPrecursor> Digest(IDigestionParams digestionParams, List<Modification> allKnownFixedModifications,

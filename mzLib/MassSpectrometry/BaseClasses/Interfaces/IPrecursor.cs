@@ -43,7 +43,12 @@ namespace MassSpectrometry
 
         IBioPolymer Parent { get; }
 
-        public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<IProduct> products);
+        public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus,
+            List<IProduct> products);
+
+        public void FragmentInternally(DissociationType dissociationType, int minLengthOfFragments,
+            List<IProduct> products);
+
 
         public string DetermineFullSequence()
         {
