@@ -135,11 +135,12 @@ namespace Transcriptomics
             bool calculateThreePrime =
                 fragmentationTerminus is FragmentationTerminus.ThreePrime or FragmentationTerminus.Both;
 
+            var sequence = (Parent as NucleicAcid)!.NucleicAcids[(OneBasedStartResidue - 1)..OneBasedEndResidue];
             if (calculateFivePrime)
             {
                 foreach (var type in fivePrimeProductTypes)
                 {
-                    products.AddRange(GetNeutralFragments(type));
+                    products.AddRange(GetNeutralFragments(type, sequence));
                 }
             }
 
@@ -147,7 +148,7 @@ namespace Transcriptomics
             {
                 foreach (var type in threePrimeProductTypes)
                 {
-                    products.AddRange(GetNeutralFragments(type));
+                    products.AddRange(GetNeutralFragments(type, sequence));
                 }
             }
         }
@@ -168,8 +169,9 @@ namespace Transcriptomics
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        internal IEnumerable<IProduct> GetNeutralFragments(ProductType type)
+        internal IEnumerable<IProduct> GetNeutralFragments(ProductType type, Nucleotide[]? sequence = null)
         {
+            sequence ??= (Parent as NucleicAcid)!.NucleicAcids[(OneBasedStartResidue - 1)..OneBasedEndResidue];
             // determine mass of piece remaining after fragmentation
             double monoMass = type.GetRnaMassShiftFromProductType();
 
@@ -179,23 +181,21 @@ namespace Transcriptomics
             monoMass += terminus.MonoisotopicMass;
 
             // determine mass of each polymer component that is contained within the fragment and add to fragment
-            var parent = Parent as NucleicAcid ?? throw new NullReferenceException();
             bool first = true; //set first to true to hand the terminus mod first
             for (int i = 0; i <= BaseSequence.Length - 1; i++)
             {
-
                 int naIndex = isThreePrimeTerminal ? Length - i : i - 1;
                 if (first)
                 {
                     first = false; //set to false so only handled once
                     continue;
                 }
-                monoMass += parent.NucleicAcids[naIndex].MonoisotopicMass;
+                monoMass += sequence[naIndex].MonoisotopicMass;
 
                 if (i < 1)
                     continue;
 
-                var previousNucleotide = parent.NucleicAcids[naIndex];
+                var previousNucleotide = sequence[naIndex];
 
                 double neutralLoss = 0;
                 if (type.ToString().Contains("Base"))

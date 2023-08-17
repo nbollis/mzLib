@@ -78,11 +78,6 @@ namespace Transcriptomics
         private Nucleotide[] _nucleicAcids;
 
         /// <summary>
-        /// The nucleic acid sequence with modification names interspersed. Is ignored if 'StoreSequenceString' is false
-        /// </summary>
-        private string _sequenceWithMods;
-
-        /// <summary>
         /// The nucleic acid sequence. Is ignored if 'StoreSequenceString' is false
         /// </summary>
         private string _sequence;
@@ -125,6 +120,7 @@ namespace Transcriptomics
 
 
         // TODO: These interface members
+        public string Name { get; }
         public string DatabaseFilePath { get; }
         public bool IsDecoy { get; }
         public bool IsContaminant { get; }
@@ -146,8 +142,6 @@ namespace Transcriptomics
         #endregion
 
         #region Nucleic Acid Sequence
-
-        public string Name { get; }
 
         /// <summary>
         /// Gets the base nucleic acid sequence
@@ -312,8 +306,7 @@ namespace Transcriptomics
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
             return _5PrimeTerminus.Equals(other._5PrimeTerminus)
-                   && _3PrimeTerminus.Equals(other._3PrimeTerminus)
-                   && _sequenceWithMods == other._sequenceWithMods;
+                   && _3PrimeTerminus.Equals(other._3PrimeTerminus);
         }
 
         public override bool Equals(object? obj)
@@ -326,7 +319,7 @@ namespace Transcriptomics
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(_5PrimeTerminus, _3PrimeTerminus, _sequenceWithMods);
+            return HashCode.Combine(_5PrimeTerminus, _3PrimeTerminus, _sequence);
         }
 
         #endregion

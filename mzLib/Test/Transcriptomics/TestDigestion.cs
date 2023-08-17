@@ -3,12 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MassSpectrometry;
-using NuGet.Frameworks;
 using NUnit.Framework;
-using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 
 namespace Test.Transcriptomics
@@ -17,34 +13,35 @@ namespace Test.Transcriptomics
     [ExcludeFromCodeCoverage]
     public class TestDigestion
     {
-        public record RnaDigestionTestCase(string BaseSequence, string Enzyme, int MissedCleavages, int MinLength, int MaxLength, int DigestionProductCount,
+        public record RnaDigestionTestCase(string BaseSequence, string Enzyme, int MissedCleavages, int MinLength,
+            int MaxLength, int DigestionProductCount,
             double[] MonoMasses, string[] Sequences);
 
         public static IEnumerable<RnaDigestionTestCase> GetTestCases()
         {
             // 6bp Top Down
-            yield return new RnaDigestionTestCase("GUACUG", "top-down", 
-                0, 1, 6, 1, 
-                new[] { 1874.28 }, 
+            yield return new RnaDigestionTestCase("GUACUG", "top-down",
+                0, 1, 6, 1,
+                new[] { 1874.28 },
                 new[] { "GUACUG" });
             // 6bp Rnase T1, normal
-            yield return new RnaDigestionTestCase("GUACUG", "RNase T1", 
-                0, 1, 6, 2, 
+            yield return new RnaDigestionTestCase("GUACUG", "RNase T1",
+                0, 1, 6, 2,
                 new[] { 363.057, 1529.234 },
                 new[] { "G", "UACUG" });
             // 6bp Cusativin, normal
-            yield return new RnaDigestionTestCase("GUACUG", "Cusativin", 
-                0, 1, 6, 2, 
+            yield return new RnaDigestionTestCase("GUACUG", "Cusativin",
+                0, 1, 6, 2,
                 new[] { 1303.175, 589.116 },
                 new[] { "GUAC", "UG" });
             // 6bp Rnase T1, one product too short
-            yield return new RnaDigestionTestCase("GUACUG", "RNase T1", 
-                0, 3, 6, 1, 
+            yield return new RnaDigestionTestCase("GUACUG", "RNase T1",
+                0, 3, 6, 1,
                 new[] { 1529.234 },
                 new[] { "UACUG" });
             // 6bp Rnase T1, one product too long
-            yield return new RnaDigestionTestCase("GUACUG", "RNase T1", 
-                0, 1, 2, 1, 
+            yield return new RnaDigestionTestCase("GUACUG", "RNase T1",
+                0, 1, 2, 1,
                 new[] { 363.057 },
                 new[] { "G" });
             // 6bp Rnase T1, 1 missed cleavage
@@ -77,11 +74,10 @@ namespace Test.Transcriptomics
                 0, 1, int.MaxValue, 6,
                 new[] { 363.057, 1609.200, 2219.282, 669.082, 1021.161, 572.137 },
                 new[] { "G", "UACUG", "CCUCUAG", "UG", "AAG", "CA" });
-
-  
         }
 
-        public static string rnaseTsvpath = @"C:\Users\Nic\source\repos\mzLib\mzLib\Transcriptomics\Digestion\rnases.tsv";
+        public static string rnaseTsvpath =
+            @"C:\Users\Nic\source\repos\mzLib\mzLib\Transcriptomics\Digestion\rnases.tsv";
 
         [OneTimeSetUp]
         public void OneTimeSetup()
@@ -104,7 +100,8 @@ namespace Test.Transcriptomics
         {
             RNA rna = new RNA(testCase.BaseSequence);
             Rnase rnase = RnaseDictionary.Dictionary[testCase.Enzyme];
-            var digestionProducts = rnase.GetUnmodifiedOligos(rna, testCase.MissedCleavages, testCase.MinLength, testCase.MaxLength);
+            var digestionProducts =
+                rnase.GetUnmodifiedOligos(rna, testCase.MissedCleavages, testCase.MinLength, testCase.MaxLength);
 
             Assert.That(digestionProducts.Count(), Is.EqualTo(testCase.DigestionProductCount));
         }
@@ -116,7 +113,8 @@ namespace Test.Transcriptomics
 
             RNA rna = new RNA(testCase.BaseSequence);
             Rnase rnase = RnaseDictionary.Dictionary[testCase.Enzyme];
-            var digestionProducts = rnase.GetUnmodifiedOligos(rna, testCase.MissedCleavages, testCase.MinLength, testCase.MaxLength);
+            var digestionProducts =
+                rnase.GetUnmodifiedOligos(rna, testCase.MissedCleavages, testCase.MinLength, testCase.MaxLength);
 
             Assert.That(digestionProducts.Count, Is.EqualTo(testCase.Sequences.Length));
             for (var i = 0; i < digestionProducts.Count; i++)
@@ -159,7 +157,7 @@ namespace Test.Transcriptomics
 
         #region NucleolyticOligo
 
-        [Test] 
+        [Test]
         public void TestNucleolyticOligoProperties_FivePrimeDigestionProduct()
         {
             RNA rna = new("GUACUG");
@@ -215,6 +213,7 @@ namespace Test.Transcriptomics
             Assert.That(oligo.PreviousResidue, Is.EqualTo('G'));
             Assert.That(oligo.ToString(), Is.EqualTo(oligo.BaseSequence));
         }
+
         [Test]
         public void TestNucleolyticOligoProperties_TopDownDigestionProduct()
         {
@@ -240,7 +239,112 @@ namespace Test.Transcriptomics
 
         // TODO: this class
 
+        private static (string Sequence, int FragmentNumber, ProductType Type, double Mass)[] DigestFragmentTestCases =>
+            new (string Sequence, int FragmentNumber, ProductType Type, double Mass)[]
+            {
+                ("UAG", 1, ProductType.aBaseLoss, 114.031), ("UAG", 2, ProductType.aBaseLoss, 420.056),
+                ("UAG", 1, ProductType.dWaterLoss, 306.025), ("UAG", 2, ProductType.dWaterLoss, 635.077),
+                ("UAG", 1, ProductType.w, 443.023), ("UAG", 2, ProductType.w, 772.075),
+                ("UAG", 1, ProductType.y,  363.057), ("UAG", 2, ProductType.y, 692.109),
 
+                ("UCG", 1, ProductType.aBaseLoss, 114.031), ("UCG", 2, ProductType.aBaseLoss, 420.056),
+                ("UCG", 1, ProductType.dWaterLoss, 306.025), ("UCG", 2, ProductType.dWaterLoss, 611.066),
+                ("UCG", 1, ProductType.w, 443.023), ("UCG", 2, ProductType.w, 748.064),
+                ("UCG", 1, ProductType.y,  363.057), ("UCG", 2, ProductType.y, 668.098),
+
+                ("UUG", 1, ProductType.aBaseLoss, 114.031), ("UUG", 2, ProductType.aBaseLoss, 420.056),
+                ("UUG", 1, ProductType.dWaterLoss, 306.025), ("UUG", 2, ProductType.dWaterLoss, 612.050),
+                ("UUG", 1, ProductType.w, 443.023), ("UUG", 2, ProductType.w, 749.048),
+                ("UUG", 1, ProductType.y,  363.057), ("UUG", 2, ProductType.y, 669.082),
+
+                ("AUAG", 1, ProductType.aBaseLoss, 114.031), ("AUAG", 2, ProductType.aBaseLoss, 443.083), ("AUAG", 3, ProductType.aBaseLoss, 749.108),
+                ("AUAG", 1, ProductType.dWaterLoss, 329.052), ("AUAG", 2, ProductType.dWaterLoss, 635.077), ("AUAG", 3, ProductType.dWaterLoss, 964.129),
+                ("AUAG", 1, ProductType.w, 363.057), ("AUAG", 2, ProductType.w, 692.109), ("AUAG", 3, ProductType.w, 998.134),
+                ("AUAG", 1, ProductType.y,  283.091), ("AUAG", 2, ProductType.y, 612.143), ("AUAG", 3, ProductType.y, 918.168),
+            };
+
+        [Test] // test values calculated with http://rna.rega.kuleuven.be/masspec/mongo.htm
+        [TestCase("UAGUCGUUGAUAG", 4140.555, new[] {"UAG", "UCG", "UUG", "AUAG" }, 
+            new[] {998.134, 974.123, 975.107, 1247.220 })]
+        public static void TestDigestionAndFragmentation(string sequence, double monoMass,
+            string[] digestionProductSequences, double[] digestionProductMasses)
+        {
+            RNA rna = new(sequence);
+            Assert.That(rna.MonoisotopicMass, Is.EqualTo(monoMass).Within(0.01));
+
+            // digest RNA
+            var digestionParams = new RnaDigestionParams("RNase T1");
+            var products = rna.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Select(p => (OligoWithSetMods)p).ToList();
+            Assert.That(products.Count, Is.EqualTo(digestionProductSequences.Length));
+
+            // ensure digestion sequence and masses are correct
+            for (var index = 0; index < products.Count; index++)
+            {
+                var digestionProduct = products[index];
+                Assert.That(digestionProduct.BaseSequence, Is.EqualTo(digestionProductSequences[index]));
+                Assert.That(digestionProduct.MonoisotopicMass, Is.EqualTo(digestionProductMasses[index]).Within(0.01));
+
+                List<IProduct> fragments = new();
+                digestionProduct.Fragment(DissociationType.CID, FragmentationTerminus.Both, fragments);
+
+                List<(int FragmentNumber, ProductType Type, double Mass)[]> ughh = new();
+
+                // test that fragments are correct
+                var fragmentsToCompare = DigestFragmentTestCases
+                    .Where(p => p.Sequence.Equals(digestionProduct.BaseSequence)).ToList();
+                for (var i = 0; i < fragments.Count; i++)
+                {
+                    var fragment = fragments[i];
+                    var theoreticalFragment = fragmentsToCompare[i];
+                    Assert.That(fragment.MonoisotopicMass, Is.EqualTo(theoreticalFragment.Mass).Within(0.01));
+                    Assert.That(fragment.FragmentNumber, Is.EqualTo(theoreticalFragment.FragmentNumber));
+                    Assert.That(fragment.ProductType, Is.EqualTo(theoreticalFragment.Type));
+                    Assert.That(fragment.FragmentNumber, Is.EqualTo(theoreticalFragment.FragmentNumber));
+                    if (fragment.Terminus == FragmentationTerminus.FivePrime)
+                        Assert.That(fragment.AminoAcidPosition, Is.EqualTo(theoreticalFragment.FragmentNumber));
+                    else
+                        Assert.That(fragment.AminoAcidPosition, Is.EqualTo(digestionProductSequences[index].Length - theoreticalFragment.FragmentNumber));
+                }
+            }
+        }
+
+        [Test]
+        [TestCase("UAGUCGUUGAUAG", new[] { "UAG", "UCG", "UUG", "AUAG" },
+            new[] {1, 4, 7, 10}, new[] {3, 6, 9, 13}, new[] {'-', 'G', 'G', 'G'},
+            new[] {'U', 'U', 'A', '-'})]
+        public static void TestOligoWithSetMods_AAPositions(string sequence, string[] digestionProductSequences,
+        int[] startResidue, int[] endResidue, char[] preciousResidue, char[] nextResidue)
+        {
+            RNA rna = new RNA(sequence);
+            var digestionProducts = rna.Digest(new RnaDigestionParams("RNase T1"), new List<Modification>(),
+                new List<Modification>()).Select(p => (OligoWithSetMods)p).ToList();
+            for (var index = 0; index < digestionProducts.Count; index++)
+            {
+                var digestionProduct = digestionProducts[index];
+                Assert.That(digestionProduct.BaseSequence, Is.EqualTo(digestionProductSequences[index]));
+                Assert.That(digestionProduct.OneBasedStartResidue, Is.EqualTo(startResidue[index]));
+                Assert.That(digestionProduct.OneBasedEndResidue, Is.EqualTo(endResidue[index]));
+                Assert.That(digestionProduct.PreviousResidue, Is.EqualTo(preciousResidue[index]));
+                Assert.That(digestionProduct.NextResidue, Is.EqualTo(nextResidue[index]));
+            }
+        }
+
+        [Test]
+        [TestCase("UAGUCGUUGAUAG")]
+        public static void TestOligoWithSetMods_PropertiesWithTopDownDigestion(string sequence)
+        {
+            var rna = new RNA(sequence);
+            var oligoWithSetMods =
+                rna.Digest(new RnaDigestionParams(), new List<Modification>(), new List<Modification>())
+                        .First() as OligoWithSetMods ?? throw new NullReferenceException();
+
+            Assert.That(rna.BaseSequence, Is.EqualTo(oligoWithSetMods.BaseSequence));
+            Assert.That(rna.ThreePrimeTerminus, Is.EqualTo(oligoWithSetMods.ThreePrimeTerminus));
+            Assert.That(rna.FivePrimeTerminus, Is.EqualTo(oligoWithSetMods.FivePrimeTerminus));
+            Assert.That(rna.ThisChemicalFormula, Is.EqualTo(oligoWithSetMods.ThisChemicalFormula));
+            Assert.That(rna.Length, Is.EqualTo(oligoWithSetMods.Length));
+        }
 
         #endregion
 
