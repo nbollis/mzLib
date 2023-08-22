@@ -43,7 +43,7 @@ namespace MassSpectrometry
         bBaseLoss,
         c,
         cWaterLoss,
-        cBaseloss,
+        cBaseLoss,
         d,
         dWaterLoss,
         dBaseLoss,

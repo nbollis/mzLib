@@ -64,7 +64,7 @@ namespace Test.Transcriptomics
             yield return new SixmerTestCase("GUACUG", ProductType.bBaseLoss,
                 new[] { 130.027, 475.074, 781.099, 1110.152, 1415.193 }, 
                 new[] { "C5H6O4", "C15H18N5O11P", "C24H29N7O19P2", "C34H41N12O25P3", "C43H53N15O32P4" });
-            yield return new SixmerTestCase("GUACUG", ProductType.cBaseloss, 
+            yield return new SixmerTestCase("GUACUG", ProductType.cBaseLoss, 
                 new[] { 193.998, 539.045, 845.071, 1174.123, 1479.164 },
                 new[] { "C5H7O6P", "C15H19N5O13P2", "C24H30N7O21P3", "C34H42N12O27P4", "C43H54N15O34P5" });
             yield return new SixmerTestCase("GUACUG", ProductType.dBaseLoss,

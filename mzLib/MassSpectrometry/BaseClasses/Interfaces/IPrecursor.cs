@@ -23,6 +23,7 @@ namespace MassSpectrometry
 
         int OneBasedStartResidue { get; }
         int OneBasedEndResidue { get; }
+        int MissedCleavages { get; }
         CleavageSpecificity CleavageSpecificityForFdrCategory { get; set; }
         char PreviousResidue { get; }
         char NextResidue { get; }

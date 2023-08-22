@@ -170,7 +170,7 @@ namespace Transcriptomics
         /// <param name="type">product type to get neutral fragments from</param>
         /// <param name="sequence">Sequence to generate fragments from, will be calculated from the parent if left null</param>
         /// <returns></returns>
-        internal IEnumerable<IProduct> GetNeutralFragments(ProductType type, Nucleotide[]? sequence = null)
+        public IEnumerable<IProduct> GetNeutralFragments(ProductType type, Nucleotide[]? sequence = null)
         {
             sequence ??= (Parent as NucleicAcid)!.NucleicAcids[(OneBasedStartResidue - 1)..OneBasedEndResidue];
             // determine mass of piece remaining after fragmentation

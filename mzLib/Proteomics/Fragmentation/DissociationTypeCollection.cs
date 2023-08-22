@@ -110,7 +110,7 @@ namespace Proteomics.Fragmentation
             {ProductType.aBaseLoss , null},
             {ProductType.bBaseLoss , null},
             {ProductType.cWaterLoss , null},
-            {ProductType.cBaseloss , null},
+            {ProductType.cBaseLoss , null},
             {ProductType.d , null},
             {ProductType.dWaterLoss , null},
             {ProductType.dBaseLoss , null},
@@ -183,7 +183,7 @@ namespace Proteomics.Fragmentation
                         case ProductType.aBaseLoss:
                         case ProductType.bBaseLoss:
                         case ProductType.cWaterLoss:
-                        case ProductType.cBaseloss:
+                        case ProductType.cBaseLoss:
                         case ProductType.d:
                         case ProductType.dWaterLoss:
                         case ProductType.dBaseLoss:

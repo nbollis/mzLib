@@ -74,7 +74,7 @@ namespace Transcriptomics
                 //fragment - Base chemical formula is the corresponding fragment chemical formula subtracing 1 H as H is lost when base is removed
                 { ProductType.aBaseLoss, ChemicalFormula.ParseFormula("H-2") }, // "H-1" -H 
                 { ProductType.bBaseLoss, ChemicalFormula.ParseFormula("O1H-2") }, //"OH1" -H
-                { ProductType.cBaseloss, ChemicalFormula.ParseFormula("O3H-1P") }, //"O3P" -H
+                { ProductType.cBaseLoss, ChemicalFormula.ParseFormula("O3H-1P") }, //"O3P" -H
                 { ProductType.dBaseLoss, ChemicalFormula.ParseFormula("O4H-1P") }, //"O4H2P" -H
 
                 { ProductType.wBaseLoss, ChemicalFormula.ParseFormula("H-2") }, //"H"-H
@@ -102,7 +102,7 @@ namespace Transcriptomics
                 case ProductType.bBaseLoss:
                 case ProductType.c:
                 case ProductType.cWaterLoss:
-                case ProductType.cBaseloss:
+                case ProductType.cBaseLoss:
                 case ProductType.d:
                 case ProductType.dWaterLoss:
                 case ProductType.dBaseLoss:
@@ -147,7 +147,7 @@ namespace Transcriptomics
                     {
                         ProductType.a, ProductType.aWaterLoss, ProductType.aBaseLoss,
                         ProductType.b, ProductType.bWaterLoss, ProductType.bBaseLoss,
-                        ProductType.c, ProductType.cWaterLoss, ProductType.cBaseloss,
+                        ProductType.c, ProductType.cWaterLoss, ProductType.cBaseLoss,
                         ProductType.d, ProductType.dWaterLoss, ProductType.dBaseLoss, 
                     }
                 },
@@ -166,7 +166,7 @@ namespace Transcriptomics
 
                         ProductType.a, ProductType.aWaterLoss, ProductType.aBaseLoss,
                         ProductType.b, ProductType.bWaterLoss, ProductType.bBaseLoss,
-                        ProductType.c, ProductType.cWaterLoss, ProductType.cBaseloss,
+                        ProductType.c, ProductType.cWaterLoss, ProductType.cBaseLoss,
                         ProductType.d, ProductType.dWaterLoss, ProductType.dBaseLoss, 
                         ProductType.w, ProductType.wWaterLoss, ProductType.wBaseLoss,
                         ProductType.x, ProductType.xWaterLoss, ProductType.xBaseLoss,

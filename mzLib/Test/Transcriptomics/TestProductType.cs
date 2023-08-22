@@ -28,7 +28,7 @@ namespace Test.Transcriptomics
         {
             ProductType.a, ProductType.aWaterLoss, ProductType.aBaseLoss,
             ProductType.b, ProductType.bWaterLoss, ProductType.bBaseLoss,
-            ProductType.c, ProductType.cWaterLoss, ProductType.cBaseloss,
+            ProductType.c, ProductType.cWaterLoss, ProductType.cBaseLoss,
             ProductType.d, ProductType.dWaterLoss, ProductType.dBaseLoss,
         })]
         [TestCase(FragmentationTerminus.ThreePrime, new[]
@@ -113,7 +113,7 @@ namespace Test.Transcriptomics
                         Assert.AreEqual(ClassExtensions.RoundedDouble(ChemicalFormula.ParseFormula("O2P").MonoisotopicMass, 2).Value, mass);
                         break;
 
-                    case ProductType.cBaseloss:
+                    case ProductType.cBaseLoss:
                         mass = ClassExtensions.RoundedDouble(p.GetRnaMassShiftFromProductType(), 2).Value;
                         Assert.AreEqual(ClassExtensions.RoundedDouble(ChemicalFormula.ParseFormula("O3H-1P").MonoisotopicMass, 2).Value, mass);
                         break;
@@ -194,7 +194,7 @@ namespace Test.Transcriptomics
                     case ProductType.bBaseLoss:
                     case ProductType.c:
                     case ProductType.cWaterLoss:
-                    case ProductType.cBaseloss:
+                    case ProductType.cBaseLoss:
                     case ProductType.d:
                     case ProductType.dWaterLoss:
                     case ProductType.dBaseLoss:
