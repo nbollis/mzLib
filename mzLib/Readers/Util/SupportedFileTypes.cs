@@ -12,7 +12,8 @@ namespace Readers
         ThermoRaw,
         MzML,
         Mgf,
-        BrukerD
+        BrukerD,
+        ModomicsCsv,
     }
 
     public static class SupportedFileTypeExtensions
@@ -36,6 +37,7 @@ namespace Readers
                 SupportedFileType.MzML => ".mzML",
                 SupportedFileType.Mgf => ".mgf",
                 SupportedFileType.BrukerD => ".d",
+                SupportedFileType.ModomicsCsv => ".csv",
                 _ => throw new MzLibException("File type not supported")
             };
         }
@@ -58,6 +60,8 @@ namespace Readers
                 case ".csv":
                     if (filePath.EndsWith(SupportedFileType.Mzrt_TopFd.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
                         return SupportedFileType.Mzrt_TopFd;
+                    if (new StreamReader(filePath).ReadLine()?.Contains("ID,MODOMICS") ?? false)
+                        return SupportedFileType.ModomicsCsv;
                     throw new MzLibException("Csv file type not supported");
 
                 case ".tsv":
