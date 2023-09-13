@@ -25,6 +25,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -141,6 +142,28 @@ namespace UsefulProteomicsDatabases
             }
         }
 
+        public static void UpdateModomics(string modomicsLocation)
+        {
+            DownloadModomics(modomicsLocation); 
+            if (!File.Exists(modomicsLocation))
+            {
+                Console.WriteLine("modomics database did not exist, writing to disk");
+                File.Move(modomicsLocation + ".temp", modomicsLocation);
+                return;
+            }
+            if (FilesAreEqual_Hash(modomicsLocation + ".temp", modomicsLocation))
+            {
+                Console.WriteLine("modomics database is up to date, doing nothing");
+                File.Delete(modomicsLocation + ".temp");
+            }
+            else
+            {
+                Console.WriteLine("modomics database updated, saving old version as backup");
+                File.Move(modomicsLocation, modomicsLocation + DateTime.Now.ToString("dd-MMM-yyyy-HH-mm-ss"));
+                File.Move(modomicsLocation + ".temp", modomicsLocation);
+            }
+        }
+
         public static IEnumerable<OboTerm> ReadPsiModFile(string psiModOboLocation)
         {
             OboParser oboParser = new();
@@ -234,6 +257,15 @@ namespace UsefulProteomicsDatabases
             return PtmListLoader.ReadModsFromFile(uniprotLocation, formalChargesDictionary, out var _).OfType<Modification>();
         }
 
+        public static IEnumerable<Modification> LoadModomics(string modomicsLocation)
+        {
+            if (!File.Exists(modomicsLocation))
+                UpdateModomics(modomicsLocation);
+
+            // TODO: Read that shit in if it exisits
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Retrieves data using async/await
         /// </summary>
@@ -300,6 +332,41 @@ namespace UsefulProteomicsDatabases
         private static void DownloadUniprot(string uniprotLocation)
         {
             DownloadContent(@"http://uniprot.org/docs/ptmlist.txt", uniprotLocation + ".temp");
+        }
+
+
+        private static string NaturalModsPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Transcriptomics",
+            "Modomics_NaturalModifications.csv");
+        private static string UnnaturalModsPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Transcriptomics",
+            "Modomics_UnnaturalModifications.csv");
+        public static void DownloadModomics(string modomicsLocation)
+        {
+            StringBuilder sb = new StringBuilder();
+            string modomicsApiUrl = @"https://www.genesilico.pl/modomics/api/modification";
+
+            //using (StreamWriter sw = new (new FileStream(modomicsLocation + ".temp", FileMode.CreateNew))
+            //{
+
+            //}
+
+            // download all modifications and 
+            int index = 1;
+            bool loop = true;
+            while (loop)
+            {
+                var urlRequest = modomicsApiUrl + $"?id={index}";
+                HttpResponseMessage response = AwaitAsync_GetSomeData(urlRequest).GetAwaiter().GetResult();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseText = response.Content.ReadAsStringAsync().Result;
+                    if (responseText.Equals("{}"))
+                        break;
+                    sb.Append(responseText);
+                }
+                
+                index++;
+            }
         }
     }
 }

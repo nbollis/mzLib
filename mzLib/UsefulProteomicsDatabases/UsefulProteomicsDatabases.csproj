@@ -21,6 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Transcriptomics\Modomics_NaturalModifications.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\Modomics_UnnaturalModifications.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="UniProtKB_columnNamesForProgrammaticAccess.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

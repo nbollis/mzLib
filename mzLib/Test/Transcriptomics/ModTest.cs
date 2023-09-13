@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Readers.Transcriptomics;
+using UsefulProteomicsDatabases;
 
 namespace Test.Transcriptomics
 {
@@ -14,10 +15,13 @@ namespace Test.Transcriptomics
         public static string ModomicsPath = @"D:\Projects\RNA\TestData\Databases\Modomics_NaturalModifications.csv";
 
         [Test]
-        public static void TESTNAME()
+        public void TESTNAME()
         {
-            var temp = new ModomicsCsvFile(ModomicsPath);
-            temp.LoadResults();
+            Loaders.DownloadModomics("");
+
+            //var temp = new ModomicsCsvFile(ModomicsPath);
+            //temp.LoadResults();
+            //temp.CallApiToGetAdditionalInformation();
         }
 
     }
