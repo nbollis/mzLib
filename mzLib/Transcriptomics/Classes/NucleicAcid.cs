@@ -125,6 +125,7 @@ namespace Transcriptomics
         public bool IsDecoy { get; }
         public bool IsContaminant { get; }
         public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }
+        public string Organism { get; }
 
 
         /// <summary>

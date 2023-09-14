@@ -16,6 +16,7 @@ namespace MassSpectrometry
         string DatabaseFilePath { get; }
         bool IsDecoy { get; }
         bool IsContaminant { get; }
+        public string Organism { get; }
         
 
         IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }

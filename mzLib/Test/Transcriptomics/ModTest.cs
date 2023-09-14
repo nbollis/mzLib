@@ -12,12 +12,12 @@ namespace Test.Transcriptomics
     [TestFixture]
     public class ModTest
     {
-        public static string ModomicsPath = @"D:\Projects\RNA\TestData\Databases\Modomics_NaturalModifications.csv";
+        public static string ModomicsPath = @"D:\Projects\RNA\TestData\Databases\Modomics\Modomics_NaturalModifications.csv";
 
         [Test]
         public void TESTNAME()
         {
-            Loaders.DownloadModomics("");
+            //Loaders.DownloadModomics("");
 
             //var temp = new ModomicsCsvFile(ModomicsPath);
             //temp.LoadResults();
