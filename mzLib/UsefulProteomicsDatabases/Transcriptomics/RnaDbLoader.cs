@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Transcriptomics;
 using Easy.Common;
 using System.Text.RegularExpressions;
+using Easy.Common.Extensions;
 
 namespace UsefulProteomicsDatabases.Transcriptomics
 {
@@ -19,14 +20,20 @@ namespace UsefulProteomicsDatabases.Transcriptomics
 
     public static class RnaDbLoader
     {
-        public static readonly FastaHeaderFieldRegex ModomicsIdRegex = new FastaHeaderFieldRegex("Id", "", 0, 1);
-        public static readonly FastaHeaderFieldRegex ModomicsNameRegex = new FastaHeaderFieldRegex("Name", @"Name:(?<Name>.+?)\|", 0, 1);
-        public static readonly FastaHeaderFieldRegex ModomicsSOtermRegex = new FastaHeaderFieldRegex("SOterm", @"SOterm:(?<SOterm>.+?)\|", 0, 1);
-        public static readonly FastaHeaderFieldRegex ModomicsRNAtypeRegex = new FastaHeaderFieldRegex("RNAtype", @"Type:(?<Type>.+?)\|", 0, 1);
-        public static readonly FastaHeaderFieldRegex ModomicsRNAsubtypeRegex = new FastaHeaderFieldRegex("RNAsubtype", @"Subtype:(?<Subtype>.+?)\|", 0, 1);
-        public static readonly FastaHeaderFieldRegex ModomicsRNAfeatureRegex = new FastaHeaderFieldRegex("RNAfeature", @"Feature:(?<Feature>.+?)\|", 0, 1);
-        public static readonly FastaHeaderFieldRegex ModomicsOrganismRegex = new FastaHeaderFieldRegex("Organism", @"Species:(?<Species>.+?)\|", 0, 1);
-        public static readonly FastaHeaderFieldRegex ModomicsCellularLocalizationRegex = new FastaHeaderFieldRegex("CellularLocalization", @"Cellular_Localization:(?<Cellular_Localization>.+?)\R", 0, 1);
+
+        public static readonly Dictionary<string, FastaHeaderFieldRegex> ModomicsFieldRegexes =
+            new Dictionary<string, FastaHeaderFieldRegex>()
+            {
+                { "Id", new FastaHeaderFieldRegex("Id", @"id:(?<id>.+?)\|", 0, 1) },
+                { "Name", new FastaHeaderFieldRegex("Name", @"Name:(?<Name>.+?)\|", 0, 1) },
+                { "SOterm", new FastaHeaderFieldRegex("SOterm", @"SOterm:(?<SOterm>.+?)\|", 0, 1) },
+                { "RNAtype", new FastaHeaderFieldRegex("RNAtype", @"Type:(?<Type>.+?)\|", 0, 1) },
+                { "RNAsubtype", new FastaHeaderFieldRegex("RNAsubtype", @"Subtype:(?<Subtype>.+?)\|", 0, 1) },
+                { "RNAfeature", new FastaHeaderFieldRegex("RNAfeature", @"Feature:(?<Feature>.+?)\|", 0, 1) },
+                { "Organism", new FastaHeaderFieldRegex("Organism", @"Species:(?<Species>.+?)$", 0, 1) },
+                { "CellularLocalization", new FastaHeaderFieldRegex("CellularLocalization", @"Cellular_Localization:(?<Cellular_Localization>.+?)\|", 0, 1) },
+            };
+
 
         public static List<RNA> LoadRnaFasta(string rnaDbLocation, bool generateTargets, DecoyType decoyType,
             bool isContaminant, out List<string> errors)
@@ -35,23 +42,11 @@ namespace UsefulProteomicsDatabases.Transcriptomics
             Regex substituteWhitespace = new Regex(@"\s+");
             errors = new List<string>();
             List<RNA> targets = new List<RNA>();
+            string identifierHeader = null;
 
-            string id;
-            string name;
-            string soTerm;
-            string rnaType;
-            string rnaSubType;
-            string rnaFeature;
-            string organism;
-            string cellularLocalization;
-            FastaHeaderFieldRegex idRegex = null;
-            FastaHeaderFieldRegex nameRegex = null;
-            FastaHeaderFieldRegex soTermRegex = null;
-            FastaHeaderFieldRegex rnaTypeRegex = null;
-            FastaHeaderFieldRegex rnaSubTypeRegex = null;
-            FastaHeaderFieldRegex rnaFeatureRegex = null;
-            FastaHeaderFieldRegex organismRegex = null;
-            FastaHeaderFieldRegex cellularLocalizationRegex = null;
+            string name = null;
+            string organism = null;
+            string identifier = null;
 
             string newDbLocation = rnaDbLocation;
 
@@ -69,13 +64,14 @@ namespace UsefulProteomicsDatabases.Transcriptomics
             {
                 StringBuilder sb = null;
                 StreamReader fasta = new StreamReader(fastaFileStream);
+                Dictionary<string, string> regexResults = new();
+                Dictionary<string, FastaHeaderFieldRegex> regexes = null;
 
                 while (true)
                 {
                     string line = "";
                     line = fasta.ReadLine();
                     if (line == null) { break; }
-
 
                     if (line.StartsWith(">"))
                     {
@@ -86,14 +82,8 @@ namespace UsefulProteomicsDatabases.Transcriptomics
                             switch (headerType)
                             {
                                 case RnaFastaHeaderType.Modomics:
-                                    idRegex = ModomicsIdRegex;
-                                    nameRegex = ModomicsNameRegex;
-                                    soTermRegex = ModomicsSOtermRegex;
-                                    rnaTypeRegex = ModomicsRNAtypeRegex;
-                                    rnaSubTypeRegex = ModomicsRNAsubtypeRegex;
-                                    rnaFeatureRegex = ModomicsRNAfeatureRegex;
-                                    organismRegex = ModomicsOrganismRegex;
-                                    cellularLocalizationRegex = ModomicsCellularLocalizationRegex;
+                                    regexes = ModomicsFieldRegexes;
+                                    identifierHeader = "SOterm";
                                     break;
 
                                 case RnaFastaHeaderType.Unknown:
@@ -103,14 +93,14 @@ namespace UsefulProteomicsDatabases.Transcriptomics
                             }
                         }
 
-                        id = ProteinDbLoader.ApplyRegex(idRegex, line);
-                        name = ProteinDbLoader.ApplyRegex(nameRegex, line);
-                        soTerm = ProteinDbLoader.ApplyRegex(soTermRegex, line);
-                        rnaType = ProteinDbLoader.ApplyRegex(rnaTypeRegex, line);
-                        rnaSubType = ProteinDbLoader.ApplyRegex(rnaSubTypeRegex, line);
-                        rnaFeature = ProteinDbLoader.ApplyRegex(rnaFeatureRegex, line);
-                        organism = ProteinDbLoader.ApplyRegex(organismRegex, line);
-                        cellularLocalization = ProteinDbLoader.ApplyRegex(cellularLocalizationRegex, line);
+
+                        regexResults = ParseRegexFields(line, regexes);
+                        name = regexResults["Name"];
+                        regexResults.Remove("Name");
+                        organism = regexResults["Organism"];
+                        regexResults.Remove("Organism");
+                        identifier = regexResults[identifierHeader];
+                        regexResults.Remove(identifierHeader);
 
                         sb = new StringBuilder();
                     }
@@ -122,10 +112,23 @@ namespace UsefulProteomicsDatabases.Transcriptomics
                     if ((fasta.Peek() == '>' || fasta.Peek() == -1) /*&& accession != null*/ && sb != null)
                     {
                         string sequence = substituteWhitespace.Replace(sb.ToString(), "");
+                        Dictionary<string, string> additonalDatabaseFields =
+                            regexResults.ToDictionary(x => x.Key, x => x.Value);
 
                         // Do we need to sanitize the sequence? 
 
-                        RNA rna = new Rna()
+                        RNA rna = new RNA(sequence, name, identifier, organism, rnaDbLocation,
+                            null, null, null,
+                            isContaminant, false, additonalDatabaseFields );
+                        if (rna.Length == 0)
+                            errors.Add("Line" + line + ", Rna length of 0: " + rna.Name + "was skipped from database: " + rnaDbLocation);
+                        else
+                            targets.Add(rna);
+
+                        name = null;
+                        organism = null;
+                        identifier = null;
+                        regexResults.Clear();
                     }
 
                     // no input left
@@ -136,8 +139,14 @@ namespace UsefulProteomicsDatabases.Transcriptomics
                 }
             }
 
+            if (newDbLocation != rnaDbLocation)
+                File.Delete(newDbLocation);
 
-            throw new NotImplementedException();
+            if (!targets.Any())
+                errors.Add("No targets were loaded from database: " + rnaDbLocation);
+            
+            List<RNA> decoys = RnaDecoyGenerator.GenerateDecoys(targets, decoyType);
+            return generateTargets ? targets.Concat(decoys).ToList() : decoys;
         }
 
         private static RnaFastaHeaderType DetectFastaHeaderType(string line)
@@ -148,6 +157,20 @@ namespace UsefulProteomicsDatabases.Transcriptomics
             return RnaFastaHeaderType.Modomics;
         }
 
-    
+        private static Dictionary<string, string> ParseRegexFields(string line,
+            Dictionary<string, FastaHeaderFieldRegex> regexes)
+        {
+            Dictionary<string, string> fields = new Dictionary<string, string>();
+
+            foreach (var regex in regexes)
+            {
+                string match = ProteinDbLoader.ApplyRegex(regex.Value, line);
+                fields.Add(regex.Key, match);
+            }
+
+            return fields;
+        }
+
+
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Chemistry;
+using MassSpectrometry;
 
 namespace Transcriptomics
 {
@@ -18,28 +19,21 @@ namespace Transcriptomics
         }
 
         /// <summary>
-        /// For use with Modomics Databases
+        /// For use with RNA loaded from a database
         /// </summary>
         /// <param name="sequence"></param>
         /// <param name="fivePrimeTerm"></param>
         /// <param name="threePrimeTerm"></param>
         /// <param name="name"></param>
-        public RNA(string sequence, int dbId, string name, string dbFilePath, bool isDecoy, 
-            bool isContaminant, string organism, string soTerm, string rnaType,
-            string rnaSubType, string rnaFeature, string cellularOrganization)
-            : base(sequence)
+        public RNA(string sequence, string name, string identifier, string organism, string databaseFilePath,
+            IHasChemicalFormula? fivePrimeTerminus = null, IHasChemicalFormula? threePrimeTerminus = null,
+            IDictionary<int, List<Modification>>? oneBasedPossibleModifications = null,
+            bool isContaminant = false, bool isDecoy = false,
+            Dictionary<string, string> databaseAdditionalsFields = null)
+            : base(sequence, name, identifier, organism, databaseFilePath, fivePrimeTerminus, threePrimeTerminus,
+                oneBasedPossibleModifications, isContaminant, isDecoy, databaseAdditionalsFields)
         {
-            //DatabaseId = dbId;
-            Name = name;
-            DatabaseFilePath = dbFilePath;
-            IsDecoy = isDecoy;
-            IsContaminant = isContaminant;
-            Organism = organism;
-            //SoTerm = soTerm;
-            //RnaType = rnaType;
-            //RnaSubType = rnaSubType;
-            //RnaFeature = rnaFeature;
-            //CellularOrganization = cellularOrganization;
+
         }
     }
 }

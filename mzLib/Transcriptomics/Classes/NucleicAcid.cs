@@ -43,19 +43,32 @@ namespace Transcriptomics
 
         #region Constuctors
 
-        protected NucleicAcid(string sequence) 
-            : this(sequence, DefaultFivePrimeTerminus, DefaultThreePrimeTerminus)
-        {
-        }
 
-        protected NucleicAcid(string sequence, IHasChemicalFormula fivePrimeTerm, IHasChemicalFormula threePrimeTerm)
+        protected NucleicAcid(string sequence, IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null)
         {
             MonoisotopicMass = 0;
             Length = sequence.Length;
             _nucleicAcids = new Nucleotide[Length];
-            ThreePrimeTerminus = threePrimeTerm;
-            FivePrimeTerminus = fivePrimeTerm;
+            ThreePrimeTerminus = threePrimeTerm ??= DefaultThreePrimeTerminus;
+            FivePrimeTerminus = fivePrimeTerm ??= DefaultFivePrimeTerminus;
             ParseSequence(sequence);
+        }
+
+        protected NucleicAcid(string sequence, string name, string identifier, string organism, string databaseFilePath,
+            IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null,
+            IDictionary<int, List<Modification>>? oneBasedPossibleLocalizedModifications = null,
+            bool isContaminant = false, bool isDecoy = false,
+            Dictionary<string, string>? additionalDatabaseFields = null) 
+            : this (sequence, fivePrimeTerm, threePrimeTerm)
+        {
+            Name = name;
+            DatabaseFilePath = databaseFilePath;
+            IsDecoy = isDecoy;
+            IsContaminant = isContaminant;
+            OneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications ?? new Dictionary<int, List<Modification>>();
+            Organism = organism;
+            Identifier = identifier;
+            AdditionalDatabaseFields = additionalDatabaseFields;
         }
 
         #endregion
@@ -126,7 +139,8 @@ namespace Transcriptomics
         public bool IsContaminant { get; }
         public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }
         public string Organism { get; }
-
+        public string Identifier { get; }
+        public Dictionary<string, string>? AdditionalDatabaseFields { get; }
 
         /// <summary>
         /// The total monoisotopic mass of this peptide and all of its modifications
