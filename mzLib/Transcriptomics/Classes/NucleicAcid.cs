@@ -44,13 +44,15 @@ namespace Transcriptomics
         #region Constuctors
 
 
-        protected NucleicAcid(string sequence, IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null)
+        protected NucleicAcid(string sequence, IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null,
+            IDictionary<int, List<Modification>>? oneBasedPossibleLocalizedModifications = null)
         {
             MonoisotopicMass = 0;
             Length = sequence.Length;
             _nucleicAcids = new Nucleotide[Length];
             ThreePrimeTerminus = threePrimeTerm ??= DefaultThreePrimeTerminus;
             FivePrimeTerminus = fivePrimeTerm ??= DefaultFivePrimeTerminus;
+            _oneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications ?? new Dictionary<int, List<Modification>>();
             ParseSequence(sequence);
         }
 
@@ -59,13 +61,13 @@ namespace Transcriptomics
             IDictionary<int, List<Modification>>? oneBasedPossibleLocalizedModifications = null,
             bool isContaminant = false, bool isDecoy = false,
             Dictionary<string, string>? additionalDatabaseFields = null) 
-            : this (sequence, fivePrimeTerm, threePrimeTerm)
+            : this (sequence, fivePrimeTerm, threePrimeTerm, oneBasedPossibleLocalizedModifications)
         {
             Name = name;
             DatabaseFilePath = databaseFilePath;
             IsDecoy = isDecoy;
             IsContaminant = isContaminant;
-            OneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications ?? new Dictionary<int, List<Modification>>();
+            _oneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications ?? new Dictionary<int, List<Modification>>();
             Organism = organism;
             Identifier = identifier;
             AdditionalDatabaseFields = additionalDatabaseFields;
@@ -94,7 +96,9 @@ namespace Transcriptomics
         /// The nucleic acid sequence. Is ignored if 'StoreSequenceString' is false
         /// </summary>
         private string _sequence;
-        
+
+        private IDictionary<int, List<Modification>> _oneBasedPossibleLocalizedModifications;
+
         #endregion
 
         #region Internal Properties
@@ -137,8 +141,10 @@ namespace Transcriptomics
         public string DatabaseFilePath { get; }
         public bool IsDecoy { get; }
         public bool IsContaminant { get; }
-        public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }
+
+        public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications => _oneBasedPossibleLocalizedModifications;
         public string Organism { get; }
+
         public string Identifier { get; }
         public Dictionary<string, string>? AdditionalDatabaseFields { get; }
 

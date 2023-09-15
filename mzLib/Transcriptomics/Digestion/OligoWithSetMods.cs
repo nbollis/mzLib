@@ -14,8 +14,9 @@ namespace Transcriptomics
     {
         public OligoWithSetMods(NucleicAcid nucleicAcid, RnaDigestionParams digestionParams, int oneBaseStartResidue,
             int oneBasedEndResidue, int missedCleavages, CleavageSpecificity cleavageSpecificity,
-            Dictionary<int, Modification> allModsOneIsNTerminus, int numFixedMods, IHasChemicalFormula? fivePrimeTerminus = null, IHasChemicalFormula? threePrimeTerminus = null ) : base(
-            nucleicAcid, oneBaseStartResidue, oneBasedEndResidue, missedCleavages,
+            Dictionary<int, Modification> allModsOneIsNTerminus, int numFixedMods, IHasChemicalFormula? fivePrimeTerminus = null, 
+            IHasChemicalFormula? threePrimeTerminus = null ) 
+            : base(nucleicAcid, oneBaseStartResidue, oneBasedEndResidue, missedCleavages,
             cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
         {
             _digestionParams = digestionParams;
@@ -29,6 +30,7 @@ namespace Transcriptomics
         private double? _monoisotopicMass;
         private ChemicalFormula? _thisChemicalFormula;
         private double? _mostAbundantMonoisotopicMass;
+        private IDictionary<int, List<Modification>>? _oneBasedPossibleLocalizedModifications;
 
         public string FullSequence { get; private set; }
         public IDigestionParams DigestionParams => _digestionParams;
@@ -112,6 +114,9 @@ namespace Transcriptomics
         public string SequenceWithChemicalFormulas => throw new NotImplementedException();
 
         public Dictionary<int, Modification> AllModsOneIsNterminus => _allModsOneIsNterminus;
+
+        public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications => _oneBasedPossibleLocalizedModifications ??=
+            _allModsOneIsNterminus.ToDictionary(p => p.Key, p => new List<Modification>() { p.Value });
         public int NumMods => AllModsOneIsNterminus.Count;
         public int NumFixedMods { get; }
         public int NumVariableMods => NumMods - NumFixedMods;

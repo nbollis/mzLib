@@ -16,10 +16,9 @@ namespace MassSpectrometry
         string DatabaseFilePath { get; }
         bool IsDecoy { get; }
         bool IsContaminant { get; }
-        public string Organism { get; }
-        
+        string Organism { get; }
+        public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }
 
-        IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }
         IEnumerable<IPrecursor> Digest(IDigestionParams digestionParams, List<Modification> allKnownFixedModifications,
             List<Modification> variableModifications, List<SilacLabel> silacLabels = null, (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = null, bool topDownTruncationSearch = false);
     }

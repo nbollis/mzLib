@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Chemistry;
+using MassSpectrometry;
 
 namespace Transcriptomics
 {
@@ -19,9 +20,13 @@ namespace Transcriptomics
         /// </summary>
         int Length { get; }
 
+        /// <summary>
+        /// Modifications 
+        /// </summary>
+        IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }
+
         IHasChemicalFormula FivePrimeTerminus { get; set; }
 
         IHasChemicalFormula ThreePrimeTerminus { get; set; }
-        
     }
 }

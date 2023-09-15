@@ -27,11 +27,11 @@ namespace UsefulProteomicsDatabases.Transcriptomics
                 { "Id", new FastaHeaderFieldRegex("Id", @"id:(?<id>.+?)\|", 0, 1) },
                 { "Name", new FastaHeaderFieldRegex("Name", @"Name:(?<Name>.+?)\|", 0, 1) },
                 { "SOterm", new FastaHeaderFieldRegex("SOterm", @"SOterm:(?<SOterm>.+?)\|", 0, 1) },
-                { "RNAtype", new FastaHeaderFieldRegex("RNAtype", @"Type:(?<Type>.+?)\|", 0, 1) },
-                { "RNAsubtype", new FastaHeaderFieldRegex("RNAsubtype", @"Subtype:(?<Subtype>.+?)\|", 0, 1) },
-                { "RNAfeature", new FastaHeaderFieldRegex("RNAfeature", @"Feature:(?<Feature>.+?)\|", 0, 1) },
+                { "Type", new FastaHeaderFieldRegex("Type", @"Type:(?<Type>.+?)\|", 0, 1) },
+                { "Subtype", new FastaHeaderFieldRegex("Subtype", @"Subtype:(?<Subtype>.+?)\|", 0, 1) },
+                { "Feature", new FastaHeaderFieldRegex("Feature", @"Feature:(?<Feature>.+?)\|", 0, 1) },
                 { "Organism", new FastaHeaderFieldRegex("Organism", @"Species:(?<Species>.+?)$", 0, 1) },
-                { "CellularLocalization", new FastaHeaderFieldRegex("CellularLocalization", @"Cellular_Localization:(?<Cellular_Localization>.+?)\|", 0, 1) },
+                { "Cellular Localization", new FastaHeaderFieldRegex("CellularLocalization", @"Cellular_Localization:(?<Cellular_Localization>.+?)\|", 0, 1) },
             };
 
 
@@ -151,6 +151,8 @@ namespace UsefulProteomicsDatabases.Transcriptomics
 
         private static RnaFastaHeaderType DetectFastaHeaderType(string line)
         {
+            if (!line.StartsWith(">"))
+                return RnaFastaHeaderType.Unknown;
 
             // modomics -> >id:1|Name:tdbR00000010|SOterm:SO:0000254
 
@@ -170,7 +172,5 @@ namespace UsefulProteomicsDatabases.Transcriptomics
 
             return fields;
         }
-
-
     }
 }
