@@ -69,22 +69,12 @@ namespace UsefulProteomicsDatabases.Transcriptomics
 
         private static List<T> GenerateSlidedDecoys<T>(List<T> nucleicAcids, int maxThreads = -1) where T : INucleicAcid
         {
-            List<T> decoyNucleicAcids = new List<T>();
-            Parallel.ForEach(nucleicAcids, new ParallelOptions() { MaxDegreeOfParallelism = maxThreads }, nucleicAcid =>
-            {
-               
-            });
-            return decoyNucleicAcids;
+            throw new NotImplementedException();
         }
 
         private static List<T> GenerateShuffledDeocys<T>(List<T> nucleicAcids, int maxThreads = -1) where T : INucleicAcid
         {
-            List<T> decoyNucleicAcids = new List<T>();
-            Parallel.ForEach(nucleicAcids, new ParallelOptions() { MaxDegreeOfParallelism = maxThreads }, nucleicAcid =>
-            {
-               
-            });
-            return decoyNucleicAcids;
+            throw new NotImplementedException();
         }
 
     }

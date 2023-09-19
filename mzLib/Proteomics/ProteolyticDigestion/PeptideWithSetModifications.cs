@@ -214,6 +214,12 @@ namespace Proteomics.ProteolyticDigestion
         }
         public IBioPolymer Parent => Protein;
 
+        public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus,
+            List<Product> products)
+        {
+            Fragment(dissociationType, fragmentationTerminus, products.Cast<IProduct>().ToList());
+        }
+
         /// <summary>
         /// Generates theoretical fragments for given dissociation type for this peptide. 
         /// The "products" parameter is filled with these fragments.
@@ -544,6 +550,12 @@ namespace Proteomics.ProteolyticDigestion
                 // the diagnostic ion is assumed to be annotated in the mod info as the *neutral mass* of the diagnostic ion, not the ionized species
                 products.Add(new Product(ProductType.D, FragmentationTerminus.Both, diagnosticIon, diagnosticIonLabel, 0, 0));
             }
+        }
+
+        public void FragmentInternally(DissociationType dissociationType, int minLengthOfFragments,
+            List<Product> products)
+        {
+            FragmentInternally(dissociationType, minLengthOfFragments, products.Cast<IProduct>().ToList());
         }
 
         /// <summary>

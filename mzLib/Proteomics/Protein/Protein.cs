@@ -218,6 +218,15 @@ namespace Proteomics
             return string.Format("{0} {1}", Accession, FullName);
         }
 
+        public IEnumerable<PeptideWithSetModifications> Digest(DigestionParams digestionParams,
+            List<Modification> allKnownFixedModifications, List<Modification> variableModifications,
+            List<SilacLabel> silacLabels = null, (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = null,
+            bool topDownTruncationSearch = false)
+        {
+            return Digest((IDigestionParams)digestionParams, allKnownFixedModifications, variableModifications, silacLabels, turnoverLabels, topDownTruncationSearch)
+                .Cast<PeptideWithSetModifications>();
+        }
+
         /// <summary>
         /// Gets peptides for digestion of a protein
         /// </summary>
