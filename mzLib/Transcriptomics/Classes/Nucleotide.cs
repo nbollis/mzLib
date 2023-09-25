@@ -84,15 +84,31 @@ namespace Transcriptomics
 
         #region Properties
 
+        /// <summary>
+        /// Chemical formula of the sugar less OH 
+        /// </summary>
         private ChemicalFormula _sugarAndPhosphate;
 
         public string Name { get; private set; }
         public double MonoisotopicMass { get; private set; }
-        public ChemicalFormula ThisChemicalFormula { get; private set; }
-        public ChemicalFormula BaseChemicalFormula { get; private set; }
-        public ChemicalFormula NucleosideChemicalFormula { get; private set; }
         public char Letter { get; private set; }
         public string Symbol { get; private set; }
+
+        /// <summary>
+        /// Chemical formula of the base plus the sugar and phosphate less H20
+        /// </summary>
+        public ChemicalFormula ThisChemicalFormula { get; private set; }
+
+        /// <summary>
+        /// Chemical formula of the base less one H
+        /// </summary>
+        public ChemicalFormula BaseChemicalFormula { get; private set; }
+
+        /// <summary>
+        /// Chemical formula of the base plus the sugar
+        /// Used to calculate the mass of a modification from the modomics database
+        /// </summary>
+        public ChemicalFormula NucleosideChemicalFormula { get; private set; }
 
         #endregion
 
@@ -126,7 +142,10 @@ namespace Transcriptomics
 
             ThisChemicalFormula.Add(_sugarAndPhosphate);
             MonoisotopicMass = ThisChemicalFormula.MonoisotopicMass;
-            NucleosideChemicalFormula = ThisChemicalFormula - ChemicalFormula.ParseFormula("H1O3P1");
+
+            // subtracting one phospho (H03P) and adding one water (H2O) to get the nucleoside formula
+            // must add water because base and sugar are already calculated assuming loss of H20 from polymerization reaction
+            NucleosideChemicalFormula = ThisChemicalFormula - ChemicalFormula.ParseFormula("H-1O2P1");
         }
 
         #endregion
