@@ -33,19 +33,28 @@ namespace Proteomics.ProteolyticDigestion
         }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; private set; }
         public int MaxMissedCleavages { get; set; }
+        public int MaxModificationIsoforms { get; set; }
         public int MinLength { get; set; }
         public int MaxLength { get; set; }
-        public int MaxModificationIsoforms { get; set; }
         public int MaxMods { get; set; }
 
         public DigestionAgent Enzyme => Protease;
-        public Protease Protease { get; private set; }
         public CleavageSpecificity SearchModeType { get; private set; } //for fast semi and nonspecific searching of proteases
         public FragmentationTerminus FragmentationTerminus { get; private set; } //for fast semi searching of proteases
         public Protease SpecificProtease { get; private set; } //for fast semi and nonspecific searching of proteases
         public bool GeneratehUnlabeledProteinsForSilac { get; private set; } //used to look for unlabeled proteins (in addition to labeled proteins) for SILAC experiments
         public bool KeepNGlycopeptide { get; private set; }
         public bool KeepOGlycopeptide { get; private set; }
+
+
+        #region Properties overridden by more generic interface
+
+        public Protease Protease { get; private set; }
+        public int MinPeptideLength => MinLength;
+        public int MaxPeptideLength => MaxLength;
+        public int MaxModsForPeptide => MaxMods;
+
+        #endregion
 
         public override bool Equals(object obj)
         {

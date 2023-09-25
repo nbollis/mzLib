@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Transcriptomics
 {
-    public class RnaModification
+    public class ModomicsMod
     {
         public int ModomicsId { get; set; }
         public string Abbreviation { get; set; }

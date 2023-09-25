@@ -90,6 +90,7 @@ namespace Transcriptomics
         public double MonoisotopicMass { get; private set; }
         public ChemicalFormula ThisChemicalFormula { get; private set; }
         public ChemicalFormula BaseChemicalFormula { get; private set; }
+        public ChemicalFormula NucleosideChemicalFormula { get; private set; }
         public char Letter { get; private set; }
         public string Symbol { get; private set; }
 
@@ -125,6 +126,7 @@ namespace Transcriptomics
 
             ThisChemicalFormula.Add(_sugarAndPhosphate);
             MonoisotopicMass = ThisChemicalFormula.MonoisotopicMass;
+            NucleosideChemicalFormula = ThisChemicalFormula - ChemicalFormula.ParseFormula("H1O3P1");
         }
 
         #endregion

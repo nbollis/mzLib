@@ -60,8 +60,19 @@ namespace Readers
                 case ".csv":
                     if (filePath.EndsWith(SupportedFileType.Mzrt_TopFd.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
                         return SupportedFileType.Mzrt_TopFd;
-                    if (new StreamReader(filePath).ReadLine()?.Contains("ID,MODOMICS") ?? false)
-                        return SupportedFileType.ModomicsCsv;
+                    else
+                    {
+                        try
+                        {
+                            var header = new StreamReader(filePath).ReadLine();
+                            if (header?.Contains("ID,MODOMICS") ?? false)
+                                return SupportedFileType.ModomicsCsv;
+                        }
+                        catch (FileNotFoundException)
+                        {
+                            throw new MzLibException("File not found");
+                        }
+                    }
                     throw new MzLibException("Csv file type not supported");
 
                 case ".tsv":

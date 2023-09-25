@@ -33,6 +33,7 @@ using System.Xml.Serialization;
 using MassSpectrometry;
 using UsefulProteomicsDatabases.Generated;
 using TopDownProteomics.IO.Obo;
+using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace UsefulProteomicsDatabases
 {
@@ -51,6 +52,8 @@ namespace UsefulProteomicsDatabases
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
         }
+
+        #region Update
 
         public static void UpdateUniprot(string uniprotLocation)
         {
@@ -164,6 +167,8 @@ namespace UsefulProteomicsDatabases
             }
         }
 
+        #endregion
+
         public static IEnumerable<OboTerm> ReadPsiModFile(string psiModOboLocation)
         {
             OboParser oboParser = new();
@@ -225,6 +230,7 @@ namespace UsefulProteomicsDatabases
             PeriodicTableLoader.Load();
         }
 
+        #region Load
         public static IEnumerable<Modification> LoadUnimod(string unimodLocation)
         {
             if (!File.Exists(unimodLocation))
@@ -261,10 +267,10 @@ namespace UsefulProteomicsDatabases
         {
             if (!File.Exists(modomicsLocation))
                 UpdateModomics(modomicsLocation);
-
-            // TODO: Read that shit in if it exisits
-            throw new NotImplementedException();
+            return ModomicsLoader.ReadMods(modomicsLocation);
         }
+
+        #endregion
 
         /// <summary>
         /// Retrieves data using async/await
@@ -311,6 +317,8 @@ namespace UsefulProteomicsDatabases
             }
         }
 
+        #region Download
+
         private static void DownloadPsiMod(string psimodLocation)
         {
             DownloadContent(@"https://github.com/smith-chem-wisc/psi-mod-CV/blob/master/PSI-MOD.obo.xml?raw=true", psimodLocation + ".temp");
@@ -334,39 +342,11 @@ namespace UsefulProteomicsDatabases
             DownloadContent(@"http://uniprot.org/docs/ptmlist.txt", uniprotLocation + ".temp");
         }
 
-
-        private static string NaturalModsPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Transcriptomics",
-            "Modomics_NaturalModifications.csv");
-        private static string UnnaturalModsPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Transcriptomics",
-            "Modomics_UnnaturalModifications.csv");
-        public static void DownloadModomics(string modomicsLocation)
+        private static void DownloadModomics(string modomicsLocation)
         {
-            StringBuilder sb = new StringBuilder();
-            string modomicsApiUrl = @"https://www.genesilico.pl/modomics/api/modification";
-
-            //using (StreamWriter sw = new (new FileStream(modomicsLocation + ".temp", FileMode.CreateNew))
-            //{
-
-            //}
-
-            // download all modifications and 
-            int index = 1;
-            bool loop = true;
-            while (loop)
-            {
-                var urlRequest = modomicsApiUrl + $"?id={index}";
-                HttpResponseMessage response = AwaitAsync_GetSomeData(urlRequest).GetAwaiter().GetResult();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string responseText = response.Content.ReadAsStringAsync().Result;
-                    if (responseText.Equals("{}"))
-                        break;
-                    sb.Append(responseText);
-                }
-                
-                index++;
-            }
+            DownloadContent(@"https://www.genesilico.pl/modomics/api/modifications?", modomicsLocation + ".temp");
         }
+
+        #endregion
     }
 }

@@ -5,23 +5,35 @@ using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Readers.Transcriptomics;
+using Test.DatabaseTests;
 using UsefulProteomicsDatabases;
+using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace Test.Transcriptomics
 {
     [TestFixture]
     public class ModTest
     {
-        public static string ModomicsPath = @"D:\Projects\RNA\TestData\Databases\Modomics\Modomics_NaturalModifications.csv";
+        public static string ModomicsPath =
+            @"C:\Users\Nic\source\repos\mzLib\mzLib\Test\Transcriptomics\TestData\modomicsmods.json";
 
         [Test]
         public void TESTNAME()
         {
-            //Loaders.DownloadModomics("");
 
-            //var temp = new ModomicsCsvFile(ModomicsPath);
-            //temp.LoadResults();
-            //temp.CallApiToGetAdditionalInformation();
+            foreach (var mod in Loaders.LoadModomics(ModomicsPath))
+            {
+                
+            }
+
+
+            
+        }
+
+        [Test]
+        public static void NucleotideTest()
+        {
+
         }
 
     }

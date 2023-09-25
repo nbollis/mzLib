@@ -190,6 +190,44 @@ namespace Test.DatabaseTests
             Loaders.UpdateUniprot(uniprotLocation);
         }
 
+
+        [Test]
+        public void TestUpdateModomics()
+        {
+            var referenceDB = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "modomicsmods.json");
+            var referenceFirstFiveLines = File.ReadLines(referenceDB).Take(5).ToList();
+
+            // UpdateModomics will downad the file if it doesn't exist
+            var modomicsLocation = Path.Combine(TestContext.CurrentContext.TestDirectory, "modomics.json");
+            if (File.Exists(modomicsLocation))
+                File.Delete(modomicsLocation);
+            Assert.That(!File.Exists(modomicsLocation));
+            Loaders.UpdateModomics(modomicsLocation);
+
+            Assert.That(File.Exists(modomicsLocation));
+            var loadedFirstFiveLines = File.ReadLines(modomicsLocation).Take(5).ToList();
+            CollectionAssert.AreEqual(referenceFirstFiveLines, loadedFirstFiveLines);
+
+            // UpdateModomics will do nothing if they are equivalent
+            Loaders.UpdateModomics(modomicsLocation);
+            Assert.That(File.Exists(modomicsLocation));
+            loadedFirstFiveLines = File.ReadLines(modomicsLocation).Take(5).ToList();
+            CollectionAssert.AreEqual(referenceFirstFiveLines, loadedFirstFiveLines);
+
+            // UpdateModomics will update if the file is different by removing first 5 lines
+            string[] lines = File.ReadAllLines(modomicsLocation);
+            string[] remainingLines = new string[lines.Length - 5];
+            Array.Copy(lines, 5, remainingLines, 0, lines.Length - 5);
+            File.WriteAllLines(modomicsLocation, remainingLines);
+            loadedFirstFiveLines = File.ReadLines(modomicsLocation).Take(5).ToList();
+            CollectionAssert.AreNotEqual(referenceFirstFiveLines, loadedFirstFiveLines);
+
+            Loaders.UpdateModomics(modomicsLocation);
+            Assert.That(File.Exists(modomicsLocation));
+            loadedFirstFiveLines = File.ReadLines(modomicsLocation).Take(5).ToList();
+            CollectionAssert.AreEqual(referenceFirstFiveLines, loadedFirstFiveLines);
+        }
+
         [Test]
         public void FilesEqualHash()
         {

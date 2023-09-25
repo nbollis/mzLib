@@ -28,8 +28,8 @@ namespace Proteomics.ProteolyticDigestion
         }
 
         [NonSerialized] private Protein _protein; // protein that this peptide is a digestion product of
-        public int OneBasedStartResidue { get; } // the residue number at which the peptide begins (the first residue in a protein is 1)
-        public int OneBasedEndResidue { get; } // the residue number at which the peptide ends
+        public int OneBasedStartResidue {get;}// the residue number at which the peptide begins (the first residue in a protein is 1)
+        public int OneBasedEndResidue { get; }// the residue number at which the peptide ends
         public int MissedCleavages { get; } // the number of missed cleavages this peptide has with respect to the digesting protease
         public string PeptideDescription { get; internal set; } //unstructured explanation of source
         public CleavageSpecificity CleavageSpecificityForFdrCategory { get; set; } //structured explanation of source
@@ -76,6 +76,15 @@ namespace Proteomics.ProteolyticDigestion
                 return BaseSequence[zeroBasedIndex];
             }
         }
+
+        #region Properties overridden by more generic interface
+
+        public int OneBasedEndResidueInProtein => OneBasedEndResidue;
+        public int OneBasedStartResidueInProtein => OneBasedStartResidue;
+        public virtual char PreviousAminoAcid => PreviousResidue;
+        public virtual char NextAminoAcid => NextResidue;
+
+        #endregion
 
         /// <summary>
         /// Gets the peptides for a specific protein interval

@@ -11,6 +11,7 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="TopDownProteomics" Version="0.0.287" />
   </ItemGroup>
 
@@ -22,12 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Transcriptomics\Modomics_NaturalModifications.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Transcriptomics\Modomics_UnnaturalModifications.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="UniProtKB_columnNamesForProgrammaticAccess.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

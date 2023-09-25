@@ -139,5 +139,19 @@ namespace Test.Transcriptomics
             Assert.That(!u.Equals((object)null));
             Assert.That(!u.Equals((object) new Action(() => { })));
         }
+
+        [Test]
+        public static void test()
+        {
+            ChemicalFormula guanineFormula = ChemicalFormula.ParseFormula("C5H5N5O5");
+            ChemicalFormula guanosineFormula = ChemicalFormula.ParseFormula("C10H13N5O5");
+            ChemicalFormula guanosineMonoPhosphateFormula = ChemicalFormula.ParseFormula("C10H14N5O8P");
+
+            var guanine = Nucleotide.GuanineBase;
+            Assert.That(guanineFormula, Is.EqualTo(guanine.BaseChemicalFormula));
+            Assert.That(guanosineFormula, Is.EqualTo(guanine.NucleosideChemicalFormula));
+            Assert.That(guanosineMonoPhosphateFormula, Is.EqualTo(guanine.ThisChemicalFormula));
+
+        }
     }
 }

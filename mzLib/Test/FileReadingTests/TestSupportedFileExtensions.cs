@@ -49,7 +49,7 @@ namespace Test.FileReadingTests
             badTest = "badTaco.psm.csv";
             e = Assert.Throws<MzLibException>(() => badTest.ParseFileType());
             Assert.That(e?.Message,
-                Is.EqualTo($"Csv file type not supported"));
+                Is.EqualTo($"File not found"));
 
             // assure all values of enum have a file extension in the swithc method
             foreach (var value in Enum.GetValues<SupportedFileType>())

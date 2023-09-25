@@ -129,7 +129,7 @@ namespace Test
         public void SilacLabelTest()
         {
             Protein originalProtein = new Protein("ACDEFGHIKAKAK", "TEST");
-            List<IPrecursor> originalDigest = originalProtein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).ToList();
+            List<PeptideWithSetModifications> originalDigest = originalProtein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).ToList();
 
             //Multiple SILAC labels
             Residue lysine = Residue.GetResidue('K');
@@ -144,7 +144,7 @@ namespace Test
                 new SilacLabel('K','a', heavyLabel.ThisChemicalFormula.Formula, heavyLabel.MonoisotopicMass - lysine.MonoisotopicMass),
                 new SilacLabel('K','b', heavierLabel.ThisChemicalFormula.Formula, heavierLabel.MonoisotopicMass - lysine.MonoisotopicMass)
             };
-            List<IPrecursor> silacDigest = originalProtein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>(), silacLabels).ToList();
+            List<PeptideWithSetModifications> silacDigest = originalProtein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>(), silacLabels).ToList();
             Assert.IsTrue(originalDigest.Count * 3 == silacDigest.Count); //check that each peptide now has a light, heavy, and heavier compliment
 
             double silacPeptideLightMonoisotopicMass = silacDigest.Where(x => x.BaseSequence.Contains("K")).First().MonoisotopicMass;

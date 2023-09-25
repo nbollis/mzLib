@@ -554,8 +554,8 @@ namespace Test
                 new ProteolysisProduct(90, 110, "")
             });
             DigestionParams dp = new DigestionParams(maxMissedCleavages: 10, minPeptideLength: 1, maxPeptideLength: 120); //this should allow for all peptides to be generated
-            List<IPrecursor> pwsms = humanInsulin.Digest(dp, null, null).ToList();
-            HashSet<IPrecursor> hashset = new HashSet<IPrecursor>(pwsms);
+            List<PeptideWithSetModifications> pwsms = humanInsulin.Digest(dp, null, null).ToList();
+            HashSet<PeptideWithSetModifications> hashset = new HashSet<PeptideWithSetModifications>(pwsms);
             //check that all the full length proteolysis products were made
             Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidue == 1 && x.OneBasedEndResidue == 24));
             Assert.IsTrue(pwsms.Any(x => x.OneBasedStartResidue == 25 && x.OneBasedEndResidue == 54));
@@ -568,8 +568,8 @@ namespace Test
             //Speedy semi specific test
             DigestionParams speedySemiN = new DigestionParams("trypsin", 10, 29, 30, 1024, InitiatorMethionineBehavior.Retain, 2, CleavageSpecificity.Semi, FragmentationTerminus.N);
             DigestionParams speedySemiC = new DigestionParams("trypsin", 10, 29, 30, 1024, InitiatorMethionineBehavior.Retain, 2, CleavageSpecificity.Semi, FragmentationTerminus.C);
-            List<IPrecursor> pwsmsN = humanInsulin.Digest(speedySemiN, null, null).ToList();
-            List<IPrecursor> pwsmsC = humanInsulin.Digest(speedySemiC, null, null).ToList();
+            List<PeptideWithSetModifications> pwsmsN = humanInsulin.Digest(speedySemiN, null, null).ToList();
+            List<PeptideWithSetModifications> pwsmsC = humanInsulin.Digest(speedySemiC, null, null).ToList();
             Assert.IsTrue(pwsmsN.Count == 7);
             Assert.IsTrue(pwsmsC.Count == 9);
             Assert.IsFalse(pwsmsN.Any(x => x.Length > speedySemiN.MaxLength));
