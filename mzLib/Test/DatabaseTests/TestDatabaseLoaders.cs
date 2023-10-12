@@ -316,6 +316,7 @@ namespace Test.DatabaseTests
 
             // UniProt PTMs
             var uniprotPtms = Loaders.LoadUniprot(uniProtPath, formalChargesDictionary).ToList();
+            
             Assert.LessOrEqual(300, uniprotPtms.Count()); // UniProt PTM list may be updated at some point, causing the unit test to fail
 
             // write UniProt and UniMod PTMs to a file
