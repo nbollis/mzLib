@@ -240,6 +240,7 @@ namespace Readers
             int? precursorScanNumber = null;
             double? isolationMz = null;
             string HcdEnergy = null;
+            string scanDescript = null;
             ActivationType activationType = ActivationType.Any; // thermo enum
             DissociationType dissociationType = DissociationType.Unknown; // mzLib enum
 
@@ -289,6 +290,10 @@ namespace Readers
                 if (labels[i].StartsWith("HCD Energy:", StringComparison.Ordinal))
                 {
                     HcdEnergy = values[i];
+                }
+                if (labels[i].StartsWith("Scan Description", StringComparison.Ordinal))
+                {
+                    scanDescript = values[i].TrimEnd();
                 }
             }
 
@@ -381,7 +386,8 @@ namespace Readers
                 dissociationType: dissociationType,
                 oneBasedPrecursorScanNumber: precursorScanNumber,
                 selectedIonMonoisotopicGuessMz: precursorSelectedMonoisotopicIonMz,
-                hcdEnergy: HcdEnergy);
+                hcdEnergy: HcdEnergy,
+                scanDescription: scanDescript);
         }
 
         private static MzSpectrum GetSpectrum(IRawDataPlus rawFile, IFilteringParams filterParams, int scanNumber, string scanFilter, int scanOrder)
