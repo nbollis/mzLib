@@ -141,21 +141,18 @@ namespace Transcriptomics
                 fragmentationTerminus is FragmentationTerminus.ThreePrime or FragmentationTerminus.Both;
 
             var sequence = (Parent as NucleicAcid)!.NucleicAcids[(OneBasedStartResidue - 1)..OneBasedEndResidue];
-            if (calculateFivePrime)
-            {
-                foreach (var type in fivePrimeProductTypes)
-                {
-                    products.AddRange(GetNeutralFragments(type, sequence));
-                }
-            }
 
-            if (calculateThreePrime)
-            {
-                foreach (var type in threePrimeProductTypes)
-                {
+            // intact product ion
+            if (FragmentationTerminus.Both == fragmentationTerminus || FragmentationTerminus.None == fragmentationTerminus)
+                products.AddRange(GetNeutralFragments(ProductType.M, sequence));
+            
+            if (calculateFivePrime)
+                foreach (var type in fivePrimeProductTypes)
                     products.AddRange(GetNeutralFragments(type, sequence));
-                }
-            }
+            
+            if (calculateThreePrime)
+                foreach (var type in threePrimeProductTypes)
+                    products.AddRange(GetNeutralFragments(type, sequence));
         }
 
         /// <summary>
@@ -178,6 +175,13 @@ namespace Transcriptomics
         public IEnumerable<IProduct> GetNeutralFragments(ProductType type, Nucleotide[]? sequence = null)
         {
             sequence ??= (Parent as NucleicAcid)!.NucleicAcids[(OneBasedStartResidue - 1)..OneBasedEndResidue];
+
+            if (type is ProductType.M)
+            {
+                yield return new RnaProduct(type, FragmentationTerminus.None, MonoisotopicMass, 0, 0, 0);
+                yield break;
+            }
+
             // determine mass of piece remaining after fragmentation
             double monoMass = type.GetRnaMassShiftFromProductType();
 

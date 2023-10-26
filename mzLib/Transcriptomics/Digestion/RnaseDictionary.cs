@@ -22,7 +22,7 @@ namespace Transcriptomics
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus") :
                     AppDomain.CurrentDomain.BaseDirectory;
             string path = Path.Combine(dataDirectory, "Digestion", "rnases.tsv");
-            //Dictionary = LoadRnaseDictionary(path);
+            Dictionary = LoadRnaseDictionary(path);
         }
 
         public static Dictionary<string, Rnase> Dictionary { get; set; }

@@ -239,25 +239,37 @@ namespace Test.Transcriptomics
         private static (string Sequence, int FragmentNumber, ProductType Type, double Mass)[] DigestFragmentTestCases =>
             new (string Sequence, int FragmentNumber, ProductType Type, double Mass)[]
             {
+                ("UAG", 0, ProductType.M, 998.134),
                 ("UAG", 1, ProductType.aBaseLoss, 114.031), ("UAG", 2, ProductType.aBaseLoss, 420.056),
+                ("UAG", 1, ProductType.c, 308.031), ("UAG", 2, ProductType.c, 637.093),
                 ("UAG", 1, ProductType.dWaterLoss, 306.025), ("UAG", 2, ProductType.dWaterLoss, 635.077),
                 ("UAG", 1, ProductType.w, 443.023), ("UAG", 2, ProductType.w, 772.075),
                 ("UAG", 1, ProductType.y,  363.057), ("UAG", 2, ProductType.y, 692.109),
+                ("UAG", 1, ProductType.yWaterLoss,  345.047), ("UAG", 2, ProductType.yWaterLoss, 674.100),
 
+                ("UCG", 0, ProductType.M, 974.123),
                 ("UCG", 1, ProductType.aBaseLoss, 114.031), ("UCG", 2, ProductType.aBaseLoss, 420.056),
+                ("UCG", 1, ProductType.c, 308.040), ("UCG", 2, ProductType.c, 613.082),
                 ("UCG", 1, ProductType.dWaterLoss, 306.025), ("UCG", 2, ProductType.dWaterLoss, 611.066),
                 ("UCG", 1, ProductType.w, 443.023), ("UCG", 2, ProductType.w, 748.064),
                 ("UCG", 1, ProductType.y,  363.057), ("UCG", 2, ProductType.y, 668.098),
+                ("UCG", 1, ProductType.yWaterLoss,  345.047), ("UCG", 2, ProductType.yWaterLoss, 650.089),
 
+                ("UUG", 0, ProductType.M, 975.107),
                 ("UUG", 1, ProductType.aBaseLoss, 114.031), ("UUG", 2, ProductType.aBaseLoss, 420.056),
+                ("UUG", 1, ProductType.c, 308.041), ("UUG", 2, ProductType.c, 614.066),
                 ("UUG", 1, ProductType.dWaterLoss, 306.025), ("UUG", 2, ProductType.dWaterLoss, 612.050),
                 ("UUG", 1, ProductType.w, 443.023), ("UUG", 2, ProductType.w, 749.048),
                 ("UUG", 1, ProductType.y,  363.057), ("UUG", 2, ProductType.y, 669.082),
+                ("UUG", 1, ProductType.yWaterLoss,  345.047), ("UUG", 2, ProductType.yWaterLoss, 651.073),
 
+                ("AUAG", 0, ProductType.M, 1247.220),
                 ("AUAG", 1, ProductType.aBaseLoss, 114.031), ("AUAG", 2, ProductType.aBaseLoss, 443.083), ("AUAG", 3, ProductType.aBaseLoss, 749.108),
+                ("AUAG", 1, ProductType.c, 331.068), ("AUAG", 2, ProductType.c, 637.093), ("AUAG", 3, ProductType.c, 966.146),
                 ("AUAG", 1, ProductType.dWaterLoss, 329.052), ("AUAG", 2, ProductType.dWaterLoss, 635.077), ("AUAG", 3, ProductType.dWaterLoss, 964.129),
                 ("AUAG", 1, ProductType.w, 363.057), ("AUAG", 2, ProductType.w, 692.109), ("AUAG", 3, ProductType.w, 998.134),
                 ("AUAG", 1, ProductType.y,  283.091), ("AUAG", 2, ProductType.y, 612.143), ("AUAG", 3, ProductType.y, 918.168),
+                ("AUAG", 1, ProductType.yWaterLoss,  265.081), ("AUAG", 2, ProductType.yWaterLoss, 594.134), ("AUAG", 3, ProductType.yWaterLoss, 900.159),
             };
 
         [Test] // test values calculated with http://rna.rega.kuleuven.be/masspec/mongo.htm
@@ -300,6 +312,8 @@ namespace Test.Transcriptomics
                     Assert.That(fragment.FragmentNumber, Is.EqualTo(theoreticalFragment.FragmentNumber));
                     if (fragment.Terminus == FragmentationTerminus.FivePrime)
                         Assert.That(fragment.AminoAcidPosition, Is.EqualTo(theoreticalFragment.FragmentNumber));
+                    else if (fragment.Terminus == FragmentationTerminus.None)
+                        Assert.That(fragment.FragmentNumber, Is.EqualTo(0));
                     else
                         Assert.That(fragment.AminoAcidPosition, Is.EqualTo(digestionProductSequences[index].Length - theoreticalFragment.FragmentNumber));
                 }
