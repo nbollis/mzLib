@@ -27,7 +27,7 @@ namespace Test.Transcriptomics
             Assert.That(oligos.First().BaseSequence,
                 Is.EqualTo("GGGGCUAUAGCUCAGCUGGGAGAGCGCCUGCUUUGCACGCAGGAGGUCUGCGGUUCGAUCCCGCAUAGCUCCACCA"));
             Assert.That(oligos.First().Name, Is.EqualTo("tdbR00000010"));
-            Assert.That(oligos.First().Identifier, Is.EqualTo("SO:0000254"));
+            Assert.That(oligos.First().Accession, Is.EqualTo("SO:0000254"));
             Assert.That(oligos.First().Organism, Is.EqualTo("Escherichia coli"));
             Assert.That(oligos.First().DatabaseFilePath, Is.EqualTo(ModomicsUnmodifedFastaPath));
             Assert.That(oligos.First().IsContaminant, Is.False);

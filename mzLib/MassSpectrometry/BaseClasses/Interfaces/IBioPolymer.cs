@@ -17,6 +17,7 @@ namespace MassSpectrometry
         bool IsDecoy { get; }
         bool IsContaminant { get; }
         string Organism { get; }
+        string Accession { get; }
         public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications { get; }
 
         IEnumerable<IPrecursor> Digest(IDigestionParams digestionParams, List<Modification> allKnownFixedModifications,

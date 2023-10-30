@@ -56,7 +56,7 @@ namespace Transcriptomics
             ParseSequence(sequence);
         }
 
-        protected NucleicAcid(string sequence, string name, string identifier, string organism, string databaseFilePath,
+        protected NucleicAcid(string sequence, string name, string identifier, string organism, string databaseFilePath, 
             IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null,
             IDictionary<int, List<Modification>>? oneBasedPossibleLocalizedModifications = null,
             bool isContaminant = false, bool isDecoy = false,
@@ -69,7 +69,7 @@ namespace Transcriptomics
             IsContaminant = isContaminant;
             _oneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications ?? new Dictionary<int, List<Modification>>();
             Organism = organism;
-            Identifier = identifier;
+            Accession = identifier;
             AdditionalDatabaseFields = additionalDatabaseFields;
         }
 
@@ -141,11 +141,10 @@ namespace Transcriptomics
         public string DatabaseFilePath { get; }
         public bool IsDecoy { get; }
         public bool IsContaminant { get; }
+        public string Accession { get; }
 
         public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications => _oneBasedPossibleLocalizedModifications;
         public string Organism { get; }
-
-        public string Identifier { get; }
         public Dictionary<string, string>? AdditionalDatabaseFields { get; }
 
         /// <summary>

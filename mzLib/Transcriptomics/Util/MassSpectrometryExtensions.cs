@@ -22,7 +22,7 @@ namespace Transcriptomics
             if (target is RNA rna)
             {
                 bool newIsDecoy = isDecoy ?? rna.IsDecoy;
-                returnObj = new RNA(newSequence, rna.Name, rna.Identifier, rna.Organism, rna.DatabaseFilePath,
+                returnObj = new RNA(newSequence, rna.Name, rna.Accession, rna.Organism, rna.DatabaseFilePath,
                     rna.FivePrimeTerminus, rna.ThreePrimeTerminus, newModifications, rna.IsContaminant, newIsDecoy, rna.AdditionalDatabaseFields);
             }
             else if (target is OligoWithSetMods oligo)
@@ -31,7 +31,7 @@ namespace Transcriptomics
                 var newParent = new RNA(
                     newSequence,
                     oldParent.Name, 
-                    oldParent.Identifier,
+                    oldParent.Accession,
                     oldParent.Organism,
                     oldParent.DatabaseFilePath,
                     oldParent.FivePrimeTerminus, 
