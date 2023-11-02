@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using Chemistry;
 using MassSpectrometry;
 using NUnit.Framework;
 using Transcriptomics;
+using UsefulProteomicsDatabases;
 
 namespace Test.Transcriptomics
 {
@@ -439,6 +441,162 @@ namespace Test.Transcriptomics
                 var testCaseCaseMass = testCase.MonoMasses[i];
                 Assert.That(productMass, Is.EqualTo(testCaseCaseMass).Within(0.01));
             }
+        }
+
+        #endregion
+
+        #region Digestion with Modifications
+
+        [Test]
+        public static void TestVariableModsCountCorrect()
+        {
+            string modText = "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A or C or G or U\r\nCF   Na1H-1\r\n" + @"//";
+            var sodiumAdducts = PtmListLoader.ReadModsFromString(modText, out List<(Modification, string)> mods)
+                .ToList();
+            Assert.That(sodiumAdducts.Count, Is.EqualTo(4));
+
+            var rna = new RNA("GUACUG");
+            var rnaDigestionParams = new RnaDigestionParams()
+            {
+                MaxMods = 1,
+            };
+
+            var precursors = rna.Digest(rnaDigestionParams, new List<Modification>(), sodiumAdducts)
+                .ToList();
+            Assert.That(precursors.Count, Is.EqualTo(7));
+            var fullSequences = precursors.Select(p => p.FullSequence).ToList();
+            Assert.That(fullSequences.Contains("GUACUG"));
+            Assert.That(fullSequences.Contains("G[Metal:Sodium on G]UACUG"));
+            Assert.That(fullSequences.Contains("GU[Metal:Sodium on U]ACUG"));
+            Assert.That(fullSequences.Contains("GUA[Metal:Sodium on A]CUG"));
+            Assert.That(fullSequences.Contains("GUAC[Metal:Sodium on C]UG"));
+            Assert.That(fullSequences.Contains("GUACU[Metal:Sodium on U]G"));
+            Assert.That(fullSequences.Contains("GUACUG[Metal:Sodium on G]"));
+
+            rnaDigestionParams.MaxMods = 2;
+            precursors = rna.Digest(rnaDigestionParams, new List<Modification>(), sodiumAdducts)
+                .ToList();
+            Assert.That(precursors.Count, Is.EqualTo(22));
+            fullSequences = precursors.Select(p => p.FullSequence).ToList();
+            Assert.That(fullSequences.Contains("GUACUG"));
+            Assert.That(fullSequences.Contains("G[Metal:Sodium on G]UACUG"));
+            Assert.That(fullSequences.Contains("G[Metal:Sodium on G]U[Metal:Sodium on U]ACUG"));
+            Assert.That(fullSequences.Contains("G[Metal:Sodium on G]UA[Metal:Sodium on A]CUG"));
+            Assert.That(fullSequences.Contains("G[Metal:Sodium on G]UAC[Metal:Sodium on C]UG"));
+            Assert.That(fullSequences.Contains("G[Metal:Sodium on G]UACU[Metal:Sodium on U]G"));
+            Assert.That(fullSequences.Contains("G[Metal:Sodium on G]UACUG[Metal:Sodium on G]"));
+            Assert.That(fullSequences.Contains("GU[Metal:Sodium on U]ACUG"));
+            Assert.That(fullSequences.Contains("GU[Metal:Sodium on U]A[Metal:Sodium on A]CUG"));
+            Assert.That(fullSequences.Contains("GU[Metal:Sodium on U]AC[Metal:Sodium on C]UG"));
+            Assert.That(fullSequences.Contains("GU[Metal:Sodium on U]ACU[Metal:Sodium on U]G"));
+            Assert.That(fullSequences.Contains("GU[Metal:Sodium on U]ACUG[Metal:Sodium on G]"));
+            Assert.That(fullSequences.Contains("GUA[Metal:Sodium on A]CUG"));
+            Assert.That(fullSequences.Contains("GUA[Metal:Sodium on A]C[Metal:Sodium on C]UG"));
+            Assert.That(fullSequences.Contains("GUA[Metal:Sodium on A]CU[Metal:Sodium on U]G"));
+            Assert.That(fullSequences.Contains("GUA[Metal:Sodium on A]CUG[Metal:Sodium on G]"));
+            Assert.That(fullSequences.Contains("GUAC[Metal:Sodium on C]UG"));
+            Assert.That(fullSequences.Contains("GUAC[Metal:Sodium on C]U[Metal:Sodium on U]G"));
+            Assert.That(fullSequences.Contains("GUAC[Metal:Sodium on C]UG[Metal:Sodium on G]"));
+            Assert.That(fullSequences.Contains("GUACU[Metal:Sodium on U]G"));
+            Assert.That(fullSequences.Contains("GUACU[Metal:Sodium on U]G[Metal:Sodium on G]"));
+            Assert.That(fullSequences.Contains("GUACUG[Metal:Sodium on G]"));
+        }
+
+        [Test]
+        public static void TestFixedModsCountCorrect()
+        {
+            string modText = "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A\r\nCF   Na1H-1\r\n" + @"//";
+            var sodiumAdduct = PtmListLoader.ReadModsFromString(modText, out List<(Modification, string)> mods)
+                .ToList();
+
+            var rna = new RNA("GUACUG");
+            var rnaDigestionParams = new RnaDigestionParams()
+            {
+                MaxMods = 1,
+            };
+            var precursors = rna.Digest(rnaDigestionParams, sodiumAdduct, new List<Modification>())
+                .ToList();
+            Assert.That(precursors.Count, Is.EqualTo(1));
+            Assert.That(precursors.First().NumFixedMods, Is.EqualTo(1));
+            Assert.That(precursors.First().FullSequence, Is.EqualTo("GUA[Metal:Sodium on A]CUG"));
+            Assert.That(precursors.First().MonoisotopicMass, Is.EqualTo(1896.26).Within(0.01));
+
+            modText = "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   G\r\nCF   Na1H-1\r\n" + @"//";
+            sodiumAdduct = PtmListLoader.ReadModsFromString(modText, out mods)
+                .ToList();
+
+            precursors = rna.Digest(rnaDigestionParams, sodiumAdduct, new List<Modification>())
+                .ToList();
+            Assert.That(precursors.Count, Is.EqualTo(1));
+            Assert.That(precursors.First().NumFixedMods, Is.EqualTo(2));
+            Assert.That(precursors.First().FullSequence, Is.EqualTo("G[Metal:Sodium on G]UACUG[Metal:Sodium on G]"));
+            Assert.That(precursors.First().MonoisotopicMass, Is.EqualTo(1918.25).Within(0.01));
+        }
+
+        [Test]
+        public static void TestFixedAndVariableMods()
+        {
+            string modText = "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A or C or G or U\r\nCF   Na1H-1\r\n" + @"//";
+            string modText2 = "ID   Potassium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A or C or G or U\r\nCF   K1H-1\r\n" + @"//";
+            var sodiumAdducts = PtmListLoader.ReadModsFromString(modText, out List<(Modification, string)> mods)
+                .ToList();
+            var potassiumAdducts = PtmListLoader.ReadModsFromString(modText2, out mods)
+                .ToList();
+
+            Assert.That(sodiumAdducts.Count, Is.EqualTo(4));
+            Assert.That(potassiumAdducts.Count, Is.EqualTo(4));
+
+            var rna = new RNA("GUACUG");
+            var rnaDigestionParams = new RnaDigestionParams();
+
+            rnaDigestionParams.MaxMods = 1;
+            var fixedMods = new List<Modification> { potassiumAdducts[0] }; // A
+            var variableMods = new List<Modification> { sodiumAdducts[1] }; // C
+            var precursors = rna.Digest(rnaDigestionParams, fixedMods, variableMods)
+                .ToList();
+
+            var fullSequences = precursors.Select(p => p.FullSequence).ToList();
+            Assert.That(precursors.Count, Is.EqualTo(2));
+            Assert.That(precursors.All(p => p.NumFixedMods == 1));
+            Assert.That(fullSequences.Contains("GUA[Metal:Potassium on A]CUG"));
+            Assert.That(fullSequences.Contains("GUA[Metal:Potassium on A]C[Metal:Sodium on C]UG"));
+
+
+            fixedMods = new List<Modification> { potassiumAdducts[2] }; // G
+            variableMods = new List<Modification> { sodiumAdducts[1] }; // C
+            precursors = rna.Digest(rnaDigestionParams, fixedMods, variableMods)
+                .ToList();
+            fullSequences = precursors.Select(p => p.FullSequence).ToList();
+            Assert.That(precursors.Count, Is.EqualTo(2));
+            Assert.That(precursors.All(p => p.NumFixedMods == 2));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]UACUG[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]UAC[Metal:Sodium on C]UG[Metal:Potassium on G]"));
+
+            fixedMods = new List<Modification> { potassiumAdducts[2] }; // G
+            variableMods = new List<Modification> { sodiumAdducts[1], sodiumAdducts[3] }; // C, U
+            precursors = rna.Digest(rnaDigestionParams, fixedMods, variableMods)
+                .ToList();
+            fullSequences = precursors.Select(p => p.FullSequence).ToList();
+            Assert.That(precursors.Count, Is.EqualTo(4));
+            Assert.That(precursors.All(p => p.NumFixedMods == 2));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]UACUG[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]UAC[Metal:Sodium on C]UG[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]UACU[Metal:Sodium on U]G[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]U[Metal:Sodium on U]ACUG[Metal:Potassium on G]"));
+
+            rnaDigestionParams.MaxMods = 2;
+            precursors = rna.Digest(rnaDigestionParams, fixedMods, variableMods)
+                .ToList();
+            fullSequences = precursors.Select(p => p.FullSequence).ToList();
+            Assert.That(precursors.Count, Is.EqualTo(7));
+            Assert.That(precursors.All(p => p.NumFixedMods == 2));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]UACUG[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]UAC[Metal:Sodium on C]UG[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]U[Metal:Sodium on U]ACUG[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]UACU[Metal:Sodium on U]G[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]U[Metal:Sodium on U]ACU[Metal:Sodium on U]G[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]UAC[Metal:Sodium on C]U[Metal:Sodium on U]G[Metal:Potassium on G]"));
+            Assert.That(fullSequences.Contains("G[Metal:Potassium on G]U[Metal:Sodium on U]AC[Metal:Sodium on C]UG[Metal:Potassium on G]"));
         }
 
         #endregion

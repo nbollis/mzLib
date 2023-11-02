@@ -209,6 +209,16 @@ namespace Transcriptomics
             }
         }
 
+        public IEnumerable<OligoWithSetMods> Digest(RnaDigestionParams digestionParameters,
+            List<Modification> allKnownFixedMods,
+            List<Modification> variableModifications, List<SilacLabel> silacLabels = null,
+            (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = null,
+            bool topDownTruncationSearch = false)
+        {
+            return Digest((IDigestionParams)digestionParameters, allKnownFixedMods, variableModifications, silacLabels, turnoverLabels, topDownTruncationSearch)
+                .Cast<OligoWithSetMods>();
+        }
+
         #endregion
 
         #region Electrospray
