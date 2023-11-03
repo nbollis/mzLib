@@ -143,7 +143,7 @@ namespace Transcriptomics
             var sequence = (Parent as NucleicAcid)!.NucleicAcids[(OneBasedStartResidue - 1)..OneBasedEndResidue];
 
             // intact product ion
-            if (FragmentationTerminus.Both == fragmentationTerminus || FragmentationTerminus.None == fragmentationTerminus)
+            if (fragmentationTerminus is FragmentationTerminus.Both or FragmentationTerminus.None)
                 products.AddRange(GetNeutralFragments(ProductType.M, sequence));
             
             if (calculateFivePrime)
@@ -204,6 +204,13 @@ namespace Transcriptomics
 
                 if (i < 1)
                     continue;
+
+                // add side-chain mod
+                if (AllModsOneIsNterminus.TryGetValue(naIndex + 2, out Modification mod))
+                {
+                    monoMass += mod.MonoisotopicMass ?? 0;
+                }
+                
 
                 var previousNucleotide = sequence[naIndex];
 

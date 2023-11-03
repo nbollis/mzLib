@@ -9,7 +9,9 @@ using static Test.Transcriptomics.TestNucleicAcid;
 using Transcriptomics;
 using MassSpectrometry;
 using Proteomics.Fragmentation;
+using TopDownProteomics.Tools;
 using UsefulProteomicsDatabases.Generated;
+using UsefulProteomicsDatabases;
 
 namespace Test.Transcriptomics
 {
@@ -61,6 +63,64 @@ namespace Test.Transcriptomics
             Assert.That(products.All(p => p.ProductType is ProductType.w or ProductType.y or ProductType.yWaterLoss ));
 
         }
+
+        [Test]
+        [TestCase("GUACUG", "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A\r\nCF   Na1H-1\r\n" + @"//",
+            "GUA[Metal:Sodium on A]CUG", 1874.28, 1896.26, ProductType.a,
+            new[] { 267.089, 573.114, 902.167, 1207.208, 1513.233 },
+            new[] { 267.089, 573.114, 902.167 + 21.982, 1207.208 + 21.982, 1513.233 + 21.982 } )]
+        [TestCase("GUACUG", "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A\r\nCF   Na1H-1\r\n" + @"//",
+            "GUA[Metal:Sodium on A]CUG", 1874.28, 1896.26, ProductType.b,
+                       new[] { 283.084, 589.109, 918.162, 1223.203, 1529.228 },
+                       new[] { 283.084, 589.109, 918.162 + 21.982, 1223.203 + 21.982, 1529.228 + 21.982 })]
+        [TestCase("GUACUG", "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A\r\nCF   Na1H-1\r\n" + @"//",
+            "GUA[Metal:Sodium on A]CUG", 1874.28, 1896.26, ProductType.c,
+                                  new[] { 347.055, 653.081, 982.133, 1287.174, 1593.2 },
+                                  new[] { 347.055, 653.081, 982.133 + 21.982, 1287.174 + 21.982, 1593.2 + 21.982 })]
+
+        // TODO: The rest of the fragment types and then another mod position, probably g so we can get to mods on there
+        [TestCase("GUACUG", "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A\r\nCF   Na1H-1\r\n" + @"//",
+            "GUA[Metal:Sodium on A]CUG", 1874.28, 1896.26, ProductType.x,
+                                             new[] { 347.055, 653.081, 982.133, 1287.174, 1593.2 },
+                                             new[] { 347.055 + 21.982, 653.081 + 21.982, 982.133, 1287.174, 1593.2 })]
+        [TestCase("GUACUG", "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A\r\nCF   Na1H-1\r\n" + @"//",
+            "GUA[Metal:Sodium on A]CUG", 1874.28, 1896.26, ProductType.y,
+                                                        new[] { 283.084, 589.109, 894.15, 1223.203, 1529.228 },
+                                                        new[] { 283.084 + 21.982, 589.109 + 21.982, 894.15, 1223.203, 1529.228 })]
+        public void TestFragmentation_Modified(string sequence, string modString, string fullSequence, double unmodifiedMass, double modifiedMass,
+            ProductType productType, double[] unmodifiedFragmentMass, double[] modifiedFragmentMasses)
+        {
+            var mods = PtmListLoader.ReadModsFromString(modString, out List<(Modification, string)> modsOut).ToList();
+            var rna = new RNA(sequence);
+
+            var unmodifiedOligo = rna.Digest(new RnaDigestionParams(), new List<Modification>(), new List<Modification>())
+                .First() as OligoWithSetMods ?? throw new NullReferenceException();
+            Assert.That(unmodifiedOligo.AllModsOneIsNterminus.Count, Is.EqualTo(0));
+            Assert.That(unmodifiedOligo.FullSequence, Is.EqualTo(sequence));
+            Assert.That(unmodifiedOligo.MonoisotopicMass, Is.EqualTo(unmodifiedMass).Within(0.01));
+
+            var modifiedOligo = rna.Digest(new RnaDigestionParams(), mods, new List<Modification>())
+                .First() as OligoWithSetMods ?? throw new NullReferenceException();
+            Assert.That(modifiedOligo.AllModsOneIsNterminus.Count, Is.EqualTo(mods.Count));
+            Assert.That(modifiedOligo.FullSequence, Is.EqualTo(fullSequence));
+            Assert.That(modifiedOligo.MonoisotopicMass, Is.EqualTo(modifiedMass).Within(0.01));
+
+            var unmodifiedProducts = unmodifiedOligo.GetNeutralFragments(productType).ToList();
+            Assert.That(unmodifiedProducts.Count, Is.EqualTo(5));
+            var modifiedProducts = modifiedOligo.GetNeutralFragments(productType).ToList();
+            Assert.That(modifiedProducts.Count, Is.EqualTo(5));
+
+
+            for (int i = 0; i < unmodifiedProducts.Count; i++)
+            {
+                var unModifedProduct = unmodifiedProducts[i];
+                var modifiedProduct = modifiedProducts[i];
+
+                Assert.That(unModifedProduct.NeutralMass, Is.EqualTo(unmodifiedFragmentMass[i]).Within(0.01));
+                Assert.That(modifiedProduct.NeutralMass, Is.EqualTo(modifiedFragmentMasses[i]).Within(0.01));
+            }
+        }
+
 
         [Test]
         [TestCaseSource(nameof(GetSixMerIndividualFragmentTypeTestCases))]

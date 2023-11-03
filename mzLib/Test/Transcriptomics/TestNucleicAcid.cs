@@ -24,7 +24,7 @@ namespace Test.Transcriptomics
     internal class TestNucleicAcid
     {
         internal record SixmerTestCase(string Sequence, ProductType Type, double[] NeutralMasses, string[] ChemicalFormulas);
-
+       
         internal static IEnumerable<SixmerTestCase> GetSixmerIndividualFragmentTypeTestCases()
         {
             Loaders.LoadElements();
