@@ -9,26 +9,19 @@ namespace MassSpectrometry.MzSpectra
     public class SpectralSimilarity
     {
         public SpectralSimilarity(MzSpectrum experimentalSpectrum, MzSpectrum theoreticalSpectrum, SpectrumNormalizationScheme scheme, double toleranceInPpm, bool allPeaks, double filterOutBelowThisMz = 300)
+        : this (experimentalSpectrum, theoreticalSpectrum.XArray, theoreticalSpectrum.YArray, scheme, toleranceInPpm, allPeaks, filterOutBelowThisMz)
         {
-            ExperimentalYArray = Normalize(FilterOutIonsBelowThisMz(experimentalSpectrum.XArray,experimentalSpectrum.YArray, filterOutBelowThisMz).Select(p=>p.Item2).ToArray(),scheme);
-            ExperimentalXArray = FilterOutIonsBelowThisMz(experimentalSpectrum.XArray, experimentalSpectrum.YArray, filterOutBelowThisMz).Select(p => p.Item1).ToArray();
-            TheoreticalYArray = Normalize(FilterOutIonsBelowThisMz(theoreticalSpectrum.XArray, theoreticalSpectrum.YArray, filterOutBelowThisMz).Select(p => p.Item2).ToArray(), scheme);
-            TheoreticalXArray = FilterOutIonsBelowThisMz(theoreticalSpectrum.XArray, theoreticalSpectrum.YArray, filterOutBelowThisMz).Select(p => p.Item1).ToArray();
-            LocalPpmTolerance = toleranceInPpm;
-            normalizationScheme = scheme;
-            _intensityPairs = IntensityPairs(allPeaks);
+           
         }
 
-        public SpectralSimilarity(MzSpectrum experimentalSpectrum, double[] theoreticalX, double[] theoreticalY, SpectrumNormalizationScheme scheme, double toleranceInPpm, bool allPeaks, double filterOutBelowThisMz = 300)
+        public SpectralSimilarity(MzSpectrum experimentalSpectrum, double[] theoreticalX, double[] theoreticalY,
+            SpectrumNormalizationScheme scheme, double toleranceInPpm, bool allPeaks, double filterOutBelowThisMz = 300)
+            : this(experimentalSpectrum.XArray, experimentalSpectrum.YArray, theoreticalX, theoreticalY, scheme,
+                toleranceInPpm, allPeaks, filterOutBelowThisMz)
         {
-            ExperimentalYArray = Normalize(FilterOutIonsBelowThisMz(experimentalSpectrum.XArray, experimentalSpectrum.YArray, filterOutBelowThisMz).Select(p => p.Item2).ToArray(), scheme);
-            ExperimentalXArray = FilterOutIonsBelowThisMz(experimentalSpectrum.XArray, experimentalSpectrum.YArray, filterOutBelowThisMz).Select(p => p.Item1).ToArray();
-            TheoreticalYArray = Normalize(FilterOutIonsBelowThisMz(theoreticalX, theoreticalY, filterOutBelowThisMz).Select(p => p.Item2).ToArray(), scheme);
-            TheoreticalXArray = FilterOutIonsBelowThisMz(theoreticalX, theoreticalY, filterOutBelowThisMz).Select(p => p.Item1).ToArray();
-            LocalPpmTolerance = toleranceInPpm;
-            normalizationScheme = scheme;
-            _intensityPairs = IntensityPairs(allPeaks);
+           
         }
+
 
         public SpectralSimilarity(double[] P_XArray, double[] P_YArray, double[] Q_XArray, double[] Q_YArray, SpectrumNormalizationScheme scheme, double toleranceInPpm, bool allPeaks, double filterOutBelowThisMz = 300)
         {
