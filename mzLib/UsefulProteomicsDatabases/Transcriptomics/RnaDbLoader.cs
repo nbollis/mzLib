@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.IO;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using Transcriptomics;
 using Easy.Common;
 using System.Text.RegularExpressions;
+using Chemistry;
 using Easy.Common.Extensions;
 
 namespace UsefulProteomicsDatabases.Transcriptomics
@@ -36,7 +38,7 @@ namespace UsefulProteomicsDatabases.Transcriptomics
 
 
         public static List<RNA> LoadRnaFasta(string rnaDbLocation, bool generateTargets, DecoyType decoyType,
-            bool isContaminant, out List<string> errors)
+            bool isContaminant, out List<string> errors, IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null)
         {
             RnaFastaHeaderType? headerType = null;
             Regex substituteWhitespace = new Regex(@"\s+");
@@ -118,7 +120,7 @@ namespace UsefulProteomicsDatabases.Transcriptomics
                         // Do we need to sanitize the sequence? 
 
                         RNA rna = new RNA(sequence, name, identifier, organism, rnaDbLocation,
-                            null, null, null,
+                            fivePrimeTerm, threePrimeTerm, null,
                             isContaminant, false, additonalDatabaseFields );
                         if (rna.Length == 0)
                             errors.Add("Line" + line + ", Rna length of 0: " + rna.Name + "was skipped from database: " + rnaDbLocation);
