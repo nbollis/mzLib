@@ -25,6 +25,7 @@ namespace Transcriptomics
         public static Nucleotide CytosineBase { get; private set; }
         public static Nucleotide GuanineBase { get; private set; }
         public static Nucleotide UracilBase { get; private set; }
+        public static Nucleotide PseudoUracilBase { get; private set; }
 
         // DNA
         public static Nucleotide DeoxyAdenineBase { get; private set; }
@@ -58,6 +59,7 @@ namespace Transcriptomics
             CytosineBase = AddResidue("Cytosine", 'C', "Cyt", "C4H4N3O1");
             GuanineBase = AddResidue("Guanine", 'G', "Gua", "C5H4N5O1");
             UracilBase = AddResidue("Uracil", 'U', "Ura", "C4H3N2O2");
+            PseudoUracilBase = AddResidue("PseudoUracil", 'Ψ', "Psu", "C4H3N2O2");
 
             // DNA bases which have the same mass as the ones above
             // however, naming to deoxy- to distinguish DNA nucleotide mass calculation from RNA
