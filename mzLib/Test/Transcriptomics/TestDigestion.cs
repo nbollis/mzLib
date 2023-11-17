@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Chemistry;
 using MassSpectrometry;
+using MathNet.Numerics.Distributions;
 using NUnit.Framework;
 using Transcriptomics;
 using UsefulProteomicsDatabases;
@@ -340,6 +341,112 @@ namespace Test.Transcriptomics
                 Assert.That(digestionProduct.OneBasedEndResidue, Is.EqualTo(endResidue[index]));
                 Assert.That(digestionProduct.PreviousResidue, Is.EqualTo(preciousResidue[index]));
                 Assert.That(digestionProduct.NextResidue, Is.EqualTo(nextResidue[index]));
+            }
+        }
+
+        [Test]
+        public static void TestMultipleTerminiOptions_BeforeDigestionCustom5PrimeAndDefault3Prime_AfterDigestionDefault5PrimeVariable3Prime()
+        {
+            string sequence = "UAGUCGUUGAUAG";
+            var initialFivePrimeCap = ChemicalFormula.ParseFormula("C13H22N5O14P3");
+            RNA rna = new RNA(sequence, initialFivePrimeCap);
+
+            List<IHasChemicalFormula> threePrimeCaps = new()
+            {
+                ChemicalFormula.ParseFormula("H2O4P"), // phosphate
+                ChemicalFormula.ParseFormula("O3P"), // cyclic phosphate
+            };
+
+            Assert.That(rna.FivePrimeTerminus.Equals(initialFivePrimeCap));
+            Assert.That(rna.ThreePrimeTerminus.Equals(NucleicAcid.DefaultThreePrimeTerminus));
+
+            var expected = new List<(string seq, IHasChemicalFormula fivePrime, IHasChemicalFormula threePrime)>()
+            {
+                // Start of sequence - custom 5' is intact at start, variable 3'
+                ("UAG", initialFivePrimeCap, threePrimeCaps[0]),
+                ("UAG", initialFivePrimeCap, threePrimeCaps[1]),
+
+                // Internal digestion product -  5' is default, varible 3'
+                ("UCG", NucleicAcid.DefaultFivePrimeTerminus, threePrimeCaps[0]),
+                ("UCG", NucleicAcid.DefaultFivePrimeTerminus, threePrimeCaps[1]),
+                ("UUG", NucleicAcid.DefaultFivePrimeTerminus, threePrimeCaps[0]),
+                ("UUG", NucleicAcid.DefaultFivePrimeTerminus, threePrimeCaps[1]),
+
+                // End of sequence - 5' is default, 3' is intact
+                ("AUAG", NucleicAcid.DefaultFivePrimeTerminus, rna.ThreePrimeTerminus),
+            };
+
+            var digestionParams = new RnaDigestionParams("RNase T1", potentialThreePrimeCaps: threePrimeCaps);
+            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Select(p => (OligoWithSetMods)p).ToList();
+
+            Assert.That(digestionProducts.Count, Is.EqualTo(expected.Count));
+            for (var index = 0; index < digestionProducts.Count; index++)
+            {
+                var digestionProduct = digestionProducts[index];
+                var expectedProduct = expected[index];
+
+                Assert.That(digestionProduct.FivePrimeTerminus.MonoisotopicMass, 
+                    Is.EqualTo(expectedProduct.fivePrime.MonoisotopicMass).Within(0.00001));
+                Assert.That(digestionProduct.ThreePrimeTerminus.MonoisotopicMass,
+                    Is.EqualTo(expectedProduct.threePrime.MonoisotopicMass).Within(0.00001));
+            }
+        }
+
+        [Test]
+        public static void TestMultipleTerminiOptions_BeforeDigestionCustom5PrimeAndCustom3Prime_AfterDigestionVariable5PrimeVariable3Prime()
+        {
+            string sequence = "UAGUCGUUGAUAG";
+            var initialFivePrimeCap = ChemicalFormula.ParseFormula("C13H22N5O14P3");
+            var initialThreePrimeCap = ChemicalFormula.ParseFormula("F3");
+            var phosphate = ChemicalFormula.ParseFormula("H2O4P");
+            var cyclicPhosphate = ChemicalFormula.ParseFormula("O3P");
+            var methyl = ChemicalFormula.ParseFormula("CH2");
+            var ethyl = ChemicalFormula.ParseFormula("C2H4");
+
+
+            RNA rna = new RNA(sequence, initialFivePrimeCap, initialThreePrimeCap);
+            List<IHasChemicalFormula> fivePrimeCaps = new() { methyl, ethyl };
+            List<IHasChemicalFormula> threePrimeCaps = new() { phosphate, cyclicPhosphate };
+
+            Assert.That(rna.FivePrimeTerminus.Equals(initialFivePrimeCap));
+            Assert.That(rna.ThreePrimeTerminus.Equals(initialThreePrimeCap));
+
+            var expected = new List<(string seq, IHasChemicalFormula fivePrime, IHasChemicalFormula threePrime)>()
+            {
+                // Start of sequence - custom 5' is intact at start, variable 3'
+                ("UAG", initialFivePrimeCap, phosphate),
+                ("UAG", initialFivePrimeCap, cyclicPhosphate),
+
+                // Internal digestion product -  5' is variable, varible 3'
+                ("UCG", methyl, phosphate),
+                ("UCG", methyl, cyclicPhosphate),
+                ("UCG", ethyl, phosphate),
+                ("UCG", ethyl, cyclicPhosphate),
+                ("UUG", methyl, phosphate),
+                ("UUG", methyl, cyclicPhosphate),
+                ("UUG", ethyl, phosphate),
+                ("UUG", ethyl, cyclicPhosphate),
+
+                // End of sequence - 5' is variable, custom 3' is intact
+                ("AUAG", methyl, initialThreePrimeCap),
+                ("AUAG", ethyl, initialThreePrimeCap),
+            };
+
+            var digestionParams = new RnaDigestionParams("RNase T1", potentialThreePrimeCaps: threePrimeCaps, potentialFivePrimeCaps: fivePrimeCaps);
+            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+                .Select(p => (OligoWithSetMods)p).ToList();
+
+            Assert.That(digestionProducts.Count, Is.EqualTo(expected.Count));
+            for (var index = 0; index < digestionProducts.Count; index++)
+            {
+                var digestionProduct = digestionProducts[index];
+                var expectedProduct = expected[index];
+
+                Assert.That(digestionProduct.FivePrimeTerminus.MonoisotopicMass,
+                    Is.EqualTo(expectedProduct.fivePrime.MonoisotopicMass).Within(0.00001));
+                Assert.That(digestionProduct.ThreePrimeTerminus.MonoisotopicMass,
+                    Is.EqualTo(expectedProduct.threePrime.MonoisotopicMass).Within(0.00001));
             }
         }
 
