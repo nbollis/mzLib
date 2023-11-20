@@ -13,8 +13,7 @@ namespace Transcriptomics
        
         public RnaDigestionParams(string rnase = "top-down", int maxMissedCleavages = 0, int minLength = 1, 
             int maxLength = int.MaxValue, int maxModificationIsoforms = 1024, int maxMods = 2,
-            FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both, 
-            List<IHasChemicalFormula> potentialFivePrimeCaps = null, List<IHasChemicalFormula> potentialThreePrimeCaps = null) 
+            FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both) 
         {
             Rnase = RnaseDictionary.Dictionary[rnase];
             MaxMissedCleavages = maxMissedCleavages;
@@ -23,8 +22,6 @@ namespace Transcriptomics
             MaxMods = maxModificationIsoforms;
             MaxModificationIsoforms = maxModificationIsoforms;
             FragmentationTerminus = fragmentationTerminus;
-            PotentialFivePrimeCaps = potentialFivePrimeCaps ?? new List<IHasChemicalFormula>();
-            PotentialThreePrimeCaps = potentialThreePrimeCaps ?? new List<IHasChemicalFormula>();
         }
 
         public int MaxMissedCleavages { get; set; }
@@ -35,7 +32,6 @@ namespace Transcriptomics
         public DigestionAgent Enzyme => Rnase;
         public Rnase Rnase { get; private set; }
         public FragmentationTerminus FragmentationTerminus { get; set; }
-        public List<IHasChemicalFormula> PotentialFivePrimeCaps { get; set; }
-        public List<IHasChemicalFormula> PotentialThreePrimeCaps { get; set; }
+
     }
 }

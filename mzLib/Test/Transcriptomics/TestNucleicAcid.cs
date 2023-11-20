@@ -95,8 +95,8 @@ namespace Test.Transcriptomics
             Assert.That(rna.Length, Is.EqualTo(sequence.Length));
             Assert.That(rna.MonoisotopicMass, Is.EqualTo(monoMass).Within(0.01));
             Assert.That(rna.GetChemicalFormula().MonoisotopicMass, Is.EqualTo(monoMass).Within(0.01));
-            Assert.That(rna.NucleicAcids.Length, Is.EqualTo(sequence.Length));
-            CollectionAssert.AreEqual(rna.NucleicAcids.Select(p => p.Letter), sequence);
+            Assert.That(rna.NucleicAcidArray.Length, Is.EqualTo(sequence.Length));
+            CollectionAssert.AreEqual(rna.NucleicAcidArray.Select(p => p.Letter), sequence);
             Assert.That(rna.FivePrimeTerminus.Equals(NucleicAcid.DefaultFivePrimeTerminus));
             Assert.That(rna.ThreePrimeTerminus.Equals(NucleicAcid.DefaultThreePrimeTerminus));
             List<Nucleotide> nucList = new();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using Chemistry;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
@@ -345,108 +346,128 @@ namespace Test.Transcriptomics
         }
 
         [Test]
-        public static void TestMultipleTerminiOptions_BeforeDigestionCustom5PrimeAndDefault3Prime_AfterDigestionDefault5PrimeVariable3Prime()
+        public static void TestTermini_ThreePrimeCyclicPhosphate()
         {
             string sequence = "UAGUCGUUGAUAG";
-            var initialFivePrimeCap = ChemicalFormula.ParseFormula("C13H22N5O14P3");
-            RNA rna = new RNA(sequence, initialFivePrimeCap);
+            RNA rna = new RNA(sequence);
+            var oligoCyclicPhosphate = PtmListLoader.ReadModsFromString(
+                "ID   Cyclic Phosphate\r\nTG   X\r\nPP   Oligo 3'-terminal.\r\nMT   Digestion Termini\r\nCF   H-2 O-1\r\nDR   Unimod; 280.\r\n//",
+                out List<(Modification, string)>  errors).First();
+            var nucleicAcidCyclicPhosphate = PtmListLoader.ReadModsFromString(
+                "ID   Cyclic Phosphate\r\nTG   X\r\nPP   3'-terminal.\r\nMT   Digestion Termini\r\nCF   H-2 O-1\r\nDR   Unimod; 280.\r\n//",
+                out errors).First();
+            Assert.That(!errors.Any());
 
-            List<IHasChemicalFormula> threePrimeCaps = new()
-            {
-                ChemicalFormula.ParseFormula("H2O4P"), // phosphate
-                ChemicalFormula.ParseFormula("O3P"), // cyclic phosphate
-            };
-
-            Assert.That(rna.FivePrimeTerminus.Equals(initialFivePrimeCap));
-            Assert.That(rna.ThreePrimeTerminus.Equals(NucleicAcid.DefaultThreePrimeTerminus));
-
-            var expected = new List<(string seq, IHasChemicalFormula fivePrime, IHasChemicalFormula threePrime)>()
-            {
-                // Start of sequence - custom 5' is intact at start, variable 3'
-                ("UAG", initialFivePrimeCap, threePrimeCaps[0]),
-                ("UAG", initialFivePrimeCap, threePrimeCaps[1]),
-
-                // Internal digestion product -  5' is default, varible 3'
-                ("UCG", NucleicAcid.DefaultFivePrimeTerminus, threePrimeCaps[0]),
-                ("UCG", NucleicAcid.DefaultFivePrimeTerminus, threePrimeCaps[1]),
-                ("UUG", NucleicAcid.DefaultFivePrimeTerminus, threePrimeCaps[0]),
-                ("UUG", NucleicAcid.DefaultFivePrimeTerminus, threePrimeCaps[1]),
-
-                // End of sequence - 5' is default, 3' is intact
-                ("AUAG", NucleicAcid.DefaultFivePrimeTerminus, rna.ThreePrimeTerminus),
-            };
-
-            var digestionParams = new RnaDigestionParams("RNase T1", potentialThreePrimeCaps: threePrimeCaps);
-            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), new List<Modification>())
+            // top-down digestion, 3' terminal modification
+            var variableMods = new List<Modification>{ nucleicAcidCyclicPhosphate };
+            var digestionParams = new RnaDigestionParams("top-down");
+            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), variableMods)
                 .Select(p => (OligoWithSetMods)p).ToList();
+            Assert.That(digestionProducts.Count, Is.EqualTo(2));
+            Assert.That(digestionProducts[0].FullSequence, Is.EqualTo("UAGUCGUUGAUAG"));
+            Assert.That(digestionProducts[1].FullSequence, Is.EqualTo("UAGUCGUUGAUAG[Digestion Termini:Cyclic Phosphate on X]"));
 
-            Assert.That(digestionProducts.Count, Is.EqualTo(expected.Count));
-            for (var index = 0; index < digestionProducts.Count; index++)
+            // top-down digestion, 3' oligo terminal modification
+            variableMods = new List<Modification> { oligoCyclicPhosphate };
+            digestionProducts = rna.Digest(digestionParams, new List<Modification>(), variableMods)
+                .Select(p => (OligoWithSetMods)p).ToList();
+            Assert.That(digestionProducts.Count, Is.EqualTo(1));
+            Assert.That(digestionProducts[0].FullSequence, Is.EqualTo("UAGUCGUUGAUAG"));
+
+            // RNase T1 digestion, 3' terminal modification
+            digestionParams = new RnaDigestionParams("RNase T1");
+            variableMods = new List<Modification> { nucleicAcidCyclicPhosphate };
+            digestionProducts = rna.Digest(digestionParams, new List<Modification>(), variableMods)
+                .Select(p => (OligoWithSetMods)p).ToList();
+            Assert.That(digestionProducts.Count, Is.EqualTo(5));
+            var expected = new List<string>()
             {
-                var digestionProduct = digestionProducts[index];
-                var expectedProduct = expected[index];
+                "UAG", "UCG", "UUG", "AUAG", "AUAG[Digestion Termini:Cyclic Phosphate on X]" 
+            };
+            for (int i = 0; i < expected.Count; i++)
+            {
+                Assert.That(digestionProducts[i].FullSequence, Is.EqualTo(expected[i]));
+            }
+           
+            // RNase T1 digestion, 3' oligo terminal modification 
+            variableMods = new List<Modification> { oligoCyclicPhosphate };
+            digestionProducts = rna.Digest(digestionParams, new List<Modification>(), variableMods)
+                .Select(p => (OligoWithSetMods)p).ToList();
+            Assert.That(digestionProducts.Count, Is.EqualTo(7));
+            expected = new List<string>()
+            {
+                "UAG", "UAG[Digestion Termini:Cyclic Phosphate on X]",
+                "UCG", "UCG[Digestion Termini:Cyclic Phosphate on X]",
+                "UUG", "UUG[Digestion Termini:Cyclic Phosphate on X]",
+                "AUAG",
+            };
 
-                Assert.That(digestionProduct.FivePrimeTerminus.MonoisotopicMass, 
-                    Is.EqualTo(expectedProduct.fivePrime.MonoisotopicMass).Within(0.00001));
-                Assert.That(digestionProduct.ThreePrimeTerminus.MonoisotopicMass,
-                    Is.EqualTo(expectedProduct.threePrime.MonoisotopicMass).Within(0.00001));
+            for (int i = 0; i < expected.Count; i++)
+            {
+                Assert.That(digestionProducts[i].FullSequence, Is.EqualTo(expected[i]));
             }
         }
 
         [Test]
-        public static void TestMultipleTerminiOptions_BeforeDigestionCustom5PrimeAndCustom3Prime_AfterDigestionVariable5PrimeVariable3Prime()
+        public static void TestTermini_FivePrimeLargeMod()
         {
             string sequence = "UAGUCGUUGAUAG";
-            var initialFivePrimeCap = ChemicalFormula.ParseFormula("C13H22N5O14P3");
-            var initialThreePrimeCap = ChemicalFormula.ParseFormula("F3");
-            var phosphate = ChemicalFormula.ParseFormula("H2O4P");
-            var cyclicPhosphate = ChemicalFormula.ParseFormula("O3P");
-            var methyl = ChemicalFormula.ParseFormula("CH2");
-            var ethyl = ChemicalFormula.ParseFormula("C2H4");
+            RNA rna = new RNA(sequence);
+            var oligoLargeMod = PtmListLoader.ReadModsFromString(
+                "ID   Pfizer 5'-Cap\r\nTG   X\r\nPP   Oligo 5'-terminal.\r\nMT   Standard\r\nCF   C13H22N5O14P3\r\nDR   Unimod; 280.\r\n//",
+                out List<(Modification, string)> errors).First();
+            var nucleicAcidLargeMod = PtmListLoader.ReadModsFromString(
+                "ID   Pfizer 5'-Cap\r\nTG   X\r\nPP   5'-terminal.\r\nMT   Standard\r\nCF   C13H22N5O14P3\r\nDR   Unimod; 280.\r\n//",
+                out errors).First();
+            Assert.That(!errors.Any());
 
+            // top-down digestion, 5' terminal modification
+            var variableMods = new List<Modification> { nucleicAcidLargeMod };
+            var digestionParams = new RnaDigestionParams("top-down");
+            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), variableMods)
+                .Select(p => (OligoWithSetMods)p).ToList();
+            Assert.That(digestionProducts.Count, Is.EqualTo(2));
+            Assert.That(digestionProducts[0].FullSequence, Is.EqualTo("UAGUCGUUGAUAG"));
+            Assert.That(digestionProducts[1].FullSequence, Is.EqualTo("[Standard:Pfizer 5'-Cap on X]UAGUCGUUGAUAG"));
 
-            RNA rna = new RNA(sequence, initialFivePrimeCap, initialThreePrimeCap);
-            List<IHasChemicalFormula> fivePrimeCaps = new() { methyl, ethyl };
-            List<IHasChemicalFormula> threePrimeCaps = new() { phosphate, cyclicPhosphate };
+            // top-down digestion, 5' oligo terminal modification
+            variableMods = new List<Modification> { oligoLargeMod };
+            digestionProducts = rna.Digest(digestionParams, new List<Modification>(), variableMods)
+                .Select(p => (OligoWithSetMods)p).ToList();
+            Assert.That(digestionProducts.Count, Is.EqualTo(1));
+            Assert.That(digestionProducts[0].FullSequence, Is.EqualTo("UAGUCGUUGAUAG"));
 
-            Assert.That(rna.FivePrimeTerminus.Equals(initialFivePrimeCap));
-            Assert.That(rna.ThreePrimeTerminus.Equals(initialThreePrimeCap));
-
-            var expected = new List<(string seq, IHasChemicalFormula fivePrime, IHasChemicalFormula threePrime)>()
+            // RNase T1 digestion, 5' terminal modification
+            digestionParams = new RnaDigestionParams("RNase T1");
+            variableMods = new List<Modification> { nucleicAcidLargeMod };
+            digestionProducts = rna.Digest(digestionParams, new List<Modification>(), variableMods)
+                .Select(p => (OligoWithSetMods)p).ToList();
+            Assert.That(digestionProducts.Count, Is.EqualTo(5));
+            var expected = new List<string>()
             {
-                // Start of sequence - custom 5' is intact at start, variable 3'
-                ("UAG", initialFivePrimeCap, phosphate),
-                ("UAG", initialFivePrimeCap, cyclicPhosphate),
+                "UAG", "[Standard:Pfizer 5'-Cap on X]UAG", "UCG", "UUG", "AUAG"
+            };
+            for (int i = 0; i < expected.Count; i++)
+            {
+                Assert.That(digestionProducts[i].FullSequence, Is.EqualTo(expected[i]));
+            }
 
-                // Internal digestion product -  5' is variable, varible 3'
-                ("UCG", methyl, phosphate),
-                ("UCG", methyl, cyclicPhosphate),
-                ("UCG", ethyl, phosphate),
-                ("UCG", ethyl, cyclicPhosphate),
-                ("UUG", methyl, phosphate),
-                ("UUG", methyl, cyclicPhosphate),
-                ("UUG", ethyl, phosphate),
-                ("UUG", ethyl, cyclicPhosphate),
-
-                // End of sequence - 5' is variable, custom 3' is intact
-                ("AUAG", methyl, initialThreePrimeCap),
-                ("AUAG", ethyl, initialThreePrimeCap),
+            // RNase T1 digestion, 5' oligo terminal modification 
+            variableMods = new List<Modification> { oligoLargeMod };
+            digestionProducts = rna.Digest(digestionParams, new List<Modification>(), variableMods)
+                .Select(p => (OligoWithSetMods)p).ToList();
+            Assert.That(digestionProducts.Count, Is.EqualTo(7));
+            expected = new List<string>()
+            {
+                "UAG", 
+                "UCG", "[Standard:Pfizer 5'-Cap on X]UCG",
+                "UUG", "[Standard:Pfizer 5'-Cap on X]UUG",
+                "AUAG", "[Standard:Pfizer 5'-Cap on X]AUAG"
             };
 
-            var digestionParams = new RnaDigestionParams("RNase T1", potentialThreePrimeCaps: threePrimeCaps, potentialFivePrimeCaps: fivePrimeCaps);
-            var digestionProducts = rna.Digest(digestionParams, new List<Modification>(), new List<Modification>())
-                .Select(p => (OligoWithSetMods)p).ToList();
-
-            Assert.That(digestionProducts.Count, Is.EqualTo(expected.Count));
-            for (var index = 0; index < digestionProducts.Count; index++)
+            for (int i = 0; i < expected.Count; i++)
             {
-                var digestionProduct = digestionProducts[index];
-                var expectedProduct = expected[index];
-
-                Assert.That(digestionProduct.FivePrimeTerminus.MonoisotopicMass,
-                    Is.EqualTo(expectedProduct.fivePrime.MonoisotopicMass).Within(0.00001));
-                Assert.That(digestionProduct.ThreePrimeTerminus.MonoisotopicMass,
-                    Is.EqualTo(expectedProduct.threePrime.MonoisotopicMass).Within(0.00001));
+                Assert.That(digestionProducts[i].FullSequence, Is.EqualTo(expected[i]));
             }
         }
 

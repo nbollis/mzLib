@@ -113,18 +113,14 @@ namespace MassSpectrometry
             switch (_locationRestriction)
             {
                 case "N-terminal.":
-                    return _locationRestriction;
-
                 case "C-terminal.":
-                    return _locationRestriction;
-
                 case "Peptide N-terminal.":
-                    return _locationRestriction;
-
                 case "Peptide C-terminal.":
-                    return _locationRestriction;
-
                 case "Anywhere.":
+                case "3'-terminal.":
+                case "5'-terminal.":
+                case "Oligo 3'-terminal.":
+                case "Oligo 5'-terminal.":
                     return _locationRestriction;
 
                 default:

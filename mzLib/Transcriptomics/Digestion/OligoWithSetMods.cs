@@ -140,7 +140,7 @@ namespace Transcriptomics
             bool calculateThreePrime =
                 fragmentationTerminus is FragmentationTerminus.ThreePrime or FragmentationTerminus.Both;
 
-            var sequence = (Parent as NucleicAcid)!.NucleicAcids[(OneBasedStartResidue - 1)..OneBasedEndResidue];
+            var sequence = (Parent as NucleicAcid)!.NucleicAcidArray[(OneBasedStartResidue - 1)..OneBasedEndResidue];
 
             // intact product ion
             if (fragmentationTerminus is FragmentationTerminus.Both or FragmentationTerminus.None)
@@ -174,7 +174,7 @@ namespace Transcriptomics
         /// <returns></returns>
         public IEnumerable<IProduct> GetNeutralFragments(ProductType type, Nucleotide[]? sequence = null)
         {
-            sequence ??= (Parent as NucleicAcid)!.NucleicAcids[(OneBasedStartResidue - 1)..OneBasedEndResidue];
+            sequence ??= (Parent as NucleicAcid)!.NucleicAcidArray[(OneBasedStartResidue - 1)..OneBasedEndResidue];
 
             if (type is ProductType.M)
             {
@@ -210,7 +210,6 @@ namespace Transcriptomics
                 {
                     monoMass += mod.MonoisotopicMass ?? 0;
                 }
-                
 
                 var previousNucleotide = sequence[naIndex];
 

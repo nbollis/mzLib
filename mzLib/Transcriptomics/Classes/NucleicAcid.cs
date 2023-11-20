@@ -43,7 +43,6 @@ namespace Transcriptomics
 
         #region Constuctors
 
-
         protected NucleicAcid(string sequence, IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null,
             IDictionary<int, List<Modification>>? oneBasedPossibleLocalizedModifications = null)
         {
@@ -67,7 +66,6 @@ namespace Transcriptomics
             DatabaseFilePath = databaseFilePath;
             IsDecoy = isDecoy;
             IsContaminant = isContaminant;
-            _oneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications ?? new Dictionary<int, List<Modification>>();
             Organism = organism;
             Accession = identifier;
             AdditionalDatabaseFields = additionalDatabaseFields;
@@ -101,14 +99,6 @@ namespace Transcriptomics
 
         #endregion
 
-        #region Internal Properties
-
-        /// <summary>
-        /// The internal data store for the nucleic acids
-        /// </summary>
-        internal Nucleotide[] NucleicAcids => _nucleicAcids;
-
-        #endregion
 
         #region Public Properties
 
@@ -198,8 +188,7 @@ namespace Transcriptomics
 
             // digest based upon base sequence
             foreach (var unmodifiedOligo in digestionParams.Rnase.GetUnmodifiedOligos(this, 
-                         digestionParams.MaxMissedCleavages, digestionParams.MinLength, digestionParams.MaxLength,
-                         digestionParams.PotentialFivePrimeCaps, digestionParams.PotentialThreePrimeCaps))
+                         digestionParams.MaxMissedCleavages, digestionParams.MinLength, digestionParams.MaxLength))
             {
                 // add fixed and variable mods to base sequence digestion products
                 foreach (var modifiedOligo in unmodifiedOligo.GetModifiedOligos(allKnownFixedMods, digestionParams,

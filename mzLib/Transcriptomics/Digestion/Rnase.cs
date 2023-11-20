@@ -40,14 +40,10 @@ namespace Transcriptomics
         }
 
         public List<NucleolyticOligo> GetUnmodifiedOligos(NucleicAcid nucleicAcid, int maxMissedCleavages, int minLength,
-            int maxLength, List<IHasChemicalFormula>? potentialDigestedFivePrimeCaps = null, List<IHasChemicalFormula>? potentialDigestedThreePrimeCaps = null)
+            int maxLength)
         {
             var oligos = new List<NucleolyticOligo>();
-            if (potentialDigestedFivePrimeCaps is null or { Count: 0 })
-                potentialDigestedFivePrimeCaps = new List<IHasChemicalFormula> { ChemicalFormula.ParseFormula("O-3P-1") };
-            if (potentialDigestedThreePrimeCaps is null or { Count: 0 })
-                potentialDigestedThreePrimeCaps = new List<IHasChemicalFormula> { ChemicalFormula.ParseFormula("H2O4P") };
-
+           
             // top down
             if (CleavageSpecificity == CleavageSpecificity.None)
             {
@@ -58,7 +54,7 @@ namespace Transcriptomics
             // full cleavage
             else if (CleavageSpecificity == CleavageSpecificity.Full)
             {
-                oligos.AddRange(FullDigestion(nucleicAcid, maxMissedCleavages, minLength, maxLength, potentialDigestedFivePrimeCaps, potentialDigestedThreePrimeCaps));
+                oligos.AddRange(FullDigestion(nucleicAcid, maxMissedCleavages, minLength, maxLength));
             }
             else
             {
@@ -70,59 +66,27 @@ namespace Transcriptomics
         }
 
         private IEnumerable<NucleolyticOligo> FullDigestion(NucleicAcid nucleicAcid, int maxMissedCleavages,
-            int minLength, int maxLength, List<IHasChemicalFormula> potentialFivePrimeCaps, List<IHasChemicalFormula> potentialThreePrimeCaps)
+            int minLength, int maxLength)
         {
             List<int> oneBasedIndicesToCleaveAfter = GetDigestionSiteIndices(nucleicAcid.BaseSequence);
             for (int missedCleavages = 0; missedCleavages <= maxMissedCleavages; missedCleavages++)
             {
                 for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - missedCleavages - 1; i++)
                 {
-                    if (OkayLength(oneBasedIndicesToCleaveAfter[i + missedCleavages + 1] - oneBasedIndicesToCleaveAfter[i], minLength, maxLength))
+                    if (OkayLength(oneBasedIndicesToCleaveAfter[i + missedCleavages + 1] - oneBasedIndicesToCleaveAfter[i],
+                            minLength, maxLength))
                     {
                         int oneBasedStartResidue = oneBasedIndicesToCleaveAfter[i] + 1;
                         int oneBasedEndResidue = oneBasedIndicesToCleaveAfter[i + missedCleavages + 1];
-                        IHasChemicalFormula fivePrimeTerminus;
-                        IHasChemicalFormula threePrimeTerminus;
 
-                        switch (oneBasedStartResidue)
-                        {
-                            // contains either original termini
-                            case 1 when oneBasedEndResidue == nucleicAcid.Length:
-                                fivePrimeTerminus = nucleicAcid.FivePrimeTerminus ?? NucleicAcid.DefaultFivePrimeTerminus;
-                                threePrimeTerminus = nucleicAcid.ThreePrimeTerminus ?? NucleicAcid.DefaultThreePrimeTerminus;
-                                yield return new NucleolyticOligo(nucleicAcid, oneBasedStartResidue, oneBasedEndResidue,
-                                    missedCleavages, CleavageSpecificity.Full, fivePrimeTerminus, threePrimeTerminus);
-                                break;
-                            // contains original 5' terminus? keep it then iterate through potential 3' termini
-                            case 1:
-                            {
-                                fivePrimeTerminus = nucleicAcid.FivePrimeTerminus ?? NucleicAcid.DefaultFivePrimeTerminus;
-                                foreach (var threePrime in potentialThreePrimeCaps)
-                                    yield return new NucleolyticOligo(nucleicAcid, oneBasedStartResidue, oneBasedEndResidue,
-                                        missedCleavages, CleavageSpecificity.Full, fivePrimeTerminus, threePrime);
-                                break;
-                            }
-                            // contains original 3' terminus? keep it then iterate through potential 5' termini
-                            default:
-                            {
-                                if (oneBasedEndResidue == nucleicAcid.Length)
-                                {
-                                    threePrimeTerminus = nucleicAcid.ThreePrimeTerminus ?? NucleicAcid.DefaultThreePrimeTerminus;
-                                    foreach (var fivePrime in potentialFivePrimeCaps)
-                                        yield return new NucleolyticOligo(nucleicAcid, oneBasedStartResidue, oneBasedEndResidue,
-                                            missedCleavages, CleavageSpecificity.Full, fivePrime, threePrimeTerminus);
-                                }
-                                // contains nether original terminus ? iterate through both potential 5' and 3' termini
-                                else
-                                {
-                                    foreach (var fivePrime in potentialFivePrimeCaps)
-                                        foreach (var threePrime in potentialThreePrimeCaps)
-                                                yield return new NucleolyticOligo(nucleicAcid, oneBasedStartResidue, oneBasedEndResidue,
-                                                    missedCleavages, CleavageSpecificity.Full, fivePrime, threePrime);
-                                }
-                                break;
-                            }
-                        }
+                        // contains original 5' terminus ? keep it : set to OH
+                        IHasChemicalFormula fivePrimeTerminus = oneBasedStartResidue == 1 ? nucleicAcid.FivePrimeTerminus : ChemicalFormula.ParseFormula("O-3P-1");
+
+                        // contains original 3' terminus ? keep it : set to phosphate
+                        IHasChemicalFormula threePrimeTerminus = oneBasedEndResidue == nucleicAcid.Length ? nucleicAcid.ThreePrimeTerminus : ChemicalFormula.ParseFormula("H2O4P");
+
+                        yield return new NucleolyticOligo(nucleicAcid, oneBasedStartResidue, oneBasedEndResidue,
+                            missedCleavages, CleavageSpecificity.Full, fivePrimeTerminus, threePrimeTerminus);
                     }
                 }
             }

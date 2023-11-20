@@ -33,7 +33,7 @@ namespace Proteomics.ProteolyticDigestion
         public int MissedCleavages { get; } // the number of missed cleavages this peptide has with respect to the digesting protease
         public string PeptideDescription { get; internal set; } //unstructured explanation of source
         public CleavageSpecificity CleavageSpecificityForFdrCategory { get; set; } //structured explanation of source
-        public int Length { get { return BaseSequence.Length; } } //how many residues long the peptide is
+        public int Length => BaseSequence.Length; //how many residues long the peptide is
 
         public virtual char PreviousResidue
         {

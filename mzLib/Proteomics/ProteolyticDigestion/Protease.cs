@@ -180,8 +180,6 @@ namespace Proteomics.ProteolyticDigestion
                 && nTerminus == 'M';
         }
 
-        
-
         /// <summary>
         /// Gets protein intervals for digestion by this specific protease.
         /// </summary>
