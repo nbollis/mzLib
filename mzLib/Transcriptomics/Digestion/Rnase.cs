@@ -79,8 +79,6 @@ namespace Transcriptomics
                         int oneBasedStartResidue = oneBasedIndicesToCleaveAfter[i] + 1;
                         int oneBasedEndResidue = oneBasedIndicesToCleaveAfter[i + missedCleavages + 1];
 
-                        // contains original 5' terminus ? keep it : set to OH
-                        IHasChemicalFormula fivePrimeTerminus = oneBasedStartResidue == 1 ? nucleicAcid.FivePrimeTerminus : ChemicalFormula.ParseFormula("O-3P-1");
 
                         // contains original 3' terminus ? keep it : set to phosphate
                         IHasChemicalFormula threePrimeTerminus = oneBasedEndResidue == nucleicAcid.Length ? nucleicAcid.ThreePrimeTerminus : ChemicalFormula.ParseFormula("H2O4P");
