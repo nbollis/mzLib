@@ -51,15 +51,24 @@ namespace Readers
 			 * 5) Scans are ordered and returned. 
 			 */ 
 
-			if (!Directory.Exists(FilePath))
-			{
-				throw new FileNotFoundException(); 
-			}
+			
 			// get the baf file inside
 			Loaders.LoadElements();
 
-			List<MsDataScan> scans = new(); 
-			OpenFileConnection(FilePath+@"\analysis.baf");
+			List<MsDataScan> scans = new();
+            if (FilePath.EndsWith(@".baf"))
+            {
+				OpenFileConnection(FilePath);
+            }
+            else
+            {
+                if (!Directory.Exists(FilePath))
+                {
+                    throw new FileNotFoundException();
+                }
+                OpenFileConnection(FilePath + @"\analysis.baf");
+            }
+
 			int totalSpectra = GetTotalSpectraCount();
 			LoadTablesInMemory();
 			for (int i = 0; i < totalSpectra; i++)

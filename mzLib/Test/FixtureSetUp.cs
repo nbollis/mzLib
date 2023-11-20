@@ -16,12 +16,15 @@
 // License along with Proteomics. If not, see <http://www.gnu.org/licenses/>.
 
 global using FragmentationTerminus = MassSpectrometry.FragmentationTerminus;
+using System.Collections.Generic;
 using NUnit.Framework;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using UsefulProteomicsDatabases;
+using Proteomics;
 
 namespace Test
 {

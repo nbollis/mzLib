@@ -8,6 +8,7 @@ using Chemistry;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
 using NUnit.Framework;
+using Readers;
 using Transcriptomics;
 using UsefulProteomicsDatabases;
 
@@ -20,6 +21,18 @@ namespace Test.Transcriptomics
         public record RnaDigestionTestCase(string BaseSequence, string Enzyme, int MissedCleavages, int MinLength,
             int MaxLength, int DigestionProductCount,
             double[] MonoMasses, string[] Sequences);
+
+
+        [Test]
+        public static void TESTNAME()
+        {
+            string filePath = @"D:\DataFiles\TopDown\PXD010825-PIG\Azo-CardiacTissue.baf";
+            var baf = new BrukerFileReader(filePath);
+            baf.LoadAllStaticData();
+
+        }
+
+
 
         public static IEnumerable<RnaDigestionTestCase> GetTestCases()
         {

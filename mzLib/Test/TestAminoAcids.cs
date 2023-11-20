@@ -18,9 +18,14 @@
 
 using Chemistry;
 using NUnit.Framework;
+using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
+using UsefulProteomicsDatabases;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Test
@@ -43,7 +48,41 @@ namespace Test
         {
             Console.WriteLine($"Analysis time: {Stopwatch.Elapsed.Hours}h {Stopwatch.Elapsed.Minutes}m {Stopwatch.Elapsed.Seconds}s");
         }
-        
+
+
+        [Test]
+        public static void GetDbInfo()
+        {
+            Dictionary<string, string> databases = new()
+            {
+                {"Human", @"D:\Databases\Human_uniprotkb_proteome_UP000005640_AND_revi_2023_09_29.fasta"},
+                {"Yeast", @"D:\Databases\Yeast_uniprotkb_proteome_UP000002311_2023_10_05.fasta" },
+                
+            };
+
+            string outpath = @"C:\Users\Nic\Downloads\proteinLength2.csv";
+
+            using (StreamWriter output = new StreamWriter(outpath))
+            {
+                output.WriteLine("Organism,Length,Count");
+                foreach (var database in databases)
+                {
+                    List<Protein> proteins;
+                    proteins = database.Value.EndsWith(".fasta") ?
+                        ProteinDbLoader.LoadProteinFasta(database.Value, true, DecoyType.None, false, out List<string> errors)
+                        : ProteinDbLoader.LoadProteinXML(database.Value, true, DecoyType.None, null, false, null, out var dbOptions);
+                    var proteinsGroupedBySize = proteins.GroupBy(p => p.Length)
+                        .OrderBy(p => p.Key)
+                        .ToDictionary(p => p.Key, p => p.Count());
+
+                    foreach (var group in proteinsGroupedBySize)
+                    {
+                        output.WriteLine(database.Key + "," + group.Key + "," + group.Value);
+                    }
+                }
+            }
+        }
+
         [Test]
         public void GetResidueByCharacter()
         {
