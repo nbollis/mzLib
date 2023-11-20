@@ -242,7 +242,7 @@ namespace Transcriptomics
                 case "Oligo 5'-terminal." when oligoOneBasedIndex > 1
                                                || nucleicAcidOneBasedIndex == 1:
                 case "3'-terminal." when nucleicAcidOneBasedIndex < nucleicAcidSequence.Length:
-                    // not the last residue in oligo or is last in oligo but also last in nucleic acid
+                    // not the last residue in oligo but not in nucleic acid
                 case "Oligo 3'-terminal." when oligoOneBasedIndex < oligoLength
                                                || nucleicAcidOneBasedIndex == nucleicAcidSequence.Length:
                     return false;
