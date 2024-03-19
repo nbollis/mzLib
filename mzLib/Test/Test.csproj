@@ -479,6 +479,9 @@
     <None Update="Transcriptomics\TestData\ModomicsUnmodifiedTrimmed.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Transcriptomics\TestData\TestEnsembleFasta_Homo_sapiens.GRCh38.ncrna.fa">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
 	<None Update="DataFiles\centroid_1x_MS1_4x_autoMS2.d\**">
 		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</None>
