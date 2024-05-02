@@ -383,6 +383,9 @@ namespace UsefulProteomicsDatabases
                 case "EThcD":
                     return DissociationType.EThcD;
 
+                case "RadicalUVPD":
+                    return DissociationType.RadicalUVPD;
+
                 case "Custom":
                     return DissociationType.Custom;
 

@@ -29,6 +29,7 @@
         a,
         aStar,
         aDegree,
+        aPlusOne,       //This is aDot plus H for radical UVPD dissociation
         aWaterLoss,
         aBaseLoss,
         b,
@@ -49,6 +50,8 @@
         xWaterLoss,
         xBaseLoss,
         y,
+        yMinusTwo,            //This is yDot minus 2H for radical UVPD dissociation
+        yMinus2AmmoniaLoss, //This is yMinusTwo minus NH3 for radical UVPD dissociation
         yAmmoniaLoss,
         yWaterLoss,
         yBaseLoss,

@@ -112,6 +112,7 @@ namespace MassSpectrometry
         Unknown,
         AnyActivationType,
         Custom,
+        RadicalUVPD,
         
         /// <summary>
         /// Placeholder used to communicate to MetaMorpheus that the dissociation type 

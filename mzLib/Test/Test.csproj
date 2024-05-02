@@ -476,6 +476,24 @@
     <None Update="FileReadingTests\SearchResults\VariantCrossTest.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="RadicalFragmentation\TestData\alpha_hemo4IPE18+PDPD-56.raw">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="RadicalFragmentation\TestData\alpha_hemo4IPE18+_50ms.raw">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="RadicalFragmentation\TestData\beta_hemo4IPE16+_15ms.raw">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="RadicalFragmentation\TestData\CAH1 UNmod PD929,3_80ms.raw">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="RadicalFragmentation\TestData\CAH1_4IPE+33PD_50ms.raw">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="RadicalFragmentation\TestData\TOHO-1_4IPE+33PD_80ms.raw">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
 	<None Update="DataFiles\centroid_1x_MS1_4x_autoMS2.d\**">
 		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</None>

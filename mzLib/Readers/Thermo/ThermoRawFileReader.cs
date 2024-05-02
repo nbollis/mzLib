@@ -354,7 +354,7 @@ namespace Readers
 
                     if (precursorScanNumber == null)
                     {
-                        throw new MzLibException("Could not get precursor for scan #" + scanNumber);
+                        //throw new MzLibException("Could not get precursor for scan #" + scanNumber);
                     }
                 }
             }

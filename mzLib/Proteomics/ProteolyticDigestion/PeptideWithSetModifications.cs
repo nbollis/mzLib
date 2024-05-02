@@ -5,11 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using MzLibUtil;
 using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
+using ClassExtensions = Chemistry.ClassExtensions;
 
 namespace Proteomics.ProteolyticDigestion
 {
@@ -538,6 +540,25 @@ namespace Proteomics.ProteolyticDigestion
 
                 // the diagnostic ion is assumed to be annotated in the mod info as the *neutral mass* of the diagnostic ion, not the ionized species
                 products.Add(new Product(ProductType.D, FragmentationTerminus.Both, diagnosticIon, diagnosticIonLabel, 0, 0));
+            }
+
+            if (dissociationType is DissociationType.RadicalUVPD)
+            {
+                int cysDistance = 20;
+                var cysIndexes = new List<DoubleRange>();
+                for (int i = 0; i < BaseSequence.Length; i++)
+                    if (BaseSequence[i] == 'C')
+                        cysIndexes.Add( new DoubleRange(i - cysDistance, i + cysDistance));
+
+                for (int i = 0; i < products.Count; i++)
+                {
+                    var product = products[i];
+                    if (cysIndexes.Any(p => p.Contains(product.AminoAcidPosition)))
+                        continue;
+
+                    products.Remove(product);
+                    i--;
+                }
             }
         }
 
