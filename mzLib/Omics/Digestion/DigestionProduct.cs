@@ -8,6 +8,7 @@ using Omics.Modifications;
 
 namespace Omics.Digestion
 {
+    [Serializable]
     public abstract class DigestionProduct
     {
         protected string _baseSequence;
@@ -24,7 +25,7 @@ namespace Omics.Digestion
             _baseSequence = baseSequence;
         }
 
-        [field: NonSerialized] public IBioPolymer Parent { get; protected set; } // BioPolymer that this lysis product is a digestion product of
+        public IBioPolymer Parent { get; protected set; } // BioPolymer that this lysis product is a digestion product of
         public string Description { get; protected set; } //unstructured explanation of source
         public int OneBasedStartResidue { get; }// the residue number at which the peptide begins (the first residue in a protein is 1)
         public int OneBasedEndResidue { get; }// the residue number at which the peptide ends

@@ -5,6 +5,7 @@ namespace Omics.Modifications
     /// <summary>
     /// Silac labels used to modify unlabeled proteins
     /// </summary>
+    [Serializable]
     public class SilacLabel
     {
         public char OriginalAminoAcid { get; private set; }

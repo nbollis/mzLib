@@ -29,6 +29,7 @@ namespace MassSpectrometry
     /// <summary>
     /// A class for interacting with data collected from a Mass Spectrometer, and stored in a file
     /// </summary>
+    [Serializable]
     public abstract class MsDataFile : IEnumerable<MsDataScan>
     {
         public MsDataScan[] Scans { get; protected set; }

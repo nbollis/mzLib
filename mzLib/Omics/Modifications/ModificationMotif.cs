@@ -2,6 +2,7 @@
 
 namespace Omics.Modifications
 {
+    [Serializable]
     public class ModificationMotif
     {
         private static readonly Regex ModificationMotifRegex = new Regex(@"^[A-Za-z]+$", RegexOptions.Compiled);

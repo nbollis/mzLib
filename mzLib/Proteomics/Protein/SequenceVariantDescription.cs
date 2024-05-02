@@ -4,6 +4,7 @@ using System.Linq;
 
 namespace Proteomics
 {
+    [Serializable]
     public class SequenceVariantDescription
     {
         public SequenceVariantDescription(string description)

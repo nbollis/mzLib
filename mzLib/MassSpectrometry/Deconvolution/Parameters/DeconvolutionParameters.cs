@@ -10,6 +10,7 @@ namespace MassSpectrometry
     /// <summary>
     /// Class for hosting deconvolution parameters common to all methods
     /// </summary>
+    [Serializable]
     public abstract class DeconvolutionParameters
     {
         public abstract DeconvolutionType DeconvolutionType { get; protected set; }

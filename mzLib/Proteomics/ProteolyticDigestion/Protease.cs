@@ -6,6 +6,7 @@ using Omics.Modifications;
 
 namespace Proteomics.ProteolyticDigestion
 {
+    [Serializable]
     public class Protease : DigestionAgent
     {
         public Protease(string name, CleavageSpecificity cleavageSpecificity, string psiMSAccessionNumber, 

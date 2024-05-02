@@ -1,5 +1,8 @@
-﻿namespace Proteomics
+﻿using System;
+
+namespace Proteomics
 {
+    [Serializable]
     public class SpliceSite
     {
         public SpliceSite(int oneBasedBegin, int oneBasedEnd, string description)

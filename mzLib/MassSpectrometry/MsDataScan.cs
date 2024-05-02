@@ -25,6 +25,7 @@ using System.Linq;
 
 namespace MassSpectrometry
 {
+    [Serializable]
     public class MsDataScan
     {
         public MsDataScan(MzSpectrum massSpectrum, int oneBasedScanNumber, int msnOrder, bool isCentroid, Polarity polarity, double retentionTime, MzRange scanWindowRange, string scanFilter, MZAnalyzerType mzAnalyzer,

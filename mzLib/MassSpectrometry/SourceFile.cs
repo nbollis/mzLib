@@ -20,6 +20,7 @@ using System.IO;
 
 namespace MassSpectrometry
 {
+    [Serializable]
     public class SourceFile
     {
         public SourceFile(string nativeIdFormat, string massSpectrometerFileFormat, string checkSum, string fileChecksumType, string id)

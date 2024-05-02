@@ -4,6 +4,7 @@ using System.Linq;
 
 namespace FlashLFQ
 {
+    [Serializable]
     public abstract class ProteinQuantificationEngineResult
     {
         // protein and peptides

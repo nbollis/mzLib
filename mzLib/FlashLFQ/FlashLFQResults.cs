@@ -7,6 +7,7 @@ using System.Text;
 
 namespace FlashLFQ
 {
+    [Serializable]
     public class FlashLfqResults
     {
         public readonly List<SpectraFileInfo> SpectraFiles;

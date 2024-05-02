@@ -10,6 +10,7 @@ using Omics.Modifications;
 
 namespace Proteomics
 {
+    [Serializable]
     public class Protein : IBioPolymer
     {
         private List<ProteolysisProduct> _proteolysisProducts;

@@ -23,6 +23,7 @@ namespace MzLibUtil
     /// <summary>
     /// The tolerance, or error, of two points
     /// </summary>
+    [Serializable]
     public class PpmTolerance : Tolerance
     {
         /// <summary>

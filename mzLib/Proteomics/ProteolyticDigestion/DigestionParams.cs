@@ -1,8 +1,10 @@
 ﻿using Omics.Digestion;
 using Omics.Fragmentation;
+using System;
 
 namespace Proteomics.ProteolyticDigestion 
 {
+    [Serializable]
     public class DigestionParams : IDigestionParams
     {
         // this parameterless constructor needs to exist to read the toml.

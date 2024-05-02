@@ -29,6 +29,7 @@ using System.Text.Json;
 
 namespace MassSpectrometry
 {
+    [Serializable]
     public class MzSpectrum : IEquatable<MzSpectrum>
     {
         private const int numAveraginesToGenerate = 1500;

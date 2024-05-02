@@ -1,8 +1,11 @@
-﻿namespace FlashLFQ
+﻿using System;
+
+namespace FlashLFQ
 {
     /// <summary>
     /// Contains the summed intensities of all isotope peaks detected in a single MS1 scan for a given species.
     /// </summary>
+    [Serializable]
     public class IsotopicEnvelope
     {
         /// <summary>

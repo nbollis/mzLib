@@ -3,6 +3,7 @@ using MzLibUtil;
 
 namespace Omics.Digestion
 {
+    [Serializable]
     public class DigestionMotif
     {
         private static char[] B = new char[] { 'D', 'N' };

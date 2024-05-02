@@ -6,6 +6,7 @@ using Omics.Fragmentation;
 
 namespace Omics.SpectrumMatch
 {
+    [Serializable]
     public class LibrarySpectrum : MzSpectrum
     {
         public string Sequence { get; set; }

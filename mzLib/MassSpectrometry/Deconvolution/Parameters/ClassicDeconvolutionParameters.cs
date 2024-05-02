@@ -10,6 +10,7 @@ namespace MassSpectrometry
     /// <summary>
     /// Classic Deconvolution Required Parameters
     /// </summary>
+    [Serializable]
     public class ClassicDeconvolutionParameters : DeconvolutionParameters
     {
         public override DeconvolutionType DeconvolutionType { get; protected set; } = DeconvolutionType.ClassicDeconvolution;

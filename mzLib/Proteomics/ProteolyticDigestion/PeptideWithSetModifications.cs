@@ -26,13 +26,13 @@ namespace Proteomics.ProteolyticDigestion
         /// Dictionary of modifications on the peptide. The N terminus is index 1.
         /// The key indicates which residue modification is on (with 1 being N terminus).
         /// </summary>
-        [NonSerialized] private Dictionary<int, Modification> _allModsOneIsNterminus; //we currently only allow one mod per position
+        private Dictionary<int, Modification> _allModsOneIsNterminus; //we currently only allow one mod per position
         [NonSerialized] private bool? _hasChemicalFormulas;
         [NonSerialized] private string _sequenceWithChemicalFormulas;
         [NonSerialized] private double? _monoisotopicMass;
         [NonSerialized] private double? _mostAbundantMonoisotopicMass;
         [NonSerialized] private ChemicalFormula _fullChemicalFormula;
-        [NonSerialized] private DigestionParams _digestionParams;
+        private DigestionParams _digestionParams;
         private static readonly double WaterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private readonly string ProteinAccession; // used to get protein object after deserialization
         /// <summary>

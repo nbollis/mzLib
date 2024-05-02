@@ -1,5 +1,8 @@
-﻿namespace MassSpectrometry
+﻿using System;
+
+namespace MassSpectrometry
 {
+    [Serializable]
     public class MzPeak
     {
         public double Mz { get; protected set; }

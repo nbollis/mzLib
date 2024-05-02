@@ -3,6 +3,7 @@ using Chemistry;
 
 namespace Omics.Fragmentation
 {
+    [Serializable]
     public class Product : IHasMass, IEquatable<Product>
     {
         public double NeutralMass { get; }

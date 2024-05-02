@@ -13,6 +13,7 @@ namespace Omics.Modifications
     /// Represents a modification
     /// Mods.txt format was taken from https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/docs/ptmlist.txt
     /// </summary>
+    [Serializable]
     public class Modification
     {
         public string IdWithMotif { get; private set; }

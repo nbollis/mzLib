@@ -1,5 +1,8 @@
-﻿namespace FlashLFQ
+﻿using System;
+
+namespace FlashLFQ
 {
+    [Serializable]
     public class SpectraFileInfo
     {
         public readonly string FullFilePathWithExtension;

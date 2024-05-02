@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace Omics.Digestion
 {
+    [Serializable]
     public abstract class DigestionAgent
     {
         protected DigestionAgent(string name, CleavageSpecificity cleavageSpecificity, List<DigestionMotif> motifList, Modification cleavageMod)

@@ -57,15 +57,17 @@ namespace Chemistry
         {
             Isotopes = new Dictionary<Isotope, int>();
             Elements = new Dictionary<Element, int>();
+            ThisChemicalFormula = this;
         }
 
         public ChemicalFormula(IHasChemicalFormula capFormula)
         {
             Isotopes = new Dictionary<Isotope, int>(capFormula.ThisChemicalFormula.Isotopes);
             Elements = new Dictionary<Element, int>(capFormula.ThisChemicalFormula.Elements);
+            ThisChemicalFormula = this;
         }
 
-        public ChemicalFormula ThisChemicalFormula => this;
+        [field: NonSerialized] public ChemicalFormula ThisChemicalFormula { get; }
 
         /// <summary>
         /// Gets the average mass of this chemical formula

@@ -4,6 +4,7 @@ using System.Linq;
 
 namespace Proteomics
 {
+    [Serializable]
     public class DatabaseReference
     {
         /// <summary>

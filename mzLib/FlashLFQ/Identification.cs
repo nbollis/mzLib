@@ -1,8 +1,10 @@
 ﻿using Chemistry;
+using System;
 using System.Collections.Generic;
 
 namespace FlashLFQ
 {
+    [Serializable]
     public class Identification
     {
         public readonly string BaseSequence;

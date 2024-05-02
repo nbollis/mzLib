@@ -6,6 +6,7 @@ using Chemistry;
 
 namespace MassSpectrometry
 {
+    [Serializable]
     public class IsotopicEnvelope : IHasMass
     {
         public readonly List<(double mz, double intensity)> Peaks;

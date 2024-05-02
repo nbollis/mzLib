@@ -25,6 +25,7 @@ namespace MzLibUtil
     /// <summary>
     /// The tolerance, or error, of two points
     /// </summary>
+    [Serializable]
     public abstract class Tolerance
     {
         /// <summary>

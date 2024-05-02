@@ -3,6 +3,7 @@ using System.Text;
 
 namespace Omics.Fragmentation
 {
+    [Serializable]
     public class MatchedFragmentIon
     {
         public readonly Product NeutralTheoreticalProduct;

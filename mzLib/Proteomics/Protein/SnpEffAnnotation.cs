@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -7,6 +8,8 @@ namespace Proteomics
     /// <summary>
     /// Specifications are described here: http://snpeff.sourceforge.net/VCFannotationformat_v1.0.pdf
     /// </summary>
+    /// 
+    [Serializable]
     public class SnpEffAnnotation
     {
         private static readonly Regex HGVSProteinRegex = new Regex(@"(p\.)([A-Z][a-z][a-z])(\d+)([A-Z][a-z][a-z])");
