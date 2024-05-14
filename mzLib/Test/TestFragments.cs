@@ -788,13 +788,30 @@ namespace Test
         {
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.b);
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.y);
+            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.c);
+            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.x);
             Assert.IsTrue(DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Contains(ProductType.b));
 
-            var productCollection = TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[FragmentationTerminus.N].Intersect(DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom]);
+            var productCollection = TerminusSpecificProductTypes
+                .ProductIonTypesFromSpecifiedTerminus[FragmentationTerminus.N]
+                .Intersect(DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom]);
             Assert.IsTrue(productCollection.Contains(ProductType.b));
+            Assert.IsTrue(productCollection.Contains(ProductType.c));
 
-            productCollection = TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[FragmentationTerminus.C].Intersect(DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom]);
+            productCollection = TerminusSpecificProductTypes
+                .ProductIonTypesFromSpecifiedTerminus[FragmentationTerminus.C]
+                .Intersect(DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom]);
             Assert.IsTrue(productCollection.Contains(ProductType.y));
+            Assert.IsTrue(productCollection.Contains(ProductType.x));
+
+            var peptide = new PeptideWithSetModifications("PEPTIDE", new Dictionary<string, Modification>());
+            var products = new List<Product>();
+            peptide.Fragment(DissociationType.Custom, FragmentationTerminus.Both, products);
+
+            Assert.That(products.Any(p => p.ProductType == ProductType.b));
+            Assert.That(products.Any(p => p.ProductType == ProductType.y));
+            Assert.That(products.Any(p => p.ProductType == ProductType.c));
+            Assert.That(products.Any(p => p.ProductType == ProductType.x));
         }
 
         [Test]

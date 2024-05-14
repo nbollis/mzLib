@@ -183,6 +183,11 @@ namespace MassSpectrometry
         {
             return GetEnumerator();
         }
+
+        public override string ToString()
+        {
+            return System.IO.Path.GetFileNameWithoutExtension(FilePath);
+        }
     }
 
     
