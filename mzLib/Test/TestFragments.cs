@@ -812,6 +812,16 @@ namespace Test
             Assert.That(products.Any(p => p.ProductType == ProductType.y));
             Assert.That(products.Any(p => p.ProductType == ProductType.c));
             Assert.That(products.Any(p => p.ProductType == ProductType.x));
+
+            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Clear();
+            Assert.That(!DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Any());
+            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].AddRange(new List<ProductType> {ProductType.b, ProductType.y});
+            products.Clear();
+            peptide.Fragment(DissociationType.Custom, FragmentationTerminus.Both, products);
+            Assert.That(products.Any(p => p.ProductType == ProductType.b));
+            Assert.That(products.Any(p => p.ProductType == ProductType.y));
+            Assert.That(products.All(p => p.ProductType != ProductType.c));
+            Assert.That(products.All(p => p.ProductType != ProductType.x));
         }
 
         [Test]
