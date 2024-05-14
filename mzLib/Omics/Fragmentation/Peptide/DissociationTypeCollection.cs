@@ -19,8 +19,7 @@ namespace Omics.Fragmentation.Peptide
             { DissociationType.AnyActivationType, new List<ProductType>{ ProductType.b, ProductType.y } },
             { DissociationType.EThcD, new List<ProductType>{ ProductType.b, ProductType.y, ProductType.c, ProductType.zDot } },
             { DissociationType.Custom, new List<ProductType>() },
-            { DissociationType.ISCID, new List<ProductType>() },
-            { DissociationType.RadicalUVPD, new List<ProductType> {ProductType.M, ProductType.a, ProductType.aPlusOne, ProductType.yMinusTwo, ProductType.yMinus2AmmoniaLoss } }
+            { DissociationType.ISCID, new List<ProductType>() }
         };
 
         public static List<ProductType> GetTerminusSpecificProductTypesFromDissociation(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus)
@@ -31,7 +30,7 @@ namespace Omics.Fragmentation.Peptide
                 productTypes = TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[fragmentationTerminus]
                     .Intersect(DissociationTypeCollection.ProductsFromDissociationType[dissociationType]).ToList();
             }
-            else if (!TerminusSpecificProductTypesFromDissociation.TryGetValue((dissociationType, fragmentationTerminus), out  productTypes))
+            else if (!TerminusSpecificProductTypesFromDissociation.TryGetValue((dissociationType, fragmentationTerminus), out productTypes))
             {
                 lock (TerminusSpecificProductTypesFromDissociation)
                 {
@@ -93,15 +92,12 @@ namespace Omics.Fragmentation.Peptide
             { ProductType.a, null},//-C -O
             { ProductType.aStar, null},//-C -O -N -H3
             { ProductType.aDegree, null},//-C -O2 -H2
-            { ProductType.aPlusOne , null}, //-C -O -H
             { ProductType.b, null},//no change
             { ProductType.bAmmoniaLoss, null},//-N -H3
             { ProductType.bWaterLoss, null},//-H2 -O1
             { ProductType.c, null},//+N1 +H3
             { ProductType.x, null},//+C1 +O2
             { ProductType.y, null},//+O +H2
-            { ProductType.yMinusTwo, null},//+O
-            { ProductType.yMinus2AmmoniaLoss, null},//+O -3H -N 
             { ProductType.yAmmoniaLoss, null},//+O -H -N
             { ProductType.yWaterLoss, null},//no change
             { ProductType.zDot, null },// +O -NH + e- + p+
@@ -141,7 +137,16 @@ namespace Omics.Fragmentation.Peptide
         /// </summary>
         public static (double[], double[]) GetNAndCTerminalMassShiftsForDissociationType(DissociationType dissociationType)
         {
-            if (!DissociationTypeToTerminusMassShift.TryGetValue(dissociationType, out var massShifts))
+            (double[], double[]) massShifts;
+            if (dissociationType == DissociationType.Custom)
+            {
+                massShifts = (
+                    GetTerminusSpecificProductTypesFromDissociation(dissociationType, FragmentationTerminus.N)
+                        .Select(p => GetMassShiftFromProductType(p)).ToArray(),
+                    GetTerminusSpecificProductTypesFromDissociation(dissociationType, FragmentationTerminus.C)
+                        .Select(p => GetMassShiftFromProductType(p)).ToArray());
+            }
+            else if (!DissociationTypeToTerminusMassShift.TryGetValue(dissociationType, out massShifts))
             {
                 lock (DissociationTypeToTerminusMassShift)
                 {
@@ -171,16 +176,13 @@ namespace Omics.Fragmentation.Peptide
                         case ProductType.a: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("C-1O-1").MonoisotopicMass; break;
                         case ProductType.aStar: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("C-1O-1N-1H-3").MonoisotopicMass; break;
                         case ProductType.aDegree: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("C-1O-2H-2").MonoisotopicMass; break; // -46.0054793036,-C -O2 -H2
-                        case ProductType.aPlusOne: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("C-1O-1H").MonoisotopicMass; break;
                         case ProductType.b: NeutralMassShiftFromProductType[productType] = 0; break;// 0, no change
                         case ProductType.bAmmoniaLoss: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("N-1H-3").MonoisotopicMass; break;// -17.02654910112, -N -H3
                         case ProductType.bWaterLoss: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("H-2O-1").MonoisotopicMass; break;// -18.01056468403, -H2 -O1
                         case ProductType.c: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("N1H3").MonoisotopicMass; break;// 17.02654910112, +N1 +H3
                         case ProductType.x: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("C1O2").MonoisotopicMass; break;// 43.98982923914, +C1 +O2
                         case ProductType.y: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("H2O1").MonoisotopicMass; break;// 18.01056468403, +O +H2
-                        case ProductType.yMinusTwo: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("O1").MonoisotopicMass; break; //+O
                         case ProductType.yAmmoniaLoss: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("O1H-1N-1").MonoisotopicMass; break;// 0.98401558291000057, +O -H -N
-                        case ProductType.yMinus2AmmoniaLoss: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("O1H-3N-1").MonoisotopicMass; break;// 0.98401558291000057, +O -3H -N +H3N
                         case ProductType.yWaterLoss: NeutralMassShiftFromProductType[productType] = 0; break;// 0, no change
                         case ProductType.zDot: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("O1N-1H-1").MonoisotopicMass + Constants.ElectronMass + Constants.ProtonMass; break; //1.991840552567, +O -NH + e- + p+
                         case ProductType.zPlusOne: NeutralMassShiftFromProductType[productType] = ChemicalFormula.ParseFormula("O1H1N-1").MonoisotopicMass; break;//; 2.9996656473699996, +O +H -N:
