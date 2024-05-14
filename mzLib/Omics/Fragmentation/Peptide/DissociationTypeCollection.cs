@@ -19,8 +19,7 @@ namespace Omics.Fragmentation.Peptide
             { DissociationType.AnyActivationType, new List<ProductType>{ ProductType.b, ProductType.y } },
             { DissociationType.EThcD, new List<ProductType>{ ProductType.b, ProductType.y, ProductType.c, ProductType.zDot } },
             { DissociationType.Custom, new List<ProductType>() },
-            { DissociationType.ISCID, new List<ProductType>() },
-            { DissociationType.RadicalUVPD, new List<ProductType> {ProductType.M, ProductType.a, ProductType.aPlusOne, ProductType.yMinusTwo, ProductType.yMinus2AmmoniaLoss } }
+            { DissociationType.ISCID, new List<ProductType>() }
         };
 
         public static List<ProductType> GetTerminusSpecificProductTypesFromDissociation(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus)
@@ -31,7 +30,7 @@ namespace Omics.Fragmentation.Peptide
                 productTypes = TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[fragmentationTerminus]
                     .Intersect(DissociationTypeCollection.ProductsFromDissociationType[dissociationType]).ToList();
             }
-            else if (!TerminusSpecificProductTypesFromDissociation.TryGetValue((dissociationType, fragmentationTerminus), out  productTypes))
+            else if (!TerminusSpecificProductTypesFromDissociation.TryGetValue((dissociationType, fragmentationTerminus), out productTypes))
             {
                 lock (TerminusSpecificProductTypesFromDissociation)
                 {
