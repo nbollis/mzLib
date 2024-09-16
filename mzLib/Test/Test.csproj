@@ -471,13 +471,34 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Transcriptomics\TestData\GRCh38_TrimmedExample_rna.fna">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Transcriptomics\TestData\modomicsmods%281%29.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Transcriptomics\TestData\ModomicsUnmodifiedTrimmed.fasta">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\NCBIassemblyRna.fna">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\NCBIRefGene_Sequence.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\NCBIRefRNA_Sequence.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\ncbi_RefSeqGene.fna">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\PDS000097765.1.dnapars_input.dnapars">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\rnaMuc2.fna">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Transcriptomics\TestData\SRR27833655.fastq">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Transcriptomics\TestData\TestEnsembleFasta_Homo_sapiens.GRCh38.ncrna.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
