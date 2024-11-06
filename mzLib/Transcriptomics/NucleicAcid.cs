@@ -1,4 +1,5 @@
 ﻿using Chemistry;
+using Omics;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
@@ -13,6 +14,7 @@ namespace Transcriptomics
     /// </summary>
     public abstract class NucleicAcid : INucleicAcid, IBioPolymer, IEquatable<NucleicAcid>
     {
+
         #region Static Properties
 
         /// <summary>
@@ -58,11 +60,11 @@ namespace Transcriptomics
         /// <summary>
         /// For Reading in from rna database
         /// </summary>
-        protected NucleicAcid(string sequence, string name, string identifier, string organism, string databaseFilePath,
+        protected NucleicAcid(string sequence, string name, string identifier, string organism, string databaseFilePath, 
             IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null,
             IDictionary<int, List<Modification>>? oneBasedPossibleLocalizedModifications = null,
             bool isContaminant = false, bool isDecoy = false, List<Tuple<string, string>>? geneNames = null,
-            Dictionary<string, string>? additionalDatabaseFields = null)
+            Dictionary<string, string>? additionalDatabaseFields = null) 
             : this(sequence, fivePrimeTerm, threePrimeTerm, oneBasedPossibleLocalizedModifications)
         {
             Name = name;
@@ -180,11 +182,11 @@ namespace Transcriptomics
         public char this[int zeroBasedIndex] => BaseSequence[zeroBasedIndex];
 
         #endregion
-
+        
         #region Digestion
 
         public IEnumerable<IBioPolymerWithSetMods> Digest(IDigestionParams digestionParameters, List<Modification> allKnownFixedMods,
-            List<Modification> variableModifications, List<SilacLabel> silacLabels = null, (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = null,
+            List<Modification> variableModifications, List<SilacLabel> silacLabels = null, (SilacLabel startLabel, SilacLabel endLabel)? turnoverLabels = null, 
             bool topDownTruncationSearch = false)
         {
             if (digestionParameters is not RnaDigestionParams digestionParams)
@@ -194,7 +196,7 @@ namespace Transcriptomics
             variableModifications ??= new();
 
             // digest based upon base sequence
-            foreach (var unmodifiedOligo in digestionParams.Rnase.GetUnmodifiedOligos(this,
+            foreach (var unmodifiedOligo in digestionParams.Rnase.GetUnmodifiedOligos(this, 
                          digestionParams.MaxMissedCleavages, digestionParams.MinLength, digestionParams.MaxLength))
             {
                 // add fixed and variable mods to base sequence digestion products
@@ -226,7 +228,8 @@ namespace Transcriptomics
                 (minCharge, maxCharge) = (maxCharge, minCharge);
             
             for (int i = maxCharge; i > minCharge - 1; i--)
-                yield return this.ToMz(i); 
+                yield return this.ToMz(i);
+            }
         }
 
         #endregion
@@ -268,6 +271,8 @@ namespace Transcriptomics
 
             if (value != null)
                 MonoisotopicMass += value.MonoisotopicMass;
+
+            return true;
         }
 
         /// <summary>
@@ -281,11 +286,13 @@ namespace Transcriptomics
                 return;
 
             int index = 0;
+
             double monoMass = 0;
+            ChemicalFormula chemFormula = new();
 
             StringBuilder sb = null;
             sb = new StringBuilder(sequence.Length);
-
+            
             foreach (char letter in sequence)
             {
                 Nucleotide residue;
@@ -314,8 +321,11 @@ namespace Transcriptomics
             }
 
             _sequence = sb.ToString();
+            Length = index;
             MonoisotopicMass += monoMass;
             Array.Resize(ref _nucleicAcids, Length);
+
+            return true;
         }
 
         #endregion

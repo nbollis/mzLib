@@ -1,7 +1,11 @@
 ﻿using Chemistry;
+using Easy.Common.Extensions;
 using MassSpectrometry;
+using MathNet.Numerics;
+using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Fragmentation.Oligo;
 using Omics.Modifications;
 using Omics;
 using Easy.Common.Extensions;
@@ -24,7 +28,7 @@ namespace Transcriptomics.Digestion
     {
         public OligoWithSetMods(NucleicAcid nucleicAcid, RnaDigestionParams digestionParams, int oneBaseStartResidue,
             int oneBasedEndResidue, int missedCleavages, CleavageSpecificity cleavageSpecificity,
-            Dictionary<int, Modification> allModsOneIsNTerminus, int numFixedMods, IHasChemicalFormula? fivePrimeTerminus = null,
+            Dictionary<int, Modification> allModsOneIsNTerminus, int numFixedMods, IHasChemicalFormula? fivePrimeTerminus = null, 
             IHasChemicalFormula? threePrimeTerminus = null)
             : base(nucleicAcid, oneBaseStartResidue, oneBasedEndResidue, missedCleavages,
             cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
@@ -39,7 +43,7 @@ namespace Transcriptomics.Digestion
             RnaDigestionParams digestionParams = null, NucleicAcid n = null, int oneBaseStartResidue = 1, int oneBasedEndResidue = 0,
              int missedCleavages = 0, CleavageSpecificity cleavageSpecificity = CleavageSpecificity.Full, string description = null,
             IHasChemicalFormula? fivePrimeTerminus = null, IHasChemicalFormula? threePrimeTerminus = null)
-            : base(n, oneBaseStartResidue, oneBasedEndResidue, missedCleavages,
+            : base(n, oneBaseStartResidue, oneBasedEndResidue, missedCleavages, 
                 cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
         {
             if (sequence.Contains("|"))
@@ -98,8 +102,9 @@ namespace Transcriptomics.Digestion
             {
                 _monoisotopicMass ??= BaseSequence.Sum(nuc => Nucleotide.GetResidue(nuc).MonoisotopicMass) +
                                       AllModsOneIsNterminus.Values.Sum(mod => mod.MonoisotopicMass!.Value) +
-                                      FivePrimeTerminus.MonoisotopicMass +
-                                      ThreePrimeTerminus.MonoisotopicMass;
+                                        FivePrimeTerminus.MonoisotopicMass +
+                                        ThreePrimeTerminus.MonoisotopicMass;
+                }
                 return _monoisotopicMass.Value;
             }
         }
@@ -159,14 +164,14 @@ namespace Transcriptomics.Digestion
                     if (!AllModsOneIsNterminus.TryGetValue(r + 2, out Modification? residueVariableMod)) continue;
                     if (residueVariableMod is { } mod)
                         subsequence.Append('[' + mod.ChemicalFormula.Formula + ']');
-                }
+            }
 
                 // variable modification on peptide C-terminus
                 if (AllModsOneIsNterminus.TryGetValue(Length + 2, out Modification? pepCTermVariableMod))
                 {
                     if (pepCTermVariableMod is { } mod)
                         subsequence.Append('[' + mod.ChemicalFormula.Formula + ']');
-                }
+        }
 
                 _sequenceWithChemicalFormula = subsequence.ToString();
                 return _sequenceWithChemicalFormula;
@@ -205,11 +210,11 @@ namespace Transcriptomics.Digestion
             // intact product ion
             if (fragmentationTerminus is FragmentationTerminus.Both or FragmentationTerminus.None)
                 products.AddRange(GetNeutralFragments(ProductType.M, sequence));
-
+            
             if (calculateFivePrime)
                 foreach (var type in fivePrimeProductTypes)
                     products.AddRange(GetNeutralFragments(type, sequence));
-
+            
             if (calculateThreePrime)
                 foreach (var type in threePrimeProductTypes)
                     products.AddRange(GetNeutralFragments(type, sequence));
@@ -306,7 +311,7 @@ namespace Transcriptomics.Digestion
 
             dictWithLocalizedMass.Add(indexOfMass + 2, new Modification(_locationRestriction: "Anywhere.", _monoisotopicMass: massToLocalize + massOfExistingMod));
 
-            var peptideWithLocalizedMass = new OligoWithSetMods(NucleicAcid, _digestionParams, OneBasedStartResidue, OneBasedEndResidue, MissedCleavages,
+            var peptideWithLocalizedMass = new OligoWithSetMods(NucleicAcid, _digestionParams, OneBasedStartResidue, OneBasedEndResidue, MissedCleavages, 
                 CleavageSpecificityForFdrCategory, dictWithLocalizedMass, NumFixedMods, FivePrimeTerminus, ThreePrimeTerminus);
 
             return peptideWithLocalizedMass;

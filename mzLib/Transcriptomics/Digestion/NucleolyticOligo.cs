@@ -14,7 +14,7 @@ namespace Transcriptomics.Digestion
 
         internal NucleolyticOligo(NucleicAcid nucleicAcid, int oneBaseStartResidue,
             int oneBasedEndResidue, int missedCleavages, CleavageSpecificity cleavageSpecificity,
-            IHasChemicalFormula? fivePrimeTerminus, IHasChemicalFormula? threePrimeTerminus)
+            IHasChemicalFormula? fivePrimeTerminus, IHasChemicalFormula? threePrimeTerminus) 
         : base(nucleicAcid, oneBaseStartResidue, oneBasedEndResidue, missedCleavages, cleavageSpecificity)
         {
             _fivePrimeTerminus = fivePrimeTerminus ?? NucleicAcid.DefaultFivePrimeTerminus;
@@ -161,6 +161,11 @@ namespace Transcriptomics.Digestion
                     yield break;
                 }
             }
+
+            //yield return new OligoWithSetMods(NucleicAcid, digestionParams, OneBasedStartResidue,
+            //    OneBasedEndResidue, MissedCleavages, CleavageSpecificityForFdrCategory,
+            //    new Dictionary<int, Modification>(), 0, _fivePrimeTerminus,
+            //    _threePrimeTerminus);
         }
 
         private bool CanBeFivePrime(Modification variableModification, int peptideLength)

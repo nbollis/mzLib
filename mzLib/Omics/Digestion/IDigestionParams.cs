@@ -2,7 +2,7 @@
 
 namespace Omics.Digestion
 {
-    public interface IDigestionParams
+    public interface IDigestionParams 
     {
         int MaxMissedCleavages { get; set; }
         int MinLength { get; set; }
@@ -11,6 +11,7 @@ namespace Omics.Digestion
         int MaxMods { get; set; }
         DigestionAgent DigestionAgent { get; }
         FragmentationTerminus FragmentationTerminus { get; }
+
         /// <summary>
         /// Search mode type refers to the CleavageSpecificity enum and is used for MetaMorpheus to determine if it should perform a non-specific, semi-specific, or fully specific search.
         /// For the initial implementation, RNA will have it hardcoded to a fully specific search.

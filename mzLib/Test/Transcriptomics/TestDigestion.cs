@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using Chemistry;
 using MassSpectrometry;
+using MathNet.Numerics.Distributions;
 using MzLibUtil;
 using NUnit.Framework;
 using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
+using Readers;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
@@ -304,6 +307,8 @@ namespace Test.Transcriptomics
                 List<Product> fragments = new();
                 digestionProduct.Fragment(DissociationType.CID, FragmentationTerminus.Both, fragments);
 
+                List<(int FragmentNumber, ProductType Type, double Mass)[]> ughh = new();
+
                 // test that fragments are correct
                 var fragmentsToCompare = DigestFragmentTestCases
                     .Where(p => p.Sequence.Equals(digestionProduct.BaseSequence)).ToList();
@@ -392,13 +397,13 @@ namespace Test.Transcriptomics
             Assert.That(digestionProducts.Count, Is.EqualTo(5));
             var expected = new List<string>()
             {
-                "UAG", "UCG", "UUG", "AUAG", "AUAG[Digestion Termini:Cyclic Phosphate on X]"
+                "UAG", "UCG", "UUG", "AUAG", "AUAG[Digestion Termini:Cyclic Phosphate on X]" 
             };
             for (int i = 0; i < expected.Count; i++)
             {
                 Assert.That(digestionProducts[i].FullSequence, Is.EqualTo(expected[i]));
             }
-
+           
             // RNase T1 digestion, 3' oligo terminal modification 
             variableMods = new List<Modification> { oligoCyclicPhosphate };
             digestionProducts = rna.Digest(digestionParams, new List<Modification>(), variableMods)
@@ -469,7 +474,7 @@ namespace Test.Transcriptomics
             Assert.That(digestionProducts.Count, Is.EqualTo(7));
             expected = new List<string>()
             {
-                "UAG",
+                "UAG", 
                 "UCG", "[Standard:Pfizer 5'-Cap on X]UCG",
                 "UUG", "[Standard:Pfizer 5'-Cap on X]UUG",
                 "AUAG", "[Standard:Pfizer 5'-Cap on X]AUAG"
@@ -694,6 +699,11 @@ namespace Test.Transcriptomics
         [Test]
         public static void TestVariableModsCountCorrect()
         {
+            string modText = "ID   Sodium\r\nMT   Metal\r\nPP   Anywhere.\r\nTG   A or C or G or U\r\nCF   Na1H-1\r\n" + @"//";
+            var sodiumAdducts = PtmListLoader.ReadModsFromString(modText, out List<(Modification, string)> mods)
+                .ToList();
+            Assert.That(sodiumAdducts.Count, Is.EqualTo(4));
+
             var rna = new RNA("GUACUG");
             var rnaDigestionParams = new RnaDigestionParams()
             {
@@ -785,7 +795,7 @@ namespace Test.Transcriptomics
             Assert.That(precursors.All(p => p.NumFixedMods == 1));
             Assert.That(fullSequences.Contains("GUA[Metal:Potassium on A]CUG"));
             Assert.That(fullSequences.Contains("GUA[Metal:Potassium on A]C[Metal:Sodium on C]UG"));
-
+            
             var oneOfEach = precursors.First(p => p.FullSequence.Equals("GUA[Metal:Potassium on A]C[Metal:Sodium on C]UG"));
             Assert.That(oneOfEach.NumFixedMods, Is.EqualTo(1));
             Assert.That(oneOfEach.NumVariableMods, Is.EqualTo(1));

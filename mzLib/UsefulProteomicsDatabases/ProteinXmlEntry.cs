@@ -216,6 +216,39 @@ namespace UsefulProteomicsDatabases
             return result;
         }
 
+        public RNA ParseRnaEndElement(XmlReader xml, IEnumerable<string> modTypesToExclude,
+            Dictionary<string, Modification> unknownModifications,
+            bool isContaminant, string rnaDbLocation)
+        {
+            RNA result = null;
+            if (xml.Name == "feature")
+            {
+                ParseFeatureEndElement(xml, modTypesToExclude, unknownModifications);
+            }
+            if (xml.Name == "subfeature")
+            {
+                ParseSubFeatureEndElement(xml, modTypesToExclude, unknownModifications);
+            }
+            else if (xml.Name == "dbReference")
+            {
+                ParseDatabaseReferenceEndElement(xml);
+            }
+            else if (xml.Name == "gene")
+            {
+                ReadingGene = false;
+            }
+            else if (xml.Name == "organism")
+            {
+                ReadingOrganism = false;
+            }
+            else if (xml.Name == "entry")
+            {
+                result = ParseRnaEntryEndElement(xml, isContaminant, rnaDbLocation, modTypesToExclude, unknownModifications);
+            }
+            return result;
+        }
+
+
         /// <summary>
         /// Finish parsing an entry
         /// </summary>

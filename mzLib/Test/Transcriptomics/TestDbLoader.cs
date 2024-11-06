@@ -7,6 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NUnit.Framework;
+using Omics.Modifications;
+using UsefulProteomicsDatabases;
 using UsefulProteomicsDatabases.Transcriptomics;
 using UsefulProteomicsDatabases;
 using Transcriptomics;
@@ -29,7 +32,7 @@ namespace Test.Transcriptomics
                 (Path.Combine(TestContext.CurrentContext.TestDirectory, "DoubleProtease.tsv"), RnaFastaHeaderType.Unknown),
                 (ModomicsUnmodifedFastaPath, RnaFastaHeaderType.Modomics),
                 (Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics/TestData/ModomicsUnmodifiedTrimmed.fasta"), RnaFastaHeaderType.Modomics),
-                
+
             };
 
         /// <summary>

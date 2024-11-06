@@ -5,6 +5,9 @@ using System.IO.Compression;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using Transcriptomics;
+using Easy.Common;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
@@ -113,6 +116,9 @@ namespace UsefulProteomicsDatabases.Transcriptomics
                                     regexes = ModomicsFieldRegexes;
                                     identifierHeader = "SOterm";
                                     break;
+
+                                case RnaFastaHeaderType.Unknown:
+                                case null:
                                 default:
                                     throw new MzLibUtil.MzLibException("Unknown fasta header format: " + line);
                             }
@@ -169,12 +175,20 @@ namespace UsefulProteomicsDatabases.Transcriptomics
 
             if (!targets.Any())
                 errors.Add("No targets were loaded from database: " + rnaDbLocation);
-
+            
             List<RNA> decoys = RnaDecoyGenerator.GenerateDecoys(targets, decoyType);
             return generateTargets ? targets.Concat(decoys).ToList() : decoys;
         }
 
-        
+        private static RnaFastaHeaderType DetectFastaHeaderType(string line)
+        {
+            if (!line.StartsWith(">"))
+                return RnaFastaHeaderType.Unknown;
+
+            // modomics -> >id:1|Name:tdbR00000010|SOterm:SO:0000254
+
+            return RnaFastaHeaderType.Modomics;
+        }
 
         private static Dictionary<string, string> ParseRegexFields(string line,
             Dictionary<string, FastaHeaderFieldRegex> regexes)
@@ -195,7 +209,7 @@ namespace UsefulProteomicsDatabases.Transcriptomics
 
         public static List<RNA> LoadRnaXML(string rnaDbLocation, bool generateTargets, DecoyType decoyType,
             bool isContaminant, IEnumerable<Modification> allKnownModifications,
-            IEnumerable<string> modTypesToExclude, out Dictionary<string, Modification> unknownModifications,
+            IEnumerable<string> modTypesToExclude, out Dictionary<string, Modification> unknownModifications, 
             int maxThreads = 1, IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null)
         {
             var prespecified = ProteinDbLoader.GetPtmListFromProteinXml(rnaDbLocation);
