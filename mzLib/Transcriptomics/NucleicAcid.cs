@@ -62,7 +62,7 @@ namespace Transcriptomics
             IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null,
             IDictionary<int, List<Modification>>? oneBasedPossibleLocalizedModifications = null,
             bool isContaminant = false, bool isDecoy = false, List<Tuple<string, string>>? geneNames = null,
-            Dictionary<string, string>? additionalDatabaseFields = null) 
+            Dictionary<string, string>? additionalDatabaseFields = null)
             : this(sequence, fivePrimeTerm, threePrimeTerm, oneBasedPossibleLocalizedModifications)
         {
             Name = name;
@@ -180,7 +180,7 @@ namespace Transcriptomics
         public char this[int zeroBasedIndex] => BaseSequence[zeroBasedIndex];
 
         #endregion
-        
+
         #region Digestion
 
         public IEnumerable<IBioPolymerWithSetMods> Digest(IDigestionParams digestionParameters, List<Modification> allKnownFixedMods,
@@ -282,7 +282,6 @@ namespace Transcriptomics
 
             int index = 0;
             double monoMass = 0;
-            ChemicalFormula chemFormula = new();
             StringBuilder sb = null;
             sb = new StringBuilder(sequence.Length);
 

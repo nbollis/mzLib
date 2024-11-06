@@ -24,8 +24,7 @@ namespace Transcriptomics.Digestion
     {
         public OligoWithSetMods(NucleicAcid nucleicAcid, RnaDigestionParams digestionParams, int oneBaseStartResidue,
             int oneBasedEndResidue, int missedCleavages, CleavageSpecificity cleavageSpecificity,
-            Dictionary<int, Modification> allModsOneIsNTerminus, int numFixedMods,
-            IHasChemicalFormula? fivePrimeTerminus = null,
+            Dictionary<int, Modification> allModsOneIsNTerminus, int numFixedMods, IHasChemicalFormula? fivePrimeTerminus = null,
             IHasChemicalFormula? threePrimeTerminus = null)
             : base(nucleicAcid, oneBaseStartResidue, oneBasedEndResidue, missedCleavages,
                 cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
@@ -37,10 +36,8 @@ namespace Transcriptomics.Digestion
         }
 
         public OligoWithSetMods(string sequence, Dictionary<string, Modification> allKnownMods, int numFixedMods = 0,
-            RnaDigestionParams digestionParams = null, NucleicAcid n = null, int oneBaseStartResidue = 1,
-            int oneBasedEndResidue = 0,
-            int missedCleavages = 0, CleavageSpecificity cleavageSpecificity = CleavageSpecificity.Full,
-            string description = null,
+            RnaDigestionParams digestionParams = null, NucleicAcid n = null, int oneBaseStartResidue = 1, int oneBasedEndResidue = 0,
+            int missedCleavages = 0, CleavageSpecificity cleavageSpecificity = CleavageSpecificity.Full, string description = null,
             IHasChemicalFormula? fivePrimeTerminus = null, IHasChemicalFormula? threePrimeTerminus = null)
             : base(n, oneBaseStartResidue, oneBasedEndResidue, missedCleavages,
                 cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
@@ -71,7 +68,6 @@ namespace Transcriptomics.Digestion
 
         public string FullSequence { get; private set; }
         public IDigestionParams DigestionParams => _digestionParams;
-
         public IHasChemicalFormula FivePrimeTerminus
         {
             get => _fivePrimeTerminus;
@@ -108,7 +104,6 @@ namespace Transcriptomics.Digestion
             }
         }
 
-
         public ChemicalFormula ThisChemicalFormula
         {
             get
@@ -123,10 +118,8 @@ namespace Transcriptomics.Digestion
                         fullFormula = null;
                         break;
                     }
-
                     fullFormula.Add(mod.ChemicalFormula);
                 }
-
                 _thisChemicalFormula = fullFormula;
                 return _thisChemicalFormula!;
             }
@@ -140,8 +133,7 @@ namespace Transcriptomics.Digestion
 
                 var distribution = IsotopicDistribution.GetDistribution(ThisChemicalFormula);
                 double maxIntensity = distribution.Intensities.Max();
-                _mostAbundantMonoisotopicMass =
-                    distribution.Masses[distribution.Intensities.IndexOf(maxIntensity)].RoundedDouble();
+                _mostAbundantMonoisotopicMass = distribution.Masses[distribution.Intensities.IndexOf(maxIntensity)].RoundedDouble();
                 return _mostAbundantMonoisotopicMass!.Value;
             }
         }
@@ -181,13 +173,10 @@ namespace Transcriptomics.Digestion
             }
         }
 
-
         public Dictionary<int, Modification> AllModsOneIsNterminus => _allModsOneIsNterminus;
 
-        public IDictionary<int, List<Modification>>
-            OneBasedPossibleLocalizedModifications => _oneBasedPossibleLocalizedModifications ??=
+        public IDictionary<int, List<Modification>> OneBasedPossibleLocalizedModifications => _oneBasedPossibleLocalizedModifications ??=
             _allModsOneIsNterminus.ToDictionary(p => p.Key, p => new List<Modification>() { p.Value });
-
         public int NumMods => AllModsOneIsNterminus.Count;
         public int NumFixedMods { get; }
         public int NumVariableMods => NumMods - NumFixedMods;
@@ -271,7 +260,6 @@ namespace Transcriptomics.Digestion
                     first = false; //set to false so only handled once
                     continue;
                 }
-
                 monoMass += sequence[naIndex].MonoisotopicMass;
 
                 if (i < 1)
@@ -316,13 +304,10 @@ namespace Transcriptomics.Digestion
                 dictWithLocalizedMass.Remove(indexOfMass + 2);
             }
 
-            dictWithLocalizedMass.Add(indexOfMass + 2,
-                new Modification(_locationRestriction: "Anywhere.", _monoisotopicMass: massToLocalize + massOfExistingMod));
+            dictWithLocalizedMass.Add(indexOfMass + 2, new Modification(_locationRestriction: "Anywhere.", _monoisotopicMass: massToLocalize + massOfExistingMod));
 
-            var peptideWithLocalizedMass = new OligoWithSetMods(NucleicAcid, _digestionParams, OneBasedStartResidue,
-                OneBasedEndResidue, MissedCleavages,
-                CleavageSpecificityForFdrCategory, dictWithLocalizedMass, NumFixedMods, FivePrimeTerminus,
-                ThreePrimeTerminus);
+            var peptideWithLocalizedMass = new OligoWithSetMods(NucleicAcid, _digestionParams, OneBasedStartResidue, OneBasedEndResidue, MissedCleavages,
+                CleavageSpecificityForFdrCategory, dictWithLocalizedMass, NumFixedMods, FivePrimeTerminus, ThreePrimeTerminus);
 
             return peptideWithLocalizedMass;
         }
@@ -394,4 +379,3 @@ namespace Transcriptomics.Digestion
         }
     }
 }
-

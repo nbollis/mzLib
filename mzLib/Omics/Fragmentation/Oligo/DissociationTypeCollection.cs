@@ -71,7 +71,13 @@ namespace Omics.Fragmentation.Oligo
                         ProductType.w, ProductType.d, ProductType.M
                     }
                 },
-                { DissociationType.LowCID, new List<ProductType>() { } },
+                {
+                    DissociationType.LowCID, new List<ProductType>()
+                    {
+                        ProductType.aBaseLoss, ProductType.c, ProductType.dWaterLoss, ProductType.w,
+                        ProductType.y, ProductType.yWaterLoss, ProductType.M
+                    }
+                },
                 { DissociationType.IRMPD, new List<ProductType>() { } },
                 { DissociationType.ECD, new List<ProductType> { } },
                 { DissociationType.PQD, new List<ProductType> { } },
@@ -99,7 +105,8 @@ namespace Omics.Fragmentation.Oligo
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static double GetRnaMassShiftFromProductType(this ProductType type) => FragmentIonCaps[type].MonoisotopicMass;
+        public static double GetRnaMassShiftFromProductType(this ProductType type) 
+            => FragmentIonCaps[type].MonoisotopicMass;
 
         /// <summary>
         /// Mass to be added or subtracted
