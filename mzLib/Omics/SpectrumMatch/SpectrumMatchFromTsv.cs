@@ -228,7 +228,8 @@ namespace Omics.SpectrumMatch
                             TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.TryGetValue(productType,
                                 out terminus);
                         else
-                            terminus = Omics.Fragmentation.Oligo.DissociationTypeCollection.GetRnaTerminusType(productType);
+                            terminus =
+                                Omics.Fragmentation.Oligo.TerminusSpecificProductTypes.GetRnaTerminusType(productType);
 
 
                         //get amino acid position

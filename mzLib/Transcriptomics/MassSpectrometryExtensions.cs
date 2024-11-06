@@ -1,4 +1,5 @@
 ﻿using Omics.Modifications;
+using System.Text;
 using Transcriptomics.Digestion;
 
 namespace Transcriptomics
@@ -13,46 +14,92 @@ namespace Transcriptomics
             object? returnObj = null;
             string newSequence = sequence ?? target.BaseSequence;
             IDictionary<int, List<Modification>> newModifications = modifications ?? target.OneBasedPossibleLocalizedModifications;
-            
 
-            if (target is RNA rna)
+            switch (target)
             {
-                bool newIsDecoy = isDecoy ?? rna.IsDecoy;
-                returnObj = new RNA(newSequence, rna.Name, rna.Accession, rna.Organism, rna.DatabaseFilePath,
-                    rna.FivePrimeTerminus, rna.ThreePrimeTerminus, newModifications, rna.IsContaminant, newIsDecoy, rna.AdditionalDatabaseFields);
+                case RNA rna:
+                    {
+                        bool newIsDecoy = isDecoy ?? rna.IsDecoy;
+                        returnObj = new RNA(newSequence, rna.Name, rna.Accession, rna.Organism, rna.DatabaseFilePath,
+                            rna.FivePrimeTerminus, rna.ThreePrimeTerminus, newModifications, rna.IsContaminant, newIsDecoy, rna.GeneNames.ToList(), rna.AdditionalDatabaseFields);
+                        break;
+                    }
+                case OligoWithSetMods oligo:
+                    {
+                        var oldParent = oligo.Parent as RNA ?? throw new NullReferenceException();
+                        bool newIsDecoy = isDecoy ?? oldParent.IsDecoy;
+                        var newParent = new RNA(
+                            newSequence,
+                            oldParent.Name,
+                            oldParent.Accession,
+                            oldParent.Organism,
+                            oldParent.DatabaseFilePath,
+                            oldParent.FivePrimeTerminus,
+                            oldParent.ThreePrimeTerminus,
+                            newModifications,
+                            oldParent.IsContaminant,
+                            newIsDecoy,
+                            oldParent.GeneNames.ToList(),
+                            oldParent.AdditionalDatabaseFields);
+
+                        returnObj = new OligoWithSetMods(
+                            newParent,
+                            (oligo.DigestionParams as RnaDigestionParams)!,
+                            oligo.OneBasedStartResidue,
+                            oligo.OneBasedEndResidue,
+                            oligo.MissedCleavages,
+                            oligo.CleavageSpecificityForFdrCategory,
+                            newModifications.ToDictionary(p => p.Key, p => p.Value.First()),
+                            oligo.NumFixedMods,
+                            oligo.FivePrimeTerminus,
+                            oligo.ThreePrimeTerminus);
+                        break;
+                    }
+                default:
+                    throw new ArgumentException("INucleicAcid type not yet implemented");
             }
-            else if (target is OligoWithSetMods oligo)
+
+            return (T)returnObj ?? throw new NullReferenceException("Error creating new INucleicAcid");
+        }
+
+        /// <summary>
+        /// Transcribes a DNA sequence into an RNA sequence
+        /// </summary>
+        /// <param name="dna">The input dna sequence</param>
+        /// <param name="isCodingStrand">True if the input sequence is the coding strand, False if the input sequence is the template strand</param>
+        /// <returns></returns>
+        public static string Transcribe(this string dna, bool isCodingStrand = true)
+        {
+            var sb = new StringBuilder();
+            foreach (var residue in dna)
             {
-                var oldParent = oligo.Parent as RNA ?? throw new NullReferenceException();
-                var newParent = new RNA(
-                    newSequence,
-                    oldParent.Name, 
-                    oldParent.Accession,
-                    oldParent.Organism,
-                    oldParent.DatabaseFilePath,
-                    oldParent.FivePrimeTerminus, 
-                    oldParent.ThreePrimeTerminus, 
-                    newModifications,
-                    oldParent.IsContaminant, 
-                    oldParent.IsDecoy,
-                    oldParent.AdditionalDatabaseFields);
-
-                returnObj = new OligoWithSetMods(
-                    newParent,
-                    oligo.DigestionParams as RnaDigestionParams,
-                    oligo.OneBasedStartResidue, 
-                    oligo.OneBasedEndResidue, 
-                    oligo.MissedCleavages,
-                    oligo.CleavageSpecificityForFdrCategory,
-                    newModifications.ToDictionary(p => p.Key, p => p.Value.First()),
-                    oligo.NumFixedMods,
-                    oligo.FivePrimeTerminus,
-                    oligo.ThreePrimeTerminus);
+                if (isCodingStrand)
+                {
+                    sb.Append(residue == 'T' ? 'U' : residue);
+                }
+                else
+                {
+                    switch (residue)
+                    {
+                        case 'A':
+                            sb.Append('U');
+                            break;
+                        case 'T':
+                            sb.Append('A');
+                            break;
+                        case 'C':
+                            sb.Append('G');
+                            break;
+                        case 'G':
+                            sb.Append('C');
+                            break;
+                        default:
+                            sb.Append(residue);
+                            break;
+                    }
+                }
             }
-            else 
-                throw new ArgumentException("Target must be RNA or OligoWithSetMods");
-
-            return (T)returnObj ?? throw new NullReferenceException();
+            return sb.ToString();
         }
     }
 }

@@ -135,7 +135,7 @@ namespace Omics.Fragmentation.Oligo
             { ProductType.zWaterLoss, FragmentationTerminus.ThreePrime },
             { ProductType.zBaseLoss, FragmentationTerminus.ThreePrime },
 
-            { ProductType.M, FragmentationTerminus.Both }
+            { ProductType.M, FragmentationTerminus.None }
         };
     }
 }

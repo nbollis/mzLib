@@ -229,7 +229,6 @@ namespace Transcriptomics
             
             for (int i = maxCharge; i > minCharge - 1; i--)
                 yield return this.ToMz(i);
-            }
         }
 
         #endregion
@@ -271,8 +270,6 @@ namespace Transcriptomics
 
             if (value != null)
                 MonoisotopicMass += value.MonoisotopicMass;
-
-            return true;
         }
 
         /// <summary>
@@ -321,11 +318,8 @@ namespace Transcriptomics
             }
 
             _sequence = sb.ToString();
-            Length = index;
             MonoisotopicMass += monoMass;
             Array.Resize(ref _nucleicAcids, Length);
-
-            return true;
         }
 
         #endregion

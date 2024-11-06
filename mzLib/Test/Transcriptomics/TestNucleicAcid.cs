@@ -90,7 +90,7 @@ namespace Test.Transcriptomics
             // test constructors and equality
             RNA rna = new RNA(sequence);
 
-            Assert.IsNotNull(rna);
+            Assert.That(rna, Is.Not.Null);
             Assert.That(rna.Length, Is.EqualTo(sequence.Length));
             Assert.That(rna.MonoisotopicMass, Is.EqualTo(monoMass).Within(0.01));
             Assert.That(rna.GetChemicalFormula().MonoisotopicMass, Is.EqualTo(monoMass).Within(0.01));
@@ -110,7 +110,7 @@ namespace Test.Transcriptomics
 
             var rna2 = new RNA(sequence, NucleicAcid.DefaultFivePrimeTerminus, NucleicAcid.DefaultThreePrimeTerminus);
 
-            Assert.IsNotNull(rna2);
+            Assert.That(rna2, Is.Not.Null);
             Assert.That(rna2.Length, Is.EqualTo(sequence.Length));
             Assert.That(rna2.MonoisotopicMass, Is.EqualTo(monoMass).Within(0.01));
             Assert.That(rna.FivePrimeTerminus.Equals(NucleicAcid.DefaultFivePrimeTerminus));

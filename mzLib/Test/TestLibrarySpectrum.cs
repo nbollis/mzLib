@@ -4,9 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NUnit.Framework.Legacy;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
-using Proteomics.PSM;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Readers;
 
 namespace Test

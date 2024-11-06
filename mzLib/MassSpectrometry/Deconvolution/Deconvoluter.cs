@@ -74,8 +74,6 @@ namespace MassSpectrometry
                 foreach (var isotopicEnvelope in deconAlgorithm.Deconvolute(spectrum, rangeToGetPeaksFrom)) 
                     yield return isotopicEnvelope;
             }
-
-            return deconAlgorithm.Deconvolute(spectrum, rangeToGetPeaksFrom);
         }
     }
 }

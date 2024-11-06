@@ -137,24 +137,9 @@ namespace Readers
                     if (firstLine == "") throw new MzLibException("Tsv file is empty");
 
                     if (firstLine.Contains("FeatureIndex"))
-                    if (filePath.EndsWith(SupportedFileType.IntralinkResults.GetFileExtension(),
-                            StringComparison.InvariantCultureIgnoreCase))
-                        return SupportedFileType.IntralinkResults;
-
-                    // these tsv cases are just .tsv and need an extra step to determine the type
-                    // currently need to distinguish between FlashDeconvTsv and MsFraggerPsm
-                    using (var sw = new StreamReader(filePath))
-                    {
-                        var firstLine = sw.ReadLine() ?? "";
-                        if (firstLine == "") throw new MzLibException("Tsv file is empty");
-                    }
-                    
-                    // catchall for other tsv types, one one implemented right now
-                    if (filePath.EndsWith(SupportedFileType.Tsv_FlashDeconv.GetFileExtension(),
-                            StringComparison.InvariantCultureIgnoreCase) &&
-                        !filePath.EndsWith(SupportedFileType.Ms1Tsv_FlashDeconv.GetFileExtension(),
-                            StringComparison.InvariantCultureIgnoreCase))
                         return SupportedFileType.Tsv_FlashDeconv;
+                    if (filePath.EndsWith(SupportedFileType.IntralinkResults.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
+                        return SupportedFileType.IntralinkResults;
                     throw new MzLibException("Tsv file type not supported");
                 }
 
