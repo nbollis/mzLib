@@ -12,8 +12,8 @@ namespace Transcriptomics
         /// <param name="fivePrimeTerm"></param>
         /// <param name="threePrimeTerm"></param>
         /// <param name="oneBasedPossibleLocalizedModifications"></param>
-        public RNA(string sequence, IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null, 
-            IDictionary<int, List<Modification>>? oneBasedPossibleLocalizedModifications = null) 
+        public RNA(string sequence, IHasChemicalFormula? fivePrimeTerm = null, IHasChemicalFormula? threePrimeTerm = null,
+            IDictionary<int, List<Modification>>? oneBasedPossibleLocalizedModifications = null)
             : base(sequence, fivePrimeTerm, threePrimeTerm, oneBasedPossibleLocalizedModifications)
         {
         }

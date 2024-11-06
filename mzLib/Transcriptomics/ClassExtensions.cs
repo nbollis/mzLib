@@ -4,7 +4,7 @@ using Transcriptomics.Digestion;
 
 namespace Transcriptomics
 {
-    public static class MassSpectrometryExtensions
+    public static class ClassExtensions
     {
         public static T CreateNew<T>(this T target, string? sequence = null, IDictionary<int, List<Modification>>? modifications = null,
         bool? isDecoy = null) 
