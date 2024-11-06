@@ -282,7 +282,6 @@ namespace Transcriptomics
 
             int index = 0;
             double monoMass = 0;
-
             StringBuilder sb = null;
             sb = new StringBuilder(sequence.Length);
 

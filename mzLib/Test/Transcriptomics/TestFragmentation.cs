@@ -3,6 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
+using static Test.Transcriptomics.TestNucleicAcid;
 using Transcriptomics;
 using MassSpectrometry;
 using Omics;
@@ -11,6 +15,9 @@ using Omics.Fragmentation.Oligo;
 using Omics.Modifications;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
+using System.Security.Cryptography;
+using Easy.Common.Extensions;
+using Proteomics.ProteolyticDigestion;
 
 namespace Test.Transcriptomics
 {
@@ -75,11 +82,11 @@ namespace Test.Transcriptomics
             {
                 foreach (var oligoWithSetMods in rnaToTest.Select(rna => rna.Digest(digestionparams, fixedMods, variableMods).First()))
                 {
-                    var terminalSpecifc = term == FragmentationTerminus.Both
-                        ? potentialProducts
+                    var terminalSpecifc = term == FragmentationTerminus.Both 
+                        ? potentialProducts 
                         : potentialProducts.Where(p => p.GetRnaTerminusType() == term).ToList();
 
-                    var expectedProductCount = term == FragmentationTerminus.Both
+                    var expectedProductCount = term == FragmentationTerminus.Both 
                         ? (oligoWithSetMods.Length - 1) * (terminalSpecifc.Count - 1) + 1 // there is only one M ion, so for both, remove that form muliplier and add one
                         : (oligoWithSetMods.Length - 1) * terminalSpecifc.Count;
 

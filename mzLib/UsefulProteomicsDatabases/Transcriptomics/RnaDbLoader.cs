@@ -1,15 +1,13 @@
 ﻿using Omics.Modifications;
-using System;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Transcriptomics;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Xml;
 using Chemistry;
-using Transcriptomics;
 
 namespace UsefulProteomicsDatabases.Transcriptomics
 {
@@ -113,6 +111,9 @@ namespace UsefulProteomicsDatabases.Transcriptomics
                                     regexes = ModomicsFieldRegexes;
                                     identifierHeader = "SOterm";
                                     break;
+
+                                case RnaFastaHeaderType.Unknown:
+                                case null:
                                 default:
                                     throw new MzLibUtil.MzLibException("Unknown fasta header format: " + line);
                             }
@@ -173,8 +174,6 @@ namespace UsefulProteomicsDatabases.Transcriptomics
             List<RNA> decoys = RnaDecoyGenerator.GenerateDecoys(targets, decoyType);
             return generateTargets ? targets.Concat(decoys).ToList() : decoys;
         }
-
-        
 
         private static Dictionary<string, string> ParseRegexFields(string line,
             Dictionary<string, FastaHeaderFieldRegex> regexes)

@@ -97,7 +97,7 @@ namespace Omics.Fragmentation.Oligo
         /// </summary>
         /// <param name="dissociationType"></param>
         /// <returns></returns>
-                                                                                                                                                                                                                     public static List<ProductType> GetRnaProductTypesFromDissociationType(this DissociationType dissociationType) =>
+        public static List<ProductType> GetRnaProductTypesFromDissociationType(this DissociationType dissociationType) =>
             ProductsFromDissociationType[dissociationType];
 
         /// <summary>
@@ -105,7 +105,8 @@ namespace Omics.Fragmentation.Oligo
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static double GetRnaMassShiftFromProductType(this ProductType type) => FragmentIonCaps[type].MonoisotopicMass;
+        public static double GetRnaMassShiftFromProductType(this ProductType type) 
+            => FragmentIonCaps[type].MonoisotopicMass;
 
         /// <summary>
         /// Mass to be added or subtracted

@@ -3,7 +3,6 @@ using Omics.Fragmentation;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Chemistry;
-using Omics.Fragmentation.Peptide;
 
 namespace Omics.SpectrumMatch
 {
@@ -156,7 +155,7 @@ namespace Omics.SpectrumMatch
         }
 
 
-        protected static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string matchedIntensityString, string peptideBaseSequence, string matchedMassErrorDaString = null)
+        protected static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string matchedIntensityString, string peptideBaseSequence, string matchedMassErrorDaString = null, bool isProtein = true)
         {
             List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
 
@@ -225,11 +224,16 @@ namespace Omics.SpectrumMatch
                         }
 
                         //get terminus
-                        if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.TryGetValue(productType,
-                                out terminus));
+                        if (isProtein)
+                            TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.TryGetValue(productType,
+                                out terminus);
+                        else
+                            terminus =
+                                Omics.Fragmentation.Oligo.TerminusSpecificProductTypes.GetRnaTerminusType(productType);
+
 
                         //get amino acid position
-                        aminoAcidPosition = terminus == FragmentationTerminus.C ?
+                        aminoAcidPosition = terminus is FragmentationTerminus.C or FragmentationTerminus.ThreePrime ?
                             peptideBaseSequence.Split('|')[0].Length - fragmentNumber :
                             fragmentNumber;
                     }
@@ -365,7 +369,8 @@ namespace Omics.SpectrumMatch
         {
             return FullSequence;
         }
-        public LibrarySpectrum ToLibrarySpectrum()
+
+        public virtual LibrarySpectrum ToLibrarySpectrum()
         {
             bool isDecoy = this.DecoyContamTarget == "D";
 

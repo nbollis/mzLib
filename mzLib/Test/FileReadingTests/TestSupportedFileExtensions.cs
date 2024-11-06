@@ -38,6 +38,8 @@ namespace Test.FileReadingTests
         [TestCase(@"FileReadingTests\ExternalFileTypes\MsPathFinderT_AllResults_IcTda.tsv", SupportedFileType.MsPathFinderTAllResults)]
         [TestCase(@"FileReadingTests\ExternalFileTypes\crux.txt", SupportedFileType.CruxResult)]
         [TestCase(@"FileReadingTests\ExternalFileTypes\EditedMSFraggerResults\experiment_annotation.tsv", SupportedFileType.ExperimentAnnotation)]
+        [TestCase(@"FileReadingTests\SearchResults\XL_Intralinks.tsv", SupportedFileType.IntralinkResults)]
+        [TestCase(@"FileReadingTests\SearchResults\XLink.psmtsv", SupportedFileType.psmtsv)]
         public static void TestSupportedFileTypeExtensions(string filePath, SupportedFileType expectedType)
         {
             var supportedType = filePath.ParseFileType();

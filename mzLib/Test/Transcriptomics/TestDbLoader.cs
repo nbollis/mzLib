@@ -29,7 +29,6 @@ namespace Test.Transcriptomics
                 (Path.Combine(TestContext.CurrentContext.TestDirectory, "DoubleProtease.tsv"), RnaFastaHeaderType.Unknown),
                 (ModomicsUnmodifedFastaPath, RnaFastaHeaderType.Modomics),
                 (Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics/TestData/ModomicsUnmodifiedTrimmed.fasta"), RnaFastaHeaderType.Modomics),
-                
             };
 
         /// <summary>

@@ -27,7 +27,7 @@ namespace Transcriptomics.Digestion
             Dictionary<int, Modification> allModsOneIsNTerminus, int numFixedMods, IHasChemicalFormula? fivePrimeTerminus = null,
             IHasChemicalFormula? threePrimeTerminus = null)
             : base(nucleicAcid, oneBaseStartResidue, oneBasedEndResidue, missedCleavages,
-            cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
+                cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
         {
             _digestionParams = digestionParams;
             _allModsOneIsNterminus = allModsOneIsNTerminus;
@@ -37,7 +37,7 @@ namespace Transcriptomics.Digestion
 
         public OligoWithSetMods(string sequence, Dictionary<string, Modification> allKnownMods, int numFixedMods = 0,
             RnaDigestionParams digestionParams = null, NucleicAcid n = null, int oneBaseStartResidue = 1, int oneBasedEndResidue = 0,
-             int missedCleavages = 0, CleavageSpecificity cleavageSpecificity = CleavageSpecificity.Full, string description = null,
+            int missedCleavages = 0, CleavageSpecificity cleavageSpecificity = CleavageSpecificity.Full, string description = null,
             IHasChemicalFormula? fivePrimeTerminus = null, IHasChemicalFormula? threePrimeTerminus = null)
             : base(n, oneBaseStartResidue, oneBasedEndResidue, missedCleavages,
                 cleavageSpecificity, fivePrimeTerminus, threePrimeTerminus)
