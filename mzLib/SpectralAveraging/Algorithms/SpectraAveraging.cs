@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -62,15 +63,13 @@ public static class SpectraAveraging
         if (parameters.SpectralWeightingType == SpectraWeightingType.LocalizedTicValue)
             binWeights = SpectralWeighting.CalculateBinWeights(bins, parameters.SpectralWeightingType, parameters.MzStep);
 
-
         // each bin index that contains peaks
         var binIncidences = bins.Keys.ToList();
 
         // reject outliers and average bins
-        List<(double mz, double intensity)> averagedPeaks = new();
+        ConcurrentBag<(double mz, double intensity)> averagedPeaks = new();
         Parallel.ForEach(Enumerable.Range(0, parameters.MaxThreadsToUsePerFile), (iterationIndex) =>
         {
-
             // iterate through each bin index which contains peaks
             for (; iterationIndex < binIncidences.Count; iterationIndex += parameters.MaxThreadsToUsePerFile)
             {
@@ -78,13 +77,11 @@ public static class SpectraAveraging
 
                 peaksFromBin = OutlierRejection.RejectOutliers(peaksFromBin, parameters);
                 if (!peaksFromBin.Any()) continue;
-                lock (MyLock)
-                {
-                    var internalWeights = binWeights.ContainsKey(binIncidences[iterationIndex])
-                        ? binWeights[binIncidences[iterationIndex]]
-                        : weights;
-                    averagedPeaks.Add(AverageBin(peaksFromBin, internalWeights));
-                }
+
+                var internalWeights = binWeights.ContainsKey(binIncidences[iterationIndex])
+                    ? binWeights[binIncidences[iterationIndex]]
+                    : weights;
+                averagedPeaks.Add(AverageBin(peaksFromBin, internalWeights));
             }
         });
 

@@ -75,7 +75,7 @@ namespace Test.AveragingTests
                 ScanOverlap = 4,
             };
 
-            var averagedSpectra = SpectraFileAveraging.AverageSpectraFile(Scans, Parameters);
+            var averagedSpectra = SpectraFileAveraging.AverageSpectraFile(dataFile.Scans.ToList(), Parameters);
             AveragedSpectraWriter.WriteAveragedScans(averagedSpectra, parameters, inputPath, dir, relativeToTicsOutPath);
 
 
@@ -94,7 +94,7 @@ namespace Test.AveragingTests
                 NumberOfScansToAverage = 5,
                 ScanOverlap = 4,
             };
-            var averagedSpectra2 = SpectraFileAveraging.AverageSpectraFile(Scans, Parameters);
+            var averagedSpectra2 = SpectraFileAveraging.AverageSpectraFile(dataFile.Scans.ToList(), Parameters);
             AveragedSpectraWriter.WriteAveragedScans(averagedSpectra2, parameters2, inputPath, dir, relativeIntensityOutPath);
         }
 
