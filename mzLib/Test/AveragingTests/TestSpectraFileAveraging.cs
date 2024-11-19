@@ -367,6 +367,7 @@ namespace Test.AveragingTests
             var scansToAverage = typeof(TestSpectraFileAveraging).GetProperty(listPropertyName)?.GetValue(null) as List<MsDataScan>;
             SpectralAveragingParameters.SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans;
             SpectralAveragingParameters.NumberOfScansToAverage = numScansToAverage;
+            SpectralAveragingParameters.SpectralWeightingType = SpectraWeightingType.LocalizedTicValue;
 
             int ms1Count = scansToAverage.Count(p => p.MsnOrder == 1);
             int ms2Count = scansToAverage.Count(p => p.MsnOrder == 2);

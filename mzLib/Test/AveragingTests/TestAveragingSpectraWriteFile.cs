@@ -55,10 +55,52 @@ namespace Test.AveragingTests
         }
 
         [Test]
+        public static void Temp()
+        {
+            string inputPath = @"B:\Users\Zhuoxin\ISD\ISD_240812\08-12-24_PEPPI_FractionD_orbiMS1_ISD60-80-100.mzML";
+            var dir = Path.GetDirectoryName(inputPath);
+            var dataFile = MsDataFileReader.GetDataFile(inputPath);
+
+            var relativeToTicsOutPath = "08-12-24_PEPPI_FractionD_orbiMS1_ISD60-80-100__relativeToTics.mzML";
+            var parameters = new SpectralAveragingParameters()
+            {
+                NormalizationType = NormalizationType.RelativeToTics,
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
+                SpectralWeightingType = SpectraWeightingType.LocalizedTicValue,
+                BinSize = 0.01,
+                MzStep = 10,
+                OutlierRejectionType = OutlierRejectionType.SigmaClipping,
+                NumberOfScansToAverage = 5
+            };
+
+            var averagedSpectra = SpectraFileAveraging.AverageSpectraFile(Scans, Parameters);
+            AveragedSpectraWriter.WriteAveragedScans(averagedSpectra, parameters, inputPath, dir, relativeToTicsOutPath);
+
+
+
+
+
+            var relativeIntensityOutPath = "08-12-24_PEPPI_FractionD_orbiMS1_ISD60-80-100__relativeIntensity.mzML";
+            var parameters2 = new SpectralAveragingParameters()
+            {
+                NormalizationType = NormalizationType.RelativeIntensity,
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
+                SpectralWeightingType = SpectraWeightingType.LocalizedTicValue,
+                BinSize = 0.01,
+                MzStep = 10,
+                OutlierRejectionType = OutlierRejectionType.SigmaClipping,
+            };
+            var averagedSpectra2 = SpectraFileAveraging.AverageSpectraFile(Scans, Parameters);
+            AveragedSpectraWriter.WriteAveragedScans(averagedSpectra2, parameters2, inputPath, dir, relativeIntensityOutPath);
+        }
+
+        [Test]
         public static void OutputAveragedSpectraAsMzMLTest()
         {
             // test that it outputs correctly
             Assert.That(Parameters.OutputType == OutputType.MzML);
+
+            Parameters.SpectralWeightingType = SpectraWeightingType.LocalizedTicValue;
             AveragedSpectraWriter.WriteAveragedScans(DdaCompositeSpectra, Parameters, SpectraPath);
             string averagedSpectraPath = Path.Combine(OutputDirectory,
                 Path.GetFileNameWithoutExtension(SpectraPath) + "-averaged.mzML");

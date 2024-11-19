@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -21,6 +20,7 @@ public class SpectralAveragingParameters
     public int NumberOfScansToAverage { get; set; }
     public int ScanOverlap { get; set; }
     public int MaxThreadsToUsePerFile { get; set; } = 1;
+    public int MzStep { get; set; }
 
     #endregion
 
@@ -39,7 +39,7 @@ public class SpectralAveragingParameters
         SpectraFileAveragingType specAveragingType = SpectraFileAveragingType.AverageAll,
         OutputType outputType = OutputType.MzML, int numToAverage = 5, int overlap = 2,
         double percentile = 0.1, double minSigma = 1.5, double maxSigma = 1.5, double binSize = 0.01,
-        int maxThreads = 1)
+        int maxThreads = 1, int localizedTicPartitions = 30)
     {
         OutlierRejectionType = outlierRejectionType;
         SpectralWeightingType = spectraWeighingType;
@@ -54,6 +54,7 @@ public class SpectralAveragingParameters
         MaxSigmaValue = maxSigma;
         BinSize = binSize;
         MaxThreadsToUsePerFile = maxThreads;
+        MzStep = localizedTicPartitions;
     }
 
     /// <summary>
@@ -74,8 +75,8 @@ public class SpectralAveragingParameters
         MaxSigmaValue = 1.5;
         BinSize = 0.01;
         MaxThreadsToUsePerFile = 1;
+        MzStep = 20;
     }
-
 
     /// <summary>
     /// Generates an IEnumerable of Spectral Averaging Parameters with all valid combinations of parameters
@@ -163,8 +164,6 @@ public class SpectralAveragingParameters
         }
         return averagingParams;
     }
-
-
 
     /// <summary>
     ///     Override for the ToString method that can be used for file output naming

@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using MzLibUtil.NoiseEstimation;
@@ -20,10 +19,11 @@ public static class SpectralWeighting
     /// <param name="xArrays">xArrays of spectra to determine weights from</param>
     /// <param name="yArrays">yArrays of spectra to determine weights from</param>
     /// <param name="spectraWeightingType">how to weight the spectra</param>
+    /// <param name="mzStep">used in the weight by localized tic only</param>
     /// <returns>Dictionary of weights where the key is the spectra index and the value is the weight</returns>
     /// <exception cref="MzLibException"></exception>
     public static Dictionary<int, double> CalculateSpectraWeights(double[][] xArrays, double[][] yArrays,
-        SpectraWeightingType spectraWeightingType)
+        SpectraWeightingType spectraWeightingType, int mzStep = 5)
     {
         switch (spectraWeightingType)
         {
@@ -36,9 +36,79 @@ public static class SpectralWeighting
             case SpectraWeightingType.MrsNoiseEstimation:
                 return WeightByMrsNoiseEstimation(yArrays);
 
+            case SpectraWeightingType.LocalizedTicValue:
+                return new();
+
             default:
                 throw new MzLibException("Spectra Weighting Type Not Implemented");
         }
+    }
+
+    //binkey -> spectra key -> weight
+    internal static Dictionary<int, Dictionary<int, double>> CalculateBinWeights(Dictionary<int, List<BinnedPeak>> bins, SpectraWeightingType weightingType, int mzStep)
+    {
+        Dictionary<int, Dictionary<int, double>> binWeights = new();
+        // if they send it into the wrong weight calculator, send it to the right one. 
+        if (weightingType != SpectraWeightingType.LocalizedTicValue) // hopefully this is never hit
+        {
+            double[][] yArray = bins.Values.SelectMany(z => z)
+                .GroupBy(p => p.SpectraId)
+                .Select(p => p.Select(x => x.Intensity).ToArray())
+                .ToArray();
+
+            double[][] xArray = bins.Values.SelectMany(z => z)
+                .GroupBy(p => p.SpectraId)
+                .Select(p => p.Select(x => x.Mz).ToArray())
+                .ToArray();
+
+            var weights = CalculateSpectraWeights(xArray, yArray, weightingType, mzStep);
+            binWeights.Add(-1, weights);
+            return binWeights;
+        }
+
+
+        // extract the relevant information from the structure
+        var extractedInfo = bins.SelectMany(bin => bin.Value.GroupBy(p => p.SpectraId)
+                .Select(specGroupedBin => new
+                {
+                    SpectraId = specGroupedBin.Key,
+                    BinKey = bin.Key,
+                    Mz = specGroupedBin.Average(peak => peak.Mz),
+                    Intensity = specGroupedBin.Sum(peak => peak.Intensity)
+                }))
+            .GroupBy(x => x.SpectraId)
+            .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.BinKey, x => (x.Mz, x.Intensity)));
+
+
+        // parse the extracted info into the relevant format for the weight calculator
+        foreach (var bin in bins)
+        {
+            var binKey = bin.Key;
+            var binnedPeaks = bin.Value;
+
+            var binWeightsForSpectra = binnedPeaks
+                .Select(p => p.SpectraId)
+                .Distinct()
+                .ToDictionary(dataFileId => dataFileId, dataFileId =>
+                {
+                    var specExtract = extractedInfo[dataFileId];
+                    var binExtract = specExtract[binKey];
+
+                    return specExtract.Values
+                        .Where(p => Math.Abs(binExtract.Mz - p.Mz) <= mzStep)
+                        .Sum(p => p.Intensity);
+                });
+
+            var sum = binWeightsForSpectra.Values.Sum();
+            foreach (var key in binWeightsForSpectra.Keys.ToList())
+            {
+                binWeightsForSpectra[key] /= sum;
+            }
+
+            binWeights[binKey] = binWeightsForSpectra;
+        }
+
+        return binWeights;
     }
 
     /// <summary>
