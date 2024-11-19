@@ -60,6 +60,7 @@ namespace Test.AveragingTests
             string inputPath = @"B:\Users\Zhuoxin\ISD\ISD_240812\08-12-24_PEPPI_FractionD_orbiMS1_ISD60-80-100.mzML";
             var dir = Path.GetDirectoryName(inputPath);
             var dataFile = MsDataFileReader.GetDataFile(inputPath);
+            dataFile.LoadAllStaticData();
 
             var relativeToTicsOutPath = "08-12-24_PEPPI_FractionD_orbiMS1_ISD60-80-100__relativeToTics.mzML";
             var parameters = new SpectralAveragingParameters()
@@ -70,7 +71,8 @@ namespace Test.AveragingTests
                 BinSize = 0.01,
                 MzStep = 10,
                 OutlierRejectionType = OutlierRejectionType.SigmaClipping,
-                NumberOfScansToAverage = 5
+                NumberOfScansToAverage = 5,
+                ScanOverlap = 4,
             };
 
             var averagedSpectra = SpectraFileAveraging.AverageSpectraFile(Scans, Parameters);
@@ -89,6 +91,8 @@ namespace Test.AveragingTests
                 BinSize = 0.01,
                 MzStep = 10,
                 OutlierRejectionType = OutlierRejectionType.SigmaClipping,
+                NumberOfScansToAverage = 5,
+                ScanOverlap = 4,
             };
             var averagedSpectra2 = SpectraFileAveraging.AverageSpectraFile(Scans, Parameters);
             AveragedSpectraWriter.WriteAveragedScans(averagedSpectra2, parameters2, inputPath, dir, relativeIntensityOutPath);
