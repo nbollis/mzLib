@@ -4,5 +4,6 @@ public enum SpectraWeightingType
 {
     WeightEvenly,
     MrsNoiseEstimation,
-    TicValue
+    TicValue,
+    LocalizedTicValue,
 }
