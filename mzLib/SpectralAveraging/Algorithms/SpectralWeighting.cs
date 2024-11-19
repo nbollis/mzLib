@@ -23,7 +23,7 @@ public static class SpectralWeighting
     /// <returns>Dictionary of weights where the key is the spectra index and the value is the weight</returns>
     /// <exception cref="MzLibException"></exception>
     public static Dictionary<int, double> CalculateSpectraWeights(double[][] xArrays, double[][] yArrays,
-        SpectraWeightingType spectraWeightingType, int mzStep = 5)
+        SpectraWeightingType spectraWeightingType)
     {
         switch (spectraWeightingType)
         {
@@ -61,7 +61,7 @@ public static class SpectralWeighting
                 .Select(p => p.Select(x => x.Mz).ToArray())
                 .ToArray();
 
-            var weights = CalculateSpectraWeights(xArray, yArray, weightingType, mzStep);
+            var weights = CalculateSpectraWeights(xArray, yArray, weightingType);
             binWeights.Add(-1, weights);
             return binWeights;
         }

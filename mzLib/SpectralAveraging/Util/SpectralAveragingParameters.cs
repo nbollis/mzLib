@@ -39,7 +39,7 @@ public class SpectralAveragingParameters
         SpectraFileAveragingType specAveragingType = SpectraFileAveragingType.AverageAll,
         OutputType outputType = OutputType.MzML, int numToAverage = 5, int overlap = 2,
         double percentile = 0.1, double minSigma = 1.5, double maxSigma = 1.5, double binSize = 0.01,
-        int maxThreads = 1, int localizedTicPartitions = 30)
+        int maxThreads = 1, int mzStep = 30)
     {
         OutlierRejectionType = outlierRejectionType;
         SpectralWeightingType = spectraWeighingType;
@@ -54,7 +54,7 @@ public class SpectralAveragingParameters
         MaxSigmaValue = maxSigma;
         BinSize = binSize;
         MaxThreadsToUsePerFile = maxThreads;
-        MzStep = localizedTicPartitions;
+        MzStep = mzStep;
     }
 
     /// <summary>

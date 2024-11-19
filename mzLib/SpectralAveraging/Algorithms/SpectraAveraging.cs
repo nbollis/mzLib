@@ -56,7 +56,7 @@ public static class SpectraAveraging
         var bins = GetBins(xArrays, yArrays, parameters.BinSize);
 
         // get weights
-        var weights = SpectralWeighting.CalculateSpectraWeights(xArrays, yArrays, parameters.SpectralWeightingType, parameters.MzStep);
+        var weights = SpectralWeighting.CalculateSpectraWeights(xArrays, yArrays, parameters.SpectralWeightingType);
 
         var binWeights = new Dictionary<int, Dictionary<int, double>>();
         if (parameters.SpectralWeightingType == SpectraWeightingType.LocalizedTicValue)
