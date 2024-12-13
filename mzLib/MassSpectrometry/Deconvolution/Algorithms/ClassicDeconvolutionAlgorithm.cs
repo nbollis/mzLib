@@ -170,7 +170,7 @@ namespace MassSpectrometry
             double[] theoreticalMasses = allMasses[massIndex];
             double[] theoreticalIntensities = allIntensities[massIndex];
             //add "most intense peak"
-            int estimatedSize = theoreticalIntensities.Length;
+            int estimatedSize = 20; // most envelopes will have fewer than 20 peaks found
             var listOfObservedPeaks = new List<(double, double)>(estimatedSize) { (candidateForMostIntensePeakMz, candidateForMostIntensePeakIntensity) };
             var listOfRatios = new List<double>(estimatedSize) { theoreticalIntensities[0] / candidateForMostIntensePeakIntensity }; // theoreticalIntensities and theoreticalMasses are sorted by intensity, so first is most intense
             // Assuming the test peak is most intense...
@@ -179,6 +179,9 @@ namespace MassSpectrometry
             double totalIntensity = candidateForMostIntensePeakIntensity;
             double monoisotopicMass = testMostIntenseMass - diffToMonoisotopic[massIndex]; //get the  monoisotopic by taking the most intense mass minus the expected mass difference between most intense and monoisotopic
             monoisotopicMassPredictions.Add(monoisotopicMass);
+
+            // Use a single instance of the tuple to avoid creating new instances in the loop
+            (double mz, double intensity) observedPeak;
             for (int indexToLookAt = 1; indexToLookAt < theoreticalIntensities.Length; indexToLookAt++) //cycle through all theoretical peaks in this envelope from most intense to least intense
             {
                 double theorMassThatTryingToFind = theoreticalMasses[indexToLookAt] + differenceBetweenTheorAndActualMass; //get the expected mass of the next most intense peak
@@ -192,7 +195,8 @@ namespace MassSpectrometry
                     && !listOfObservedPeaks.Contains((closestPeakmz, closestPeakIntensity)))
                 {
                     //Found a match to an isotope peak for this charge state!
-                    listOfObservedPeaks.Add((closestPeakmz, closestPeakIntensity)); //add to observed list
+                    observedPeak = (closestPeakmz, closestPeakIntensity);
+                    listOfObservedPeaks.Add(observedPeak); //add to observed list
                     totalIntensity += closestPeakIntensity; //add intensity
                     listOfRatios.Add(theoreticalIntensities[indexToLookAt] / closestPeakIntensity); //add ratio
                     double monoisotopicMassFromThisPeak = monoisotopicMass + closestPeakMass - theorMassThatTryingToFind;

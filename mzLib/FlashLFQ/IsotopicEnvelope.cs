@@ -1,4 +1,6 @@
-﻿namespace FlashLFQ
+﻿using System;
+
+namespace FlashLFQ
 {
     /// <summary>
     /// Contains the summed intensities of all isotope peaks detected in a single MS1 scan for a given species.
@@ -41,16 +43,16 @@
 
         public override bool Equals(object obj)
         {
-            var otherEnv = (IsotopicEnvelope)obj;
+            if (obj is null) return false;
+            if (obj is not IsotopicEnvelope otherEnv) return false;
 
-            return otherEnv != null
-                && otherEnv.ChargeState == this.ChargeState
-                && otherEnv.IndexedPeak.Equals(this.IndexedPeak);
+            return otherEnv.ChargeState == ChargeState
+                && otherEnv.IndexedPeak.Equals(IndexedPeak);
         }
 
         public override int GetHashCode()
         {
-            return ChargeState.GetHashCode() + IndexedPeak.GetHashCode();
+            return HashCode.Combine(ChargeState, IndexedPeak);
         }
     }
 }

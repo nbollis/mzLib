@@ -1,14 +1,11 @@
-﻿using Omics.Modifications;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MzLibUtil;
+using Omics.Modifications;
 
 namespace Omics.Digestion
 {
     public abstract class DigestionAgent
     {
+        protected static readonly HashSetPool<int> HashSetPool = new HashSetPool<int>(20);
         protected DigestionAgent(string name, CleavageSpecificity cleavageSpecificity, List<DigestionMotif> motifList, Modification cleavageMod)
         {
             Name = name;
@@ -68,8 +65,9 @@ namespace Omics.Digestion
         /// <returns></returns>
         public List<int> GetDigestionSiteIndices(string sequence)
         {
-            var indices = new List<int>();
-
+            var indices = HashSetPool.Get();
+            indices.Add(0); // The start of the protein is treated as a cleavage site to retain the n-terminal peptide
+            
             for (int r = 0; r < sequence.Length; r++)
             {
                 var cutSiteIndex = -1;
@@ -99,9 +97,13 @@ namespace Omics.Digestion
                 }
             }
 
-            indices.Add(0); // The start of the protein is treated as a cleavage site to retain the n-terminal peptide
             indices.Add(sequence.Length); // The end of the protein is treated as a cleavage site to retain the c-terminal peptide
-            return indices.Distinct().OrderBy(i => i).ToList();
+            var toReturn = indices.ToList();
+
+            HashSetPool.Return(indices);
+            return toReturn;
         }
+
+
     }
 }

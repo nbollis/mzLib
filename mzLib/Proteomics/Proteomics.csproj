@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="32.0.3" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.0" />
   </ItemGroup>
 
 </Project>

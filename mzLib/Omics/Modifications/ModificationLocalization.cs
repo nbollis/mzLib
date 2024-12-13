@@ -2,12 +2,20 @@
 {
     public static class ModificationLocalization
     {
-        // This method is called a ton in MetaMorpheus. If changes are made, ensure they are efficient. 
+        // This method is called a ton (8.8 billion times in Bottom-Up Jenkins as of 1.0.6) in MetaMorpheus. If changes are made, ensure they are efficient. 
         public static bool ModFits(Modification attemptToLocalize, string sequence, int digestionProductOneBasedIndex, int digestionProductLength, int bioPolymerOneBasedIndex)
         {
             // First find the capital letter...
             var motif = attemptToLocalize.Target.ToString();
-            var motifStartLocation = motif.IndexOf(motif.First(char.IsUpper));
+            var motifStartLocation = -1;
+            for (int i = 0; i < motif.Length; i++)
+            {
+                if (char.IsUpper(motif[i]))
+                {
+                    motifStartLocation = i;
+                    break;
+                }
+            }
 
             // Look up starting at and including the capital letter
             var proteinToMotifOffset = bioPolymerOneBasedIndex - motifStartLocation - 1;
@@ -35,7 +43,6 @@
                     // last residue in oligo but not in nucleic acid
                 "Oligo 3'-terminal." when digestionProductOneBasedIndex < digestionProductLength || bioPolymerOneBasedIndex == sequence.Length => false,
                     // I guess Anywhere. and Unassigned. are true since how do you localize anywhere or unassigned.
-                    
                 _ => true,
             };
         }
@@ -52,20 +59,15 @@
 
         private static bool MotifMatches(char motifChar, char sequenceChar)
         {
-            char upperMotifChar = char.ToUpper(motifChar);
-            switch (upperMotifChar)
+            var upperMotifChar = char.ToUpper(motifChar);
+            return upperMotifChar switch
             {
-                case 'X':
-                    return true;
-                case 'B':
-                    return sequenceChar is 'D' or 'N';
-                case 'J':
-                    return sequenceChar is 'I' or 'L';
-                case 'Z':
-                    return sequenceChar is 'E' or 'Q';
-                default:
-                    return upperMotifChar == sequenceChar;
-            }
+                'X' => true,
+                'B' => sequenceChar is 'D' or 'N',
+                'J' => sequenceChar is 'I' or 'L',
+                'Z' => sequenceChar is 'E' or 'Q',
+                _ => upperMotifChar == sequenceChar
+            };
         }
     }
 }

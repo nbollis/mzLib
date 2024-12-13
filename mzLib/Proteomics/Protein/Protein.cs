@@ -12,7 +12,7 @@ using Easy.Common.Extensions;
 
 namespace Proteomics
 {
-    public class Protein : IBioPolymer
+    public class Protein : IBioPolymer, IComparable<Protein>, IEquatable<Protein>
     {
         private List<ProteolysisProduct> _proteolysisProducts;
 
@@ -967,10 +967,22 @@ namespace Proteomics
         }
 
         //not sure if we require any additional fields for equality
+        public bool Equals(Protein otherProtein)
+        {
+            if (otherProtein == null) return false;
+            if (Accession != otherProtein.Accession) return false;
+            if (BaseSequence.Length != otherProtein.BaseSequence.Length) return false;
+            for (int i = 0; i < BaseSequence.Length; i++)
+            {
+                if (BaseSequence[i] != otherProtein.BaseSequence[i]) return false;
+            }
+
+            return true;
+        }
+
         public override bool Equals(object obj)
         {
-            Protein otherProtein = (Protein)obj;
-            return otherProtein != null && otherProtein.Accession.Equals(Accession) && otherProtein.BaseSequence.Equals(BaseSequence);
+            return obj is Protein otherProtein && Equals(otherProtein);
         }
 
         /// <summary>
