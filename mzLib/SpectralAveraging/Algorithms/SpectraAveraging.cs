@@ -76,7 +76,10 @@ public static class SpectraAveraging
                 var peaksFromBin = bins[binIncidences[iterationIndex]];
 
                 peaksFromBin = OutlierRejection.RejectOutliers(peaksFromBin, parameters);
-                if (!peaksFromBin.Any()) continue;
+
+                // if we have rejected all peaks, do not create an averaged peak
+                if (peaksFromBin.Count(peak => peak.Intensity > 0) < 1) 
+                    continue;
 
                 var internalWeights = binWeights.ContainsKey(binIncidences[iterationIndex])
                     ? binWeights[binIncidences[iterationIndex]]
