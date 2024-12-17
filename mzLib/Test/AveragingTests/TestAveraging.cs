@@ -172,5 +172,51 @@ namespace Test.AveragingTests
             Assert.That(peak.ToString(), Is.EqualTo("20 : 25.5 : 1"));
         }
 
+        [Test]
+        public static void TestGetBins()
+        {
+            var xArrays = new[]
+            {
+                new double[] { 0, 1, 2, 3, 4 },
+                new double[] { 0, 1, 2, 3, 4 },
+                new double[] { 0, 1, 2, 3, 4 }
+            };
+            var yArrays = new[]
+            {
+                new double[] { 10, 20, 30, 40, 50 },
+                new double[] { 15, 25, 35, 45, 55 },
+                new double[] { 20, 30, 40, 50, 60 }
+            };
+            double binSize = 1.0;
+
+            var bins = SpectralAveraging.SpectraAveraging.GetBins(xArrays, yArrays, binSize);
+            Assert.That(bins.Count, Is.EqualTo(5));
+            Assert.That(bins[0].Count, Is.EqualTo(3));
+            Assert.That(bins[1].Count, Is.EqualTo(3));
+            Assert.That(bins[2].Count, Is.EqualTo(3));
+            Assert.That(bins[3].Count, Is.EqualTo(3));
+            Assert.That(bins[4].Count, Is.EqualTo(3));
+
+            Assert.That(bins[0][0].Intensity, Is.EqualTo(10));
+            Assert.That(bins[0][1].Intensity, Is.EqualTo(15));
+            Assert.That(bins[0][2].Intensity, Is.EqualTo(20));
+
+            Assert.That(bins[1][0].Intensity, Is.EqualTo(20));
+            Assert.That(bins[1][1].Intensity, Is.EqualTo(25));
+            Assert.That(bins[1][2].Intensity, Is.EqualTo(30));
+
+            Assert.That(bins[2][0].Intensity, Is.EqualTo(30));
+            Assert.That(bins[2][1].Intensity, Is.EqualTo(35));
+            Assert.That(bins[2][2].Intensity, Is.EqualTo(40));
+
+            Assert.That(bins[3][0].Intensity, Is.EqualTo(40));
+            Assert.That(bins[3][1].Intensity, Is.EqualTo(45));
+            Assert.That(bins[3][2].Intensity, Is.EqualTo(50));
+
+            Assert.That(bins[4][0].Intensity, Is.EqualTo(50));
+            Assert.That(bins[4][1].Intensity, Is.EqualTo(55));
+            Assert.That(bins[4][2].Intensity, Is.EqualTo(60));
+        }
+
     }
 }

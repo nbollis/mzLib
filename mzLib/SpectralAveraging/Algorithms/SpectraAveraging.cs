@@ -115,7 +115,7 @@ public static class SpectraAveraging
     ///     If a spectrum does not have a peak in a bin where all other spectra do,
     ///     then a peak with zero intensity will be added. This allows for efficient outlier rejection
     /// </remarks>
-    private static Dictionary<int, List<BinnedPeak>> GetBins(double[][] xArrays, double[][] yArrays,
+    internal static Dictionary<int, List<BinnedPeak>> GetBins(double[][] xArrays, double[][] yArrays,
         double binSize)
     {
         var numSpectra = xArrays.Length;
