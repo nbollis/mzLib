@@ -51,7 +51,7 @@ namespace Proteomics.ProteolyticDigestion
         /// <param name="digestionParams"></param>
         /// <param name="variableModifications"></param>
         /// <returns></returns>
-        internal IEnumerable<PeptideWithSetModifications> GetModifiedPeptides(IEnumerable<Modification> allKnownFixedModifications,
+        internal IEnumerable<PeptideWithSetModifications> GetModifiedPeptides(List<Modification> allKnownFixedModifications,
             DigestionParams digestionParams, List<Modification> variableModifications)
         {
             int peptideLength = OneBasedEndResidue - OneBasedStartResidue + 1;
@@ -149,10 +149,10 @@ namespace Proteomics.ProteolyticDigestion
                 int numFixedMods = 0;
                 foreach (var ok in GetFixedModsOneIsNorFivePrimeTerminus(peptideLength, allKnownFixedModifications))
                 {
-                    if (!kvp.ContainsKey(ok.Key))
+                    if (!kvp.ContainsKey(ok.Position))
                     {
                         numFixedMods++;
-                        kvp.Add(ok.Key, ok.Value);
+                        kvp.Add(ok.Position, ok.Mod);
                     }
                 }
                 yield return new PeptideWithSetModifications(Protein, digestionParams, OneBasedStartResidue, OneBasedEndResidue,

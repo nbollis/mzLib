@@ -147,10 +147,10 @@ namespace Transcriptomics.Digestion
                 int numFixedMods = 0;
                 foreach (var fixedModPattern in GetFixedModsOneIsNorFivePrimeTerminus(oligoLength, allKnownFixedMods))
                 {
-                    if (!variableModPattern.ContainsKey(fixedModPattern.Key))
+                    if (!variableModPattern.ContainsKey(fixedModPattern.Position))
                     {
                         numFixedMods++;
-                        variableModPattern.Add(fixedModPattern.Key, fixedModPattern.Value);
+                        variableModPattern.Add(fixedModPattern.Position, fixedModPattern.Mod);
                     }
                 }
                 yield return new OligoWithSetMods(NucleicAcid, digestionParams, OneBasedStartResidue, OneBasedEndResidue, MissedCleavages,

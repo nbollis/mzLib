@@ -1,11 +1,12 @@
-﻿using Omics.Modifications;
+﻿using MzLibUtil;
+using Omics.Modifications;
 
 namespace Omics.Digestion
 {
     public abstract class DigestionProduct
     {
         protected string _baseSequence;
-
+        private static readonly DictionaryPool<int, Modification> ModDictionaryPool = new(32);
         protected DigestionProduct(IBioPolymer parent, int oneBasedStartResidue, int oneBasedEndResidue, int missedCleavages, 
             CleavageSpecificity cleavageSpecificityForFdrCategory, string? description = null, string? baseSequence = null)
         {
@@ -67,8 +68,8 @@ namespace Omics.Digestion
             }
         }
 
-        protected Dictionary<int, Modification> GetFixedModsOneIsNorFivePrimeTerminus(int length,
-            IEnumerable<Modification> allKnownFixedModifications)
+        protected IEnumerable<(int Position, Modification Mod)> GetFixedModsOneIsNorFivePrimeTerminus(int length,
+            List<Modification> allKnownFixedModifications)
         {
             var fixedModsOneIsNterminus = new Dictionary<int, Modification>(length + 3);
             foreach (Modification mod in allKnownFixedModifications)
@@ -85,10 +86,10 @@ namespace Omics.Digestion
                             if (mod.ModificationType == "Protease")
                             {
                                 if (OneBasedStartResidue != 1)
-                                    fixedModsOneIsNterminus[2] = mod;
+                                    yield return (2, mod);
                             }
                             else //Normal N-terminal peptide modification
-                                fixedModsOneIsNterminus[1] = mod;
+                                yield return (1, mod);
                         }
                         break;
 
@@ -97,7 +98,7 @@ namespace Omics.Digestion
                         {
                             if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, i - 1, length, OneBasedStartResidue + i - 2))
                             {
-                                fixedModsOneIsNterminus[i] = mod;
+                                yield return (i, mod);
                             }
                         }
                         break;
@@ -112,10 +113,10 @@ namespace Omics.Digestion
                             if (mod.ModificationType == "Protease")
                             {
                                 if (OneBasedEndResidue != Parent.Length)
-                                    fixedModsOneIsNterminus[length + 1] = mod;
+                                    yield return (length + 1, mod);
                             }
                             else //Normal C-terminal peptide modification 
-                                fixedModsOneIsNterminus[length + 2] = mod;
+                                yield return (length + 2, mod);
                         }
                         break;
 
@@ -123,7 +124,6 @@ namespace Omics.Digestion
                         throw new NotSupportedException("This terminus localization is not supported.");
                 }
             }
-            return fixedModsOneIsNterminus;
         }
 
 
@@ -168,6 +168,39 @@ namespace Omics.Digestion
                         variableModificationPattern[possibleVariableModifications[index].Key] = i;
                         yield return variableModificationPattern;
                     }
+                }
+            }
+        }
+
+        private static IEnumerable<int[]> GetVariableModificationPatternsOptimized(
+            List<KeyValuePair<int, List<Modification>>> possibleVariableModifications,
+            int unmodifiedResiduesDesired,
+            int[] variableModificationPattern)
+        {
+            var stack = new Stack<(int Index, int UnmodifiedResiduesDesired, int[] Pattern)>();
+            stack.Push((0, unmodifiedResiduesDesired, (int[])variableModificationPattern.Clone()));
+
+            while (stack.Count > 0)
+            {
+                var (index, remaining, pattern) = stack.Pop();
+                if (index >= possibleVariableModifications.Count)
+                {
+                    yield return pattern;
+                    continue;
+                }
+
+                if (remaining > 0)
+                {
+                    var nextPattern = (int[])pattern.Clone();
+                    nextPattern[possibleVariableModifications[index].Key] = 0;
+                    stack.Push((index + 1, remaining - 1, nextPattern));
+                }
+
+                foreach (var modIndex in Enumerable.Range(1, possibleVariableModifications[index].Value.Count))
+                {
+                    var nextPattern = (int[])pattern.Clone();
+                    nextPattern[possibleVariableModifications[index].Key] = modIndex;
+                    stack.Push((index + 1, remaining, nextPattern));
                 }
             }
         }

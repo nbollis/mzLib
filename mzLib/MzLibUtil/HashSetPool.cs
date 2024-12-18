@@ -23,7 +23,7 @@ public class HashSetPool<T>
     public HashSetPool(int initialCapacity = 16)
     {
         var policy = new HashSetPooledObjectPolicy<T>(initialCapacity);
-        _pool = new DefaultObjectPool<HashSet<T>>(policy);
+        _pool = new DefaultObjectPool<HashSet<T>>(policy, Environment.ProcessorCount * 2);
     }
 
     /// <summary>
