@@ -61,4 +61,41 @@ namespace MzLibUtil
             return Math.Abs((experimental - theoretical) / theoretical * 1e6) <= Value;
         }
     }
+
+    /// <summary>
+    /// The tolerance, or error, of two points
+    /// </summary>
+    public class NewPpmTolerance : Tolerance
+    {
+        private readonly double _factor;
+
+        /// <summary>
+        /// Creates a new tolerance given value
+        /// </summary>
+        /// <param name="value">The numerical value of the tolerance</param>
+        public NewPpmTolerance(double value)
+            : base(value)
+        {
+            _factor = value / 1e6;
+        }
+
+        public override string ToString() => $"\u00b1{Value.ToString("f4", System.Globalization.CultureInfo.InvariantCulture)} PPM";
+
+        public override DoubleRange GetRange(double mean)
+        {
+            double tol = _factor * mean;
+            return new DoubleRange(mean - tol, mean + tol);
+        }
+
+        public override double GetMinimumValue(double mean) => mean * (1 - _factor);
+
+        public override double GetMaximumValue(double mean) => mean * (1 + _factor);
+
+        public override bool Within(double experimental, double theoretical)
+        {
+            double diff = experimental - theoretical;
+            double scaledTolerance = theoretical * _factor;
+            return -scaledTolerance <= diff && diff <= scaledTolerance;
+        }
+    }
 }
