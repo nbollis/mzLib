@@ -21,6 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Resources\EcoliProteome_Trimmed.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Resources\Mods.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
