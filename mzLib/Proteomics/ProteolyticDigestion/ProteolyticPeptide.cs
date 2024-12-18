@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using Easy.Common.Extensions;
 using Omics.Digestion;
 using Omics.Modifications;
 
@@ -149,10 +150,10 @@ namespace Proteomics.ProteolyticDigestion
                 int numFixedMods = 0;
                 foreach (var ok in GetFixedModsOneIsNorFivePrimeTerminus(peptideLength, allKnownFixedModifications))
                 {
-                    if (!kvp.ContainsKey(ok.Position))
+                    if (!kvp.ContainsKey(ok.Key))
                     {
                         numFixedMods++;
-                        kvp.Add(ok.Position, ok.Mod);
+                        kvp.Add(ok.Key, ok.Value);
                     }
                 }
                 yield return new PeptideWithSetModifications(Protein, digestionParams, OneBasedStartResidue, OneBasedEndResidue,

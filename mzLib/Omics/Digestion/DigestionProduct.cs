@@ -68,7 +68,7 @@ namespace Omics.Digestion
             }
         }
 
-        protected IEnumerable<(int Position, Modification Mod)> GetFixedModsOneIsNorFivePrimeTerminus(int length,
+        protected Dictionary<int, Modification> GetFixedModsOneIsNorFivePrimeTerminus(int length,
             List<Modification> allKnownFixedModifications)
         {
             var fixedModsOneIsNterminus = new Dictionary<int, Modification>(length + 3);
@@ -86,10 +86,10 @@ namespace Omics.Digestion
                             if (mod.ModificationType == "Protease")
                             {
                                 if (OneBasedStartResidue != 1)
-                                    yield return (2, mod);
+                                    fixedModsOneIsNterminus[2] = mod;
                             }
                             else //Normal N-terminal peptide modification
-                                yield return (1, mod);
+                                fixedModsOneIsNterminus[1] = mod;
                         }
                         break;
 
@@ -98,7 +98,7 @@ namespace Omics.Digestion
                         {
                             if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, i - 1, length, OneBasedStartResidue + i - 2))
                             {
-                                yield return (i, mod);
+                                fixedModsOneIsNterminus[i] = mod;
                             }
                         }
                         break;
@@ -113,10 +113,10 @@ namespace Omics.Digestion
                             if (mod.ModificationType == "Protease")
                             {
                                 if (OneBasedEndResidue != Parent.Length)
-                                    yield return (length + 1, mod);
+                                    fixedModsOneIsNterminus[length + 1] = mod;
                             }
                             else //Normal C-terminal peptide modification 
-                                yield return (length + 2, mod);
+                                fixedModsOneIsNterminus[length + 2] = mod;
                         }
                         break;
 
@@ -124,6 +124,8 @@ namespace Omics.Digestion
                         throw new NotSupportedException("This terminus localization is not supported.");
                 }
             }
+
+            return fixedModsOneIsNterminus;
         }
 
 
