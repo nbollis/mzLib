@@ -2,4 +2,4 @@
 using BenchmarkDotNet.Running;
 using Profiling;
 
-var summary = BenchmarkRunner.Run<ToleranceBenchmarks>();
+var summary = BenchmarkRunner.Run<DigestionBenchMark>();
