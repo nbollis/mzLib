@@ -50,15 +50,11 @@ public class HashSetPool<T>
             return new HashSet<TItem>(capacity: initialCapacity);
         }
 
-        public override bool Return(HashSet<TItem> obj)
+        public override bool Return(HashSet<TItem> hashSet)
         {
             // Ensure the HashSet can be safely reused
-            obj.Clear();
+            hashSet.Clear();
             return true;
         }
     }
 }
-
-    
-
-
