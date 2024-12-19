@@ -59,10 +59,10 @@ namespace Proteomics.ProteolyticDigestion
 
             try
             {
-                var pepNTermVariableMods = ModListPool.Get();
+                var pepNTermVariableMods = new List<Modification>();
                 twoBasedPossibleVariableAndLocalizeableModifications.Add(1, pepNTermVariableMods);
 
-                var pepCTermVariableMods = ModListPool.Get();
+                var pepCTermVariableMods = new List<Modification>();
                 twoBasedPossibleVariableAndLocalizeableModifications.Add(peptideLength + 2, pepCTermVariableMods);
 
                 foreach (Modification variableModification in variableModifications)
@@ -80,8 +80,7 @@ namespace Proteomics.ProteolyticDigestion
                         {
                             if (!twoBasedPossibleVariableAndLocalizeableModifications.TryGetValue(r + 2, out List<Modification> residueVariableMods))
                             {
-                                residueVariableMods = ModListPool.Get();
-                                residueVariableMods.Add(variableModification);
+                                residueVariableMods = new List<Modification>() { variableModification };
                                 twoBasedPossibleVariableAndLocalizeableModifications.Add(r + 2, residueVariableMods);
                             }
                             else
@@ -125,8 +124,7 @@ namespace Proteomics.ProteolyticDigestion
                             {
                                 if (!twoBasedPossibleVariableAndLocalizeableModifications.TryGetValue(r + 2, out List<Modification> residueVariableMods))
                                 {
-                                    residueVariableMods = ModListPool.Get();
-                                    residueVariableMods.Add(variableModification);
+                                    residueVariableMods = new List<Modification>() { variableModification };
                                     twoBasedPossibleVariableAndLocalizeableModifications.Add(r + 2, residueVariableMods);
                                 }
                                 else
@@ -166,10 +164,6 @@ namespace Proteomics.ProteolyticDigestion
             }
             finally
             {
-                foreach (var kvp in twoBasedPossibleVariableAndLocalizeableModifications)
-                {
-                    ModListPool.Return(kvp.Value);
-                }
                 ModListDictionaryPool.Return(twoBasedPossibleVariableAndLocalizeableModifications);
             }
         }
