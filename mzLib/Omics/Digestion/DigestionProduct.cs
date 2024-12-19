@@ -62,7 +62,7 @@ namespace Omics.Digestion
             }
         }
 
-        protected IEnumerable<KeyValuePair<int, Modification>> GetFixedModsOneIsNorFivePrimeTerminus(int length,
+        protected List<KeyValuePair<int, Modification>> GetFixedModsOneIsNorFivePrimeTerminus(int length,
             List<Modification> allKnownFixedModifications)
         {
             var fixedModsOneIsNterminus = ModDictionaryPool.Get();
@@ -121,10 +121,7 @@ namespace Omics.Digestion
                     }
                 }
 
-                foreach (var mod in fixedModsOneIsNterminus)
-                {
-                    yield return mod;
-                }
+                return fixedModsOneIsNterminus.ToList();
             }
             finally
             {
