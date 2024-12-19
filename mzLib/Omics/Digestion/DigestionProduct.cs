@@ -6,7 +6,10 @@ namespace Omics.Digestion
     public abstract class DigestionProduct
     {
         protected string _baseSequence;
-        private static readonly DictionaryPool<int, Modification> ModDictionaryPool = new(32);
+        protected static readonly DictionaryPool<int, Modification> ModDictionaryPool = new(32);
+        protected static readonly DictionaryPool<int, List<Modification>> ModListDictionaryPool = new(32); 
+        protected static readonly ListPool<Modification> ModListPool = new(4);
+
         protected DigestionProduct(IBioPolymer parent, int oneBasedStartResidue, int oneBasedEndResidue, int missedCleavages, 
             CleavageSpecificity cleavageSpecificityForFdrCategory, string? description = null, string? baseSequence = null)
         {
@@ -44,112 +47,112 @@ namespace Omics.Digestion
             }
             else
             {
-                var possible_variable_modifications = new Dictionary<int, List<Modification>>(possibleVariableModifications);
-
                 int[] base_variable_modification_pattern = new int[peptideLength + 4];
-                int totalAvailableMods = 0;
-                foreach (var kvp in possible_variable_modifications)
-                {
-                    if (kvp.Value != null)
-                    {
-                        totalAvailableMods += kvp.Value.Count;
-                    }
-                }
+                int totalAvailableMods = possibleVariableModifications.Values.Sum(mods => mods.Count);
 
                 int maxVariableMods = Math.Min(totalAvailableMods, maxModsForPeptide);
                 for (int variable_modifications = 0; variable_modifications <= maxVariableMods; variable_modifications++)
                 {
-                    foreach (int[] variable_modification_pattern in GetVariableModificationPatterns(new List<KeyValuePair<int, List<Modification>>>(possible_variable_modifications),
-                        possible_variable_modifications.Count - variable_modifications, base_variable_modification_pattern, 0))
+                    foreach (int[] variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications,
+                                 possibleVariableModifications.Count - variable_modifications, base_variable_modification_pattern, 0))
                     {
-                        yield return GetNewVariableModificationPattern(variable_modification_pattern, possible_variable_modifications);
+                        yield return GetNewVariableModificationPattern(variable_modification_pattern, possibleVariableModifications);
                     }
                 }
             }
         }
 
-        protected Dictionary<int, Modification> GetFixedModsOneIsNorFivePrimeTerminus(int length,
+        protected IEnumerable<(int Key, Modification Value)> GetFixedModsOneIsNorFivePrimeTerminus(int length,
             List<Modification> allKnownFixedModifications)
         {
-            var fixedModsOneIsNterminus = new Dictionary<int, Modification>(length + 3);
-            foreach (Modification mod in allKnownFixedModifications)
+            var fixedModsOneIsNterminus = ModDictionaryPool.Get();
+            try
             {
-                switch (mod.LocationRestriction)
+                foreach (Modification mod in allKnownFixedModifications)
                 {
-                    case "5'-terminal.":
-                    case "Oligo 5'-terminal.":
-                    case "N-terminal.":
-                    case "Peptide N-terminal.":
-                        //the modification is protease associated and is applied to the n-terminal cleaved residue, not at the beginning of the protein
-                        if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, 1, length, OneBasedStartResidue))
-                        {
-                            if (mod.ModificationType == "Protease")
+                    switch (mod.LocationRestriction)
+                    {
+                        case "5'-terminal.":
+                        case "Oligo 5'-terminal.":
+                        case "N-terminal.":
+                        case "Peptide N-terminal.":
+                            //the modification is protease associated and is applied to the n-terminal cleaved residue, not at the beginning of the protein
+                            if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, 1, length, OneBasedStartResidue))
                             {
-                                if (OneBasedStartResidue != 1)
-                                    fixedModsOneIsNterminus[2] = mod;
+                                if (mod.ModificationType == "Protease")
+                                {
+                                    if (OneBasedStartResidue != 1)
+                                        fixedModsOneIsNterminus[2] = mod;
+                                }
+                                else //Normal N-terminal peptide modification
+                                    fixedModsOneIsNterminus[1] = mod;
                             }
-                            else //Normal N-terminal peptide modification
-                                fixedModsOneIsNterminus[1] = mod;
-                        }
-                        break;
+                            break;
 
-                    case "Anywhere.":
-                        for (int i = 2; i <= length + 1; i++)
-                        {
-                            if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, i - 1, length, OneBasedStartResidue + i - 2))
+                        case "Anywhere.":
+                            for (int i = 2; i <= length + 1; i++)
                             {
-                                fixedModsOneIsNterminus[i] = mod;
+                                if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, i - 1, length, OneBasedStartResidue + i - 2))
+                                {
+                                    fixedModsOneIsNterminus[i] = mod;
+                                }
                             }
-                        }
-                        break;
+                            break;
 
-                    case "3'-terminal.":
-                    case "Oligo 3'-terminal.":
-                    case "C-terminal.":
-                    case "Peptide C-terminal.":
-                        //the modification is protease associated and is applied to the c-terminal cleaved residue, not if it is at the end of the protein
-                        if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, length, length, OneBasedStartResidue + length - 1))
-                        {
-                            if (mod.ModificationType == "Protease")
+                        case "3'-terminal.":
+                        case "Oligo 3'-terminal.":
+                        case "C-terminal.":
+                        case "Peptide C-terminal.":
+                            //the modification is protease associated and is applied to the c-terminal cleaved residue, not if it is at the end of the protein
+                            if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, length, length, OneBasedStartResidue + length - 1))
                             {
-                                if (OneBasedEndResidue != Parent.Length)
-                                    fixedModsOneIsNterminus[length + 1] = mod;
+                                if (mod.ModificationType == "Protease")
+                                {
+                                    if (OneBasedEndResidue != Parent.Length)
+                                        fixedModsOneIsNterminus[length + 1] = mod;
+                                }
+                                else //Normal C-terminal peptide modification 
+                                    fixedModsOneIsNterminus[length + 2] = mod;
                             }
-                            else //Normal C-terminal peptide modification 
-                                fixedModsOneIsNterminus[length + 2] = mod;
-                        }
-                        break;
+                            break;
 
-                    default:
-                        throw new NotSupportedException("This terminus localization is not supported.");
+                        default:
+                            throw new NotSupportedException("This terminus localization is not supported.");
+                    }
+                }
+
+                foreach (var mod in fixedModsOneIsNterminus)
+                {
+                    yield return (mod.Key, mod.Value);
                 }
             }
-
-            return fixedModsOneIsNterminus;
+            finally
+            {
+                ModDictionaryPool.Return(fixedModsOneIsNterminus);
+            }
         }
 
 
-        private static IEnumerable<int[]> GetVariableModificationPatterns(List<KeyValuePair<int, List<Modification>>> possibleVariableModifications,
+        private static IEnumerable<int[]> GetVariableModificationPatterns(Dictionary<int, List<Modification>> possibleVariableModifications,
             int unmodifiedResiduesDesired, int[] variableModificationPattern, int index)
         {
-            if (index < possibleVariableModifications.Count - 1)
+            var keys = possibleVariableModifications.Keys.ToList();
+            if (index < keys.Count - 1)
             {
                 if (unmodifiedResiduesDesired > 0)
                 {
-                    variableModificationPattern[possibleVariableModifications[index].Key] = 0;
-                    foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications,
-                        unmodifiedResiduesDesired - 1, variableModificationPattern, index + 1))
+                    variableModificationPattern[keys[index]] = 0;
+                    foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications, unmodifiedResiduesDesired - 1, variableModificationPattern, index + 1))
                     {
                         yield return new_variable_modification_pattern;
                     }
                 }
-                if (unmodifiedResiduesDesired < possibleVariableModifications.Count - index)
+                if (unmodifiedResiduesDesired < keys.Count - index)
                 {
-                    for (int i = 1; i <= possibleVariableModifications[index].Value.Count; i++)
+                    for (int i = 1; i <= possibleVariableModifications[keys[index]].Count; i++)
                     {
-                        variableModificationPattern[possibleVariableModifications[index].Key] = i;
-                        foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications,
-                            unmodifiedResiduesDesired, variableModificationPattern, index + 1))
+                        variableModificationPattern[keys[index]] = i;
+                        foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications, unmodifiedResiduesDesired, variableModificationPattern, index + 1))
                         {
                             yield return new_variable_modification_pattern;
                         }
@@ -160,49 +163,16 @@ namespace Omics.Digestion
             {
                 if (unmodifiedResiduesDesired > 0)
                 {
-                    variableModificationPattern[possibleVariableModifications[index].Key] = 0;
-                    yield return variableModificationPattern;
+                    variableModificationPattern[keys[index]] = 0;
+                    yield return (int[])variableModificationPattern.Clone();
                 }
                 else
                 {
-                    for (int i = 1; i <= possibleVariableModifications[index].Value.Count; i++)
+                    for (int i = 1; i <= possibleVariableModifications[keys[index]].Count; i++)
                     {
-                        variableModificationPattern[possibleVariableModifications[index].Key] = i;
-                        yield return variableModificationPattern;
+                        variableModificationPattern[keys[index]] = i;
+                        yield return (int[])variableModificationPattern.Clone();
                     }
-                }
-            }
-        }
-
-        private static IEnumerable<int[]> GetVariableModificationPatternsOptimized(
-            List<KeyValuePair<int, List<Modification>>> possibleVariableModifications,
-            int unmodifiedResiduesDesired,
-            int[] variableModificationPattern)
-        {
-            var stack = new Stack<(int Index, int UnmodifiedResiduesDesired, int[] Pattern)>();
-            stack.Push((0, unmodifiedResiduesDesired, (int[])variableModificationPattern.Clone()));
-
-            while (stack.Count > 0)
-            {
-                var (index, remaining, pattern) = stack.Pop();
-                if (index >= possibleVariableModifications.Count)
-                {
-                    yield return pattern;
-                    continue;
-                }
-
-                if (remaining > 0)
-                {
-                    var nextPattern = (int[])pattern.Clone();
-                    nextPattern[possibleVariableModifications[index].Key] = 0;
-                    stack.Push((index + 1, remaining - 1, nextPattern));
-                }
-
-                foreach (var modIndex in Enumerable.Range(1, possibleVariableModifications[index].Value.Count))
-                {
-                    var nextPattern = (int[])pattern.Clone();
-                    nextPattern[possibleVariableModifications[index].Key] = modIndex;
-                    stack.Push((index + 1, remaining, nextPattern));
                 }
             }
         }
@@ -212,7 +182,7 @@ namespace Omics.Digestion
         {
             var modification_pattern = new Dictionary<int, Modification>();
 
-            foreach (KeyValuePair<int, List<Modification>> kvp in possibleVariableModifications)
+            foreach (var kvp in possibleVariableModifications)
             {
                 if (variableModificationArray[kvp.Key] > 0)
                 {

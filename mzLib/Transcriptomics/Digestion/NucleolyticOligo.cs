@@ -165,13 +165,13 @@ namespace Transcriptomics.Digestion
 
         private bool CanBeFivePrime(Modification variableModification, int peptideLength)
         {
-            return (variableModification.LocationRestriction == "5'-terminal." || variableModification.LocationRestriction == "Oligo 5'-terminal.")
+            return variableModification.LocationRestriction is "5'-terminal." or "Oligo 5'-terminal."
                 && ModificationLocalization.ModFits(variableModification, NucleicAcid.BaseSequence, 1, peptideLength, OneBasedStartResidue);
         }
 
         private bool CanBeThreePrime(Modification variableModification, int peptideLength)
         {
-            return (variableModification.LocationRestriction == "3'-terminal." || variableModification.LocationRestriction == "Oligo 3'-terminal.")
+            return variableModification.LocationRestriction is "3'-terminal." or "Oligo 3'-terminal."
                 && ModificationLocalization.ModFits(variableModification, NucleicAcid.BaseSequence, peptideLength, peptideLength, OneBasedStartResidue + peptideLength - 1);
         }
     }

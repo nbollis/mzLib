@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
+using MzLibUtil;
 
 namespace Test
 {
@@ -274,7 +275,7 @@ namespace Test
             double rt = 1;
             int precursorZ = 1;
 
-            var myScan = new MsDataScan(ms2, 1, 2, true, Polarity.Positive, rt + 0.01, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=2", precursorMass.ToMz(precursorZ), precursorZ, 1, precursorMass.ToMz(precursorZ), 1.0, DissociationType.HCD, 1, precursorMass.ToMz(precursorZ));
+            var myScan = new MsDataScan(ms2, 1, 2, true, Polarity.Positive, rt + 0.01, new MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1, null, "scan=2", precursorMass.ToMz(precursorZ), precursorZ, 1, precursorMass.ToMz(precursorZ), 1.0, DissociationType.HCD, 1, precursorMass.ToMz(precursorZ));
 
             ms2.XCorrPrePreprocessing(0, 1969, precursorMass.ToMz(1));
 

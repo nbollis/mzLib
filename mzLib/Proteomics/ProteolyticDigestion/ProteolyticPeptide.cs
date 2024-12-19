@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using Easy.Common.Extensions;
 using Omics.Digestion;
 using Omics.Modifications;
 
@@ -58,74 +55,33 @@ namespace Proteomics.ProteolyticDigestion
             int peptideLength = OneBasedEndResidue - OneBasedStartResidue + 1;
             int maximumVariableModificationIsoforms = digestionParams.MaxModificationIsoforms;
             int maxModsForPeptide = digestionParams.MaxModsForPeptide;
-            var twoBasedPossibleVariableAndLocalizeableModifications = new Dictionary<int, List<Modification>>(peptideLength + 4);
+            var twoBasedPossibleVariableAndLocalizeableModifications = ModListDictionaryPool.Get();
 
-            var pepNTermVariableMods = new List<Modification>();
-            twoBasedPossibleVariableAndLocalizeableModifications.Add(1, pepNTermVariableMods);
-
-            var pepCTermVariableMods = new List<Modification>();
-            twoBasedPossibleVariableAndLocalizeableModifications.Add(peptideLength + 2, pepCTermVariableMods);
-
-            foreach (Modification variableModification in variableModifications)
+            try
             {
-                // Check if can be a n-term mod
-                if (CanBeNTerminalMod(variableModification, peptideLength) && !ModificationLocalization.UniprotModExists(Protein, 1, variableModification))
-                {
-                    pepNTermVariableMods.Add(variableModification);
-                }
+                var pepNTermVariableMods = ModListPool.Get();
+                twoBasedPossibleVariableAndLocalizeableModifications.Add(1, pepNTermVariableMods);
 
-                for (int r = 0; r < peptideLength; r++)
+                var pepCTermVariableMods = ModListPool.Get();
+                twoBasedPossibleVariableAndLocalizeableModifications.Add(peptideLength + 2, pepCTermVariableMods);
+
+                foreach (Modification variableModification in variableModifications)
                 {
-                    if (ModificationLocalization.ModFits(variableModification, Protein.BaseSequence, r + 1, peptideLength, OneBasedStartResidue + r)
-                        && variableModification.LocationRestriction == "Anywhere." && !ModificationLocalization.UniprotModExists(Protein, r + 1, variableModification))
+                    // Check if can be a n-term mod
+                    if (CanBeNTerminalMod(variableModification, peptideLength) && !ModificationLocalization.UniprotModExists(Protein, 1, variableModification))
                     {
-                        if (!twoBasedPossibleVariableAndLocalizeableModifications.TryGetValue(r + 2, out List<Modification> residueVariableMods))
-                        {
-                            residueVariableMods = new List<Modification> { variableModification };
-                            twoBasedPossibleVariableAndLocalizeableModifications.Add(r + 2, residueVariableMods);
-                        }
-                        else
-                        {
-                            residueVariableMods.Add(variableModification);
-                        }
+                        pepNTermVariableMods.Add(variableModification);
                     }
-                }
-                // Check if can be a c-term mod
-                if (CanBeCTerminalMod(variableModification, peptideLength) && !ModificationLocalization.UniprotModExists(Protein, peptideLength, variableModification))
-                {
-                    pepCTermVariableMods.Add(variableModification);
-                }
-            }
 
-            // LOCALIZED MODS
-            foreach (var kvp in Protein.OneBasedPossibleLocalizedModifications)
-            {
-                bool inBounds = kvp.Key >= OneBasedStartResidue && kvp.Key <= OneBasedEndResidue;
-                if (!inBounds)
-                {
-                    continue;
-                }
-
-                int locInPeptide = kvp.Key - OneBasedStartResidueInProtein + 1;
-                foreach (Modification modWithMass in kvp.Value)
-                {
-                    if (modWithMass is Modification variableModification)
+                    for (int r = 0; r < peptideLength; r++)
                     {
-                        // Check if can be a n-term mod
-                        if (locInPeptide == 1 && CanBeNTerminalMod(variableModification, peptideLength) && !Protein.IsDecoy)
-                        {
-                            pepNTermVariableMods.Add(variableModification);
-                        }
-
-                        int r = locInPeptide - 1;
-                        if (r >= 0 && r < peptideLength
-                            && (Protein.IsDecoy ||
-                            (ModificationLocalization.ModFits(variableModification, Protein.BaseSequence, r + 1, peptideLength, OneBasedStartResidueInProtein + r)
-                                && variableModification.LocationRestriction == "Anywhere.")))
+                        if (ModificationLocalization.ModFits(variableModification, Protein.BaseSequence, r + 1, peptideLength, OneBasedStartResidue + r)
+                            && variableModification.LocationRestriction == "Anywhere." && !ModificationLocalization.UniprotModExists(Protein, r + 1, variableModification))
                         {
                             if (!twoBasedPossibleVariableAndLocalizeableModifications.TryGetValue(r + 2, out List<Modification> residueVariableMods))
                             {
-                                residueVariableMods = new List<Modification> { variableModification };
+                                residueVariableMods = ModListPool.Get();
+                                residueVariableMods.Add(variableModification);
                                 twoBasedPossibleVariableAndLocalizeableModifications.Add(r + 2, residueVariableMods);
                             }
                             else
@@ -133,36 +89,88 @@ namespace Proteomics.ProteolyticDigestion
                                 residueVariableMods.Add(variableModification);
                             }
                         }
+                    }
+                    // Check if can be a c-term mod
+                    if (CanBeCTerminalMod(variableModification, peptideLength) && !ModificationLocalization.UniprotModExists(Protein, peptideLength, variableModification))
+                    {
+                        pepCTermVariableMods.Add(variableModification);
+                    }
+                }
 
-                        // Check if can be a c-term mod
-                        if (locInPeptide == peptideLength && CanBeCTerminalMod(variableModification, peptideLength) && !Protein.IsDecoy)
+                // LOCALIZED MODS
+                foreach (var kvp in Protein.OneBasedPossibleLocalizedModifications)
+                {
+                    bool inBounds = kvp.Key >= OneBasedStartResidue && kvp.Key <= OneBasedEndResidue;
+                    if (!inBounds)
+                    {
+                        continue;
+                    }
+
+                    int locInPeptide = kvp.Key - OneBasedStartResidueInProtein + 1;
+                    foreach (Modification modWithMass in kvp.Value)
+                    {
+                        if (modWithMass is Modification variableModification)
                         {
-                            pepCTermVariableMods.Add(variableModification);
+                            // Check if can be a n-term mod
+                            if (locInPeptide == 1 && CanBeNTerminalMod(variableModification, peptideLength) && !Protein.IsDecoy)
+                            {
+                                pepNTermVariableMods.Add(variableModification);
+                            }
+
+                            int r = locInPeptide - 1;
+                            if (r >= 0 && r < peptideLength
+                                && (Protein.IsDecoy ||
+                                (ModificationLocalization.ModFits(variableModification, Protein.BaseSequence, r + 1, peptideLength, OneBasedStartResidueInProtein + r)
+                                    && variableModification.LocationRestriction == "Anywhere.")))
+                            {
+                                if (!twoBasedPossibleVariableAndLocalizeableModifications.TryGetValue(r + 2, out List<Modification> residueVariableMods))
+                                {
+                                    residueVariableMods = ModListPool.Get();
+                                    residueVariableMods.Add(variableModification);
+                                    twoBasedPossibleVariableAndLocalizeableModifications.Add(r + 2, residueVariableMods);
+                                }
+                                else
+                                {
+                                    residueVariableMods.Add(variableModification);
+                                }
+                            }
+
+                            // Check if can be a c-term mod
+                            if (locInPeptide == peptideLength && CanBeCTerminalMod(variableModification, peptideLength) && !Protein.IsDecoy)
+                            {
+                                pepCTermVariableMods.Add(variableModification);
+                            }
                         }
                     }
                 }
-            }
 
-            int variable_modification_isoforms = 0;
+                int variable_modification_isoforms = 0;
 
-            foreach (Dictionary<int, Modification> kvp in GetVariableModificationPatterns(twoBasedPossibleVariableAndLocalizeableModifications, maxModsForPeptide, peptideLength))
-            {
-                int numFixedMods = 0;
-                foreach (var ok in GetFixedModsOneIsNorFivePrimeTerminus(peptideLength, allKnownFixedModifications))
+                foreach (var kvp in GetVariableModificationPatterns(twoBasedPossibleVariableAndLocalizeableModifications, maxModsForPeptide, peptideLength))
                 {
-                    if (!kvp.ContainsKey(ok.Key))
+                    int numFixedMods = 0;
+                    foreach (var ok in GetFixedModsOneIsNorFivePrimeTerminus(peptideLength, allKnownFixedModifications))
                     {
+                        if (kvp.ContainsKey(ok.Key)) continue;
                         numFixedMods++;
                         kvp.Add(ok.Key, ok.Value);
                     }
+                    yield return new PeptideWithSetModifications(Protein, digestionParams, OneBasedStartResidue, OneBasedEndResidue,
+                        CleavageSpecificityForFdrCategory, PeptideDescription, MissedCleavages, kvp, numFixedMods);
+                    variable_modification_isoforms++;
+                    if (variable_modification_isoforms == maximumVariableModificationIsoforms)
+                    {
+                        yield break;
+                    }
                 }
-                yield return new PeptideWithSetModifications(Protein, digestionParams, OneBasedStartResidue, OneBasedEndResidue,
-                    CleavageSpecificityForFdrCategory, PeptideDescription, MissedCleavages, kvp, numFixedMods);
-                variable_modification_isoforms++;
-                if (variable_modification_isoforms == maximumVariableModificationIsoforms)
+            }
+            finally
+            {
+                foreach (var kvp in twoBasedPossibleVariableAndLocalizeableModifications)
                 {
-                    yield break;
+                    ModListPool.Return(kvp.Value);
                 }
+                ModListDictionaryPool.Return(twoBasedPossibleVariableAndLocalizeableModifications);
             }
         }
 
@@ -174,8 +182,8 @@ namespace Proteomics.ProteolyticDigestion
         /// <returns></returns>
         private bool CanBeNTerminalMod(Modification variableModification, int peptideLength)
         {
-            return ModificationLocalization.ModFits(variableModification, Protein.BaseSequence, 1, peptideLength, OneBasedStartResidue)
-                && (variableModification.LocationRestriction == "N-terminal." || variableModification.LocationRestriction == "Peptide N-terminal.");
+            return variableModification.LocationRestriction is "N-terminal." or "Peptide N-terminal."
+                   && ModificationLocalization.ModFits(variableModification, Protein.BaseSequence, 1, peptideLength, OneBasedStartResidue); 
         }
 
         /// <summary>
@@ -186,8 +194,8 @@ namespace Proteomics.ProteolyticDigestion
         /// <returns></returns>
         private bool CanBeCTerminalMod(Modification variableModification, int peptideLength)
         {
-            return ModificationLocalization.ModFits(variableModification, Protein.BaseSequence, peptideLength, peptideLength, OneBasedStartResidue + peptideLength - 1)
-                && (variableModification.LocationRestriction == "C-terminal." || variableModification.LocationRestriction == "Peptide C-terminal.");
+            return variableModification.LocationRestriction is "C-terminal." or "Peptide C-terminal."
+                   && ModificationLocalization.ModFits(variableModification, Protein.BaseSequence, peptideLength, peptideLength, OneBasedStartResidue + peptideLength - 1);
         }
     }
 }

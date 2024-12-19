@@ -49,10 +49,10 @@ namespace Test
             string path4 = Path.Combine(TestContext.CurrentContext.TestDirectory, "ProteaseFilesForLoadingTests", "TestProteases_Mod_dupName.tsv");
             var proteaseMods = PtmListLoader.ReadModsFromFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "ModificationTests", "ProteaseMods.txt"), out var errors).ToList();
             
-            Assert.Throws<MzLibUtil.MzLibException>(() => ProteaseDictionary.LoadProteaseDictionary(path1, proteaseMods)); 
-            Assert.Throws<MzLibUtil.MzLibException>(() => ProteaseDictionary.LoadProteaseDictionary(path2, proteaseMods));
-            Assert.Throws<MzLibUtil.MzLibException>(() => ProteaseDictionary.LoadProteaseDictionary(path3, proteaseMods));
-            Assert.Throws<MzLibUtil.MzLibException>(() => ProteaseDictionary.LoadProteaseDictionary(path4, proteaseMods));
+            Assert.Throws<MzLibException>(() => ProteaseDictionary.LoadProteaseDictionary(path1, proteaseMods)); 
+            Assert.Throws<MzLibException>(() => ProteaseDictionary.LoadProteaseDictionary(path2, proteaseMods));
+            Assert.Throws<MzLibException>(() => ProteaseDictionary.LoadProteaseDictionary(path3, proteaseMods));
+            Assert.Throws<MzLibException>(() => ProteaseDictionary.LoadProteaseDictionary(path4, proteaseMods));
         }
 
         [Test]
