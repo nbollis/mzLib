@@ -1,4 +1,6 @@
-﻿namespace Omics.Modifications
+﻿using Omics.Digestion;
+
+namespace Omics.Modifications
 {
     public static class ModificationLocalization
     {
@@ -31,18 +33,18 @@
             }
             switch (attemptToLocalize.LocationRestriction)
             {
-                case "N-terminal." when bioPolymerOneBasedIndex > 2:
-                case "Peptide N-terminal." when digestionProductOneBasedIndex > 1 || bioPolymerOneBasedIndex == 1:
-                case "C-terminal." when bioPolymerOneBasedIndex < sequence.Length:
-                case "Peptide C-terminal." when digestionProductOneBasedIndex < digestionProductLength || bioPolymerOneBasedIndex == sequence.Length:
-                case "5'-terminal." when bioPolymerOneBasedIndex > 2:
+                case LocalizationRestriction.NTerminal when bioPolymerOneBasedIndex > 2:
+                case LocalizationRestriction.PeptideNTerminal when digestionProductOneBasedIndex > 1 || bioPolymerOneBasedIndex == 1:
+                case LocalizationRestriction.CTerminal when bioPolymerOneBasedIndex < sequence.Length:
+                case LocalizationRestriction.PeptideCTerminal when digestionProductOneBasedIndex < digestionProductLength || bioPolymerOneBasedIndex == sequence.Length:
+                case LocalizationRestriction.FivePrimeTerminal when bioPolymerOneBasedIndex > 2:
                 // first residue in oligo but not first in nucleic acid
-                case "Oligo 5'-terminal." when digestionProductOneBasedIndex > 1
-                                               || bioPolymerOneBasedIndex == 1:
-                case "3'-terminal." when bioPolymerOneBasedIndex < sequence.Length:
+                case LocalizationRestriction.OligoFivePrimeTerminal when digestionProductOneBasedIndex > 1
+                                                                         || bioPolymerOneBasedIndex == 1:
+                case LocalizationRestriction.ThreePrimeTerminal when bioPolymerOneBasedIndex < sequence.Length:
                 // not the last residue in oligo but not in nucleic acid
-                case "Oligo 3'-terminal." when digestionProductOneBasedIndex < digestionProductLength
-                                               || bioPolymerOneBasedIndex == sequence.Length:
+                case LocalizationRestriction.OligoThreePrimeTerminal when digestionProductOneBasedIndex < digestionProductLength
+                                                                          || bioPolymerOneBasedIndex == sequence.Length:
                     return false;
 
                 default:

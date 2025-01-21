@@ -1,6 +1,8 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using System.Text;
+using Easy.Common;
+using Omics.Digestion;
 
 namespace Omics.Modifications
 {
@@ -16,7 +18,7 @@ namespace Omics.Modifications
         public string ModificationType { get; private set; }
         public string FeatureType { get; private set; }
         public ModificationMotif Target { get; private set; }
-        public string LocationRestriction { get; private set; }
+        public LocalizationRestriction LocationRestriction { get; private set; }
         public ChemicalFormula ChemicalFormula { get; private set; }
         private double? monoisotopicMass = null;
 
@@ -47,7 +49,7 @@ namespace Omics.Modifications
                 return this.IdWithMotif != null
                        && (this.ChemicalFormula != null || this.MonoisotopicMass != null)
                        && this.Target != null
-                       && this.LocationRestriction != "Unassigned."
+                       && this.LocationRestriction != LocalizationRestriction.Unassigned
                        && this.ModificationType != null
                        && this.FeatureType != "CROSSLINK"
                        && !this.ModificationType.Contains(':');
@@ -88,7 +90,7 @@ namespace Omics.Modifications
             this.ModificationType = _modificationType;
             this.FeatureType = _featureType;
             this.Target = _target;
-            this.LocationRestriction = ModLocationOnPeptideOrProtein(_locationRestriction);
+            this.LocationRestriction = _locationRestriction.ToLocalizationRestriction();
             this.ChemicalFormula = _chemicalFormula;
             this.MonoisotopicMass = _monoisotopicMass;
             this.DatabaseReference = _databaseReference;
@@ -101,26 +103,6 @@ namespace Omics.Modifications
             if (this.MonoisotopicMass == null && this.ChemicalFormula != null)
             {
                 this.MonoisotopicMass = this.ChemicalFormula.MonoisotopicMass;
-            }
-        }
-
-        public static string ModLocationOnPeptideOrProtein(string _locationRestriction)
-        {
-            switch (_locationRestriction)
-            {
-                case "N-terminal.":
-                case "C-terminal.":
-                case "Peptide N-terminal.":
-                case "Peptide C-terminal.":
-                case "Anywhere.":
-                case "3'-terminal.":
-                case "5'-terminal.":
-                case "Oligo 3'-terminal.":
-                case "Oligo 5'-terminal.":
-                    return _locationRestriction;
-
-                default:
-                    return "Unassigned.";
             }
         }
 
@@ -156,7 +138,7 @@ namespace Omics.Modifications
             if (this.Target != null)
             { sb.AppendLine("TG   " + this.Target); } // at this stage, each mod has only one target though many may have the same Id
             if (this.LocationRestriction != null)
-            { sb.AppendLine("PP   " + this.LocationRestriction); }
+            { sb.AppendLine("PP   " + this.LocationRestriction.ToModTextString()); }
             if (this.ChemicalFormula != null)
             { sb.AppendLine("CF   " + this.ChemicalFormula.Formula); }
             if (this.MonoisotopicMass != null)
@@ -275,7 +257,7 @@ namespace Omics.Modifications
 
             if (this.LocationRestriction == null)
             {
-                sb.AppendLine("#Required field PP missing or malformed. Current value = " + this.LocationRestriction +
+                sb.AppendLine("#Required field PP missing or malformed. Current value = " + this.LocationRestriction.ToString() +
                               ".");
             }
 
@@ -308,7 +290,7 @@ namespace Omics.Modifications
             int typeComparison = string.Compare(this.ModificationType, other.ModificationType, StringComparison.Ordinal);
             if (typeComparison != 0) return typeComparison;
 
-            int locRestrictionComparison = string.Compare(this.LocationRestriction, other.LocationRestriction, StringComparison.Ordinal);
+            int locRestrictionComparison = this.LocationRestriction.CompareTo(other.LocationRestriction);
             if (locRestrictionComparison != 0) return locRestrictionComparison;
 
             return Nullable.Compare(this.MonoisotopicMass, other.MonoisotopicMass);

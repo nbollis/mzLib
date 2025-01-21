@@ -292,10 +292,10 @@ namespace Proteomics
         internal static IEnumerable<PeptideWithSetModifications> RemoveTerminalModifications(IEnumerable<PeptideWithSetModifications> modifiedPeptides, FragmentationTerminus fragmentationTerminus, IEnumerable<Modification> allFixedMods)
         {
             string terminalStringToLookFor = fragmentationTerminus == FragmentationTerminus.N ? "C-terminal" : "N-terminal";
-            List<Modification> fixedTerminalMods = allFixedMods.Where(x => x.LocationRestriction.Contains(terminalStringToLookFor)).ToList();
+            List<Modification> fixedTerminalMods = allFixedMods.Where(x => x.LocationRestriction.ToModTextString().Contains(terminalStringToLookFor)).ToList();
             foreach (PeptideWithSetModifications pwsm in modifiedPeptides)
             {
-                if (!pwsm.AllModsOneIsNterminus.Values.Any(x => x.LocationRestriction.Contains(terminalStringToLookFor) && !fixedTerminalMods.Contains(x)))
+                if (!pwsm.AllModsOneIsNterminus.Values.Any(x => x.LocationRestriction.ToModTextString().Contains(terminalStringToLookFor) && !fixedTerminalMods.Contains(x)))
                 {
                     yield return pwsm;
                 }

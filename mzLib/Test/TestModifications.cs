@@ -859,8 +859,8 @@ namespace Test
             var mod1 = new Modification("mod1", "accession1", "type1", "feature1", motif, "C-terminal.", chemicalFormula, 100.0);
             var mod2 = new Modification("mod1", "accession1", "type1", "feature1", motif, "N-terminal.", chemicalFormula, 100.0);
 
-            NUnit.Framework.Assert.That(mod1.CompareTo(mod2), Is.LessThan(0));
-            NUnit.Framework.Assert.That(mod2.CompareTo(mod1), Is.GreaterThan(0));
+            NUnit.Framework.Assert.That(mod1.CompareTo(mod2), Is.GreaterThan(0));
+            NUnit.Framework.Assert.That(mod2.CompareTo(mod1), Is.LessThan(0));
         }
 
         [Test]

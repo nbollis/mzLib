@@ -103,10 +103,10 @@ namespace Omics.Digestion
             {
                 switch (mod.LocationRestriction)
                 {
-                    case "5'-terminal.":
-                    case "Oligo 5'-terminal.":
-                    case "N-terminal.":
-                    case "Peptide N-terminal.":
+                    case LocalizationRestriction.FivePrimeTerminal:
+                    case LocalizationRestriction.OligoFivePrimeTerminal:
+                    case LocalizationRestriction.NTerminal:
+                    case LocalizationRestriction.PeptideNTerminal:
                         //the modification is protease associated and is applied to the n-terminal cleaved residue, not at the beginning of the protein
                         if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, 1, length, OneBasedStartResidue))
                         {
@@ -120,7 +120,7 @@ namespace Omics.Digestion
                         }
                         break;
 
-                    case "Anywhere.":
+                     case LocalizationRestriction.Anywhere:
                         for (int i = 2; i <= length + 1; i++)
                         {
                             if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, i - 1, length, OneBasedStartResidue + i - 2))
@@ -130,10 +130,10 @@ namespace Omics.Digestion
                         }
                         break;
 
-                    case "3'-terminal.":
-                    case "Oligo 3'-terminal.":
-                    case "C-terminal.":
-                    case "Peptide C-terminal.":
+                    case LocalizationRestriction.ThreePrimeTerminal:
+                    case LocalizationRestriction.OligoThreePrimeTerminal:
+                    case LocalizationRestriction.CTerminal:
+                    case LocalizationRestriction.PeptideCTerminal:
                         //the modification is protease associated and is applied to the c-terminal cleaved residue, not if it is at the end of the protein
                         if (ModificationLocalization.ModFits(mod, Parent.BaseSequence, length, length, OneBasedStartResidue + length - 1))
                         {
@@ -184,7 +184,7 @@ namespace Omics.Digestion
                 for (int r = 0; r < peptideLength; r++)
                 {
                     if (ModificationLocalization.ModFits(variableModification, Parent.BaseSequence, r + 1, peptideLength, OneBasedStartResidue + r)
-                        && variableModification.LocationRestriction == "Anywhere." && !ModificationLocalization.UniprotModExists(Parent, r + 1, variableModification))
+                        && variableModification.LocationRestriction == LocalizationRestriction.Anywhere && !ModificationLocalization.UniprotModExists(Parent, r + 1, variableModification))
                     {
                         if (!twoBasedDictToPopulate.TryGetValue(r + 2, out var residueVariableMods))
                         {
@@ -229,7 +229,7 @@ namespace Omics.Digestion
                     if (r >= 0 && r < peptideLength
                                && (Parent.IsDecoy ||
                                    (ModificationLocalization.ModFits(variableModification, Parent.BaseSequence, r + 1, peptideLength, OneBasedStartResidue + r)
-                                    && variableModification.LocationRestriction == "Anywhere.")))
+                                    && variableModification.LocationRestriction == LocalizationRestriction.Anywhere)))
                     {
                         if (!twoBasedDictToPopulate.TryGetValue(r + 2, out var residueVariableMods))
                         {
@@ -340,8 +340,9 @@ namespace Omics.Digestion
         /// <returns>True if the modification can be applied to the N-terminal or 5' end; otherwise, false.</returns>
         private bool CanBeNTerminalOrFivePrime(Modification mod, int peptideLength)
         {
-            return mod.LocationRestriction is "5'-terminal." or "Oligo 5'-terminal." or "N-terminal." or "Peptide N-terminal."
-                   && ModificationLocalization.ModFits(mod, Parent.BaseSequence, 1, peptideLength, OneBasedStartResidue);
+            return mod.LocationRestriction.IsStartTerminus()
+                   && ModificationLocalization.ModFits(mod, Parent.BaseSequence, 1, peptideLength,
+                       OneBasedStartResidue);
         }
 
         /// <summary>
@@ -352,8 +353,9 @@ namespace Omics.Digestion
         /// <returns>True if the modification can be applied to the C-terminal or 3' end; otherwise, false.</returns>
         private bool CanBeCTerminalOrThreePrime(Modification mod, int peptideLength)
         {
-            return mod.LocationRestriction is "3'-terminal." or "Oligo 3'-terminal." or "C-terminal." or "Peptide C-terminal."
-                   && ModificationLocalization.ModFits(mod, Parent.BaseSequence, peptideLength, peptideLength, OneBasedStartResidue + peptideLength - 1);
+            return mod.LocationRestriction.IsEndTerminus()
+                   && ModificationLocalization.ModFits(mod, Parent.BaseSequence, peptideLength, peptideLength,
+                       OneBasedStartResidue + peptideLength - 1);
         }
 
         #endregion

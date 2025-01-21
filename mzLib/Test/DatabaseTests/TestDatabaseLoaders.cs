@@ -29,6 +29,7 @@ using Omics.Modifications;
 using UsefulProteomicsDatabases;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using NUnit.Framework.Legacy;
+using Omics.Digestion;
 
 namespace Test.DatabaseTests
 {
@@ -486,27 +487,27 @@ namespace Test.DatabaseTests
             // create slightly different modifications
             var newMod = new Modification(_originalId: "1" + currentMod.OriginalId, _target: currentMod.Target,
                 _modificationType: currentMod.ModificationType,
-                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction,
+                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction.ToModTextString(),
                 _featureType: currentMod.FeatureType,
                 _chemicalFormula: currentMod.ChemicalFormula);
             var newMod2 = new Modification(_originalId: "2" + currentMod.OriginalId, _target: currentMod.Target,
                 _modificationType: currentMod.ModificationType,
-                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction,
+                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction.ToModTextString(),
                 _featureType: currentMod.FeatureType,
                 _chemicalFormula: currentMod.ChemicalFormula);
             var newMod3 = new Modification(_originalId: "3" + currentMod.OriginalId, _target: currentMod.Target,
                 _modificationType: currentMod.ModificationType,
-                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction,
+                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction.ToModTextString(),
                 _featureType: currentMod.FeatureType,
                 _chemicalFormula: currentMod.ChemicalFormula);
             var newMod4 = new Modification(_originalId: "4" + currentMod.OriginalId, _target: currentMod.Target,
                 _modificationType: currentMod.ModificationType,
-                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction,
+                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction.ToModTextString(),
                 _featureType: currentMod.FeatureType,
                 _chemicalFormula: currentMod.ChemicalFormula);
             var newMod5 = new Modification(_originalId: "5" + currentMod.OriginalId, _target: currentMod.Target,
                 _modificationType: currentMod.ModificationType,
-                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction,
+                _accession: currentMod.Accession, _locationRestriction: currentMod.LocationRestriction.ToModTextString(),
                 _featureType: currentMod.FeatureType,
                 _chemicalFormula: currentMod.ChemicalFormula);
             sampleModList.AddRange(new List<Modification>() { newMod, newMod2, newMod3, newMod4, newMod5 });

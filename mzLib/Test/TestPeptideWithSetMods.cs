@@ -1273,14 +1273,14 @@ namespace Test
 
                             if (locRestrictions.AllSame())
                             {
-                                if (locRestrictions.First() == "Anywhere.")
+                                if (locRestrictions.First() == LocalizationRestriction.Anywhere)
                                     expectedModCount++;
-                                else if (locRestrictions.First() == "N-terminal." && modDictEntry.Key == startResidue)
+                                else if (locRestrictions.First() == LocalizationRestriction.NTerminal && modDictEntry.Key == startResidue)
                                     expectedModCount++;
                             }
-                            else if (modDictEntry.Value.Select(mod => mod.LocationRestriction).Contains("Anywhere.")
+                            else if (modDictEntry.Value.Select(mod => mod.LocationRestriction).Contains(LocalizationRestriction.Anywhere)
                                      && modDictEntry.Value.Select(mod => mod.LocationRestriction)
-                                         .Contains("N-terminal."))
+                                         .Contains(LocalizationRestriction.NTerminal))
                             {
                                 expectedModCount++;
                                 if (modDictEntry.Key == startResidue)
@@ -1291,8 +1291,8 @@ namespace Test
                         {
                             switch (modDictEntry.Value.First().LocationRestriction)
                             {
-                                case "Anywhere.":
-                                case "N-terminal." when modDictEntry.Key == startResidue:
+                                case LocalizationRestriction.Anywhere:
+                                case LocalizationRestriction.NTerminal when modDictEntry.Key == startResidue:
                                     expectedModCount++;
                                     break;
                             }
