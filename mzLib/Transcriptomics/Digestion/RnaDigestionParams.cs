@@ -41,5 +41,23 @@ namespace Transcriptomics.Digestion
                 : new RnaDigestionParams(Rnase.Name, MaxMissedCleavages, MinLength, MaxLength,
                     MaxModificationIsoforms, MaxMods, FragmentationTerminus);
         }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is RnaDigestionParams a
+                   && MaxMissedCleavages.Equals(a.MaxMissedCleavages)
+                   && MinLength.Equals(a.MinLength)
+                   && MaxLength.Equals(a.MaxLength)
+                   && MaxModificationIsoforms.Equals(a.MaxModificationIsoforms)
+                   && MaxMods.Equals(a.MaxMods)
+                   && Rnase.Equals(a.Rnase)
+                   && SearchModeType.Equals(a.SearchModeType)
+                   && FragmentationTerminus.Equals(a.FragmentationTerminus);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(MaxMissedCleavages, MinLength, MaxLength, MaxModificationIsoforms, MaxMods, Rnase, (int)FragmentationTerminus, (int)SearchModeType);
+        }
     }
 }

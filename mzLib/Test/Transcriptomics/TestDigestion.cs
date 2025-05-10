@@ -598,6 +598,43 @@ namespace Test.Transcriptomics
             Assert.That(cloned.FragmentationTerminus, Is.EqualTo(FragmentationTerminus.Both));
         }
 
+        [Test]
+        public void TestRnaDigestionParams_Equals_SameValues()
+        {
+            var params1 = new RnaDigestionParams("RNase T1", 1, 2, 100, 512, 3, FragmentationTerminus.Both);
+            var params2 = new RnaDigestionParams("RNase T1", 1, 2, 100, 512, 3, FragmentationTerminus.Both);
+
+            Assert.That(params1.Equals(params2));
+            Assert.That(params1.GetHashCode(), Is.EqualTo(params2.GetHashCode()));
+        }
+
+        [Test]
+        public void TestRnaDigestionParams_Equals_DifferentValues()
+        {
+            var params1 = new RnaDigestionParams("RNase T1", 1, 2, 100, 512, 3, FragmentationTerminus.Both);
+            var params2 = new RnaDigestionParams("RNase A", 0, 3, 200, 1024, 2, FragmentationTerminus.C);
+
+            Assert.That(!params1.Equals(params2));
+            Assert.That(params1.GetHashCode(), Is.Not.EqualTo(params2.GetHashCode()));
+        }
+
+        [Test]
+        public void TestRnaDigestionParams_Equals_Null()
+        {
+            var params1 = new RnaDigestionParams("RNase T1", 1, 2, 100, 512, 3, FragmentationTerminus.Both);
+
+            Assert.That(!params1.Equals(null));
+        }
+
+        [Test]
+        public void TestRnaDigestionParams_Equals_DifferentObjectType()
+        {
+            var params1 = new RnaDigestionParams("RNase T1", 1, 2, 100, 512, 3, FragmentationTerminus.Both);
+            var differentObject = new object();
+
+            Assert.That(!params1.Equals(differentObject));
+        }
+
         #endregion
 
         #region NucleicAcid
