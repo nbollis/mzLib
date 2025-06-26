@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using MassSpectrometry;
 using MzLibUtil;
 
@@ -90,27 +91,27 @@ public static class SpectraFileAveraging
 
     private static MsDataScan[] AverageDdaScans(List<MsDataScan> scans, SpectralAveragingParameters parameters)
     {
-        List<MsDataScan> averagedScans = new();
-        List<MsDataScan> scansToProcess = new();
+        List<MsDataScan> averagedScans = new(scans.Count);
+        List<MsDataScan> ms1Scans = scans.Where(p => p.MsnOrder == 1).ToList();
 
-        int representativeScanMs1Index = parameters.NumberOfScansToAverage % 2 == 0 ? // central scan
-            parameters.NumberOfScansToAverage / 2 - 1 : parameters.NumberOfScansToAverage / 2;
+        int representativeScanMs1Index = parameters.NumberOfScansToAverage % 2 == 0
+            ? parameters.NumberOfScansToAverage / 2 - 1
+            : parameters.NumberOfScansToAverage / 2;
 
-        // iterate through all MS1 scans and average them
-        foreach (var scan in scans.Where(p => p.MsnOrder == 1))
+        int numAverages = ms1Scans.Count - parameters.NumberOfScansToAverage + 1;
+        MsDataScan[] averagedMs1Scans = new MsDataScan[numAverages > 0 ? numAverages : 0];
+
+        Parallel.For(0, numAverages, i =>
         {
-            scansToProcess.Add(scan);
-            // average with new scan from iteration, then remove first scan from list
-            if (scansToProcess.Count != parameters.NumberOfScansToAverage) continue;
-
+            var scansToProcess = ms1Scans.GetRange(i, parameters.NumberOfScansToAverage);
             MsDataScan centralScan = scansToProcess[representativeScanMs1Index];
             var averagedSpectrum = scansToProcess.AverageSpectra(parameters);
             var averagedScan = GetAveragedDataScanFromAveragedSpectrum(averagedSpectrum, centralScan);
+            averagedMs1Scans[i] = averagedScan;
+        });
 
-            averagedScans.Add(averagedScan);
-            scansToProcess.RemoveAt(0);
-        }
-        
+        averagedScans.AddRange(averagedMs1Scans);
+
         // add all scans that did not get averaged
         // this includes the MS1 scans from start and end of file and all MS2+ scans
         foreach (var unaveragedScan in scans.Where(original =>

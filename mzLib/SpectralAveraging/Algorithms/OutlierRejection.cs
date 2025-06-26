@@ -117,24 +117,17 @@ public static class OutlierRejection
     /// <returns></returns>
     private static double[] SigmaClipping(double[] initialValues, double sValueMin, double sValueMax)
     {
-        var values = initialValues.ToList();
+        var values = initialValues;
         int n;
         do
         {
             var median = values.Median();
             var standardDeviation = values.StandardDeviation();
-            n = 0;
-            for (var i = 0; i < values.Count; i++)
-                if (SigmaClipping(values[i], median, standardDeviation, sValueMin, sValueMax))
-                {
-                    values.RemoveAt(i);
-                    n++;
-                    i--;
-                }
+            var filtered = values.Where(v => !SigmaClipping(v, median, standardDeviation, sValueMin, sValueMax)).ToArray();
+            n = values.Length - filtered.Length;
+            values = filtered;
         } while (n > 0);
-
-        var val = values.ToArray();
-        return val;
+        return values;
     }
 
     /// <summary>
