@@ -3,14 +3,14 @@ using Omics.Modifications;
 
 namespace Omics.Digestion
 {
-    public abstract class DigestionProduct
+    public class DigestionProduct
     {
         protected static readonly DictionaryPool<int, SortedSet<Modification>> DictionaryPool = new();
         protected static readonly DictionaryPool<int, Modification> FixedModDictionaryPool = new(8);
 
-        protected string _baseSequence;
+        protected string? _baseSequence;
 
-        protected DigestionProduct(IBioPolymer parent, int oneBasedStartResidue, int oneBasedEndResidue, int missedCleavages, 
+        public DigestionProduct(IBioPolymer parent, int oneBasedStartResidue, int oneBasedEndResidue, int missedCleavages, 
             CleavageSpecificity cleavageSpecificityForFdrCategory, string? description = null, string? baseSequence = null)
         {
             Parent = parent;

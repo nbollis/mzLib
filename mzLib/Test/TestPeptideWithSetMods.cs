@@ -557,7 +557,7 @@ namespace Test
         public static void TestIntersectsSequenceVariations()
         {
             Protein protein = new Protein("MACDEFGHIK", "test");
-            PeptideWithSetModifications pepe = new PeptideWithSetModifications(protein, new DigestionParams(), 2, 10, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
+            IBioPolymerWithSetMods pepe = new PeptideWithSetModifications(protein, new DigestionParams(), 2, 10, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
 
             // The weird thing here is that IntersectsWithVariation takes in applied variations,
             // so these are constructed as if already applied
@@ -597,7 +597,7 @@ namespace Test
             Assert.IsTrue(pepe.IntersectsAndIdentifiesVariation(sv10MissenseRangeEdge).identifies);
             Assert.IsFalse(pepe.IntersectsAndIdentifiesVariation(sv11After).identifies);
 
-            PeptideWithSetModifications pepe2 = new PeptideWithSetModifications(protein, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
+            IBioPolymerWithSetMods pepe2 = new PeptideWithSetModifications(protein, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
             Assert.IsTrue(pepe2.IntersectsAndIdentifiesVariation(sv5InsertionAtEnd).intersects); // this only intersects GHI, which is the same in GHI -> GHIK
             Assert.IsFalse(pepe2.IntersectsAndIdentifiesVariation(sv5InsertionAtEnd).identifies);
         }
@@ -607,11 +607,11 @@ namespace Test
         {
             Protein protein = new Protein("MPEPTIDENEWPEPTIDE", "protein0", appliedSequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "V", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
 
-            PeptideWithSetModifications pepe = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 8, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
-            PeptideWithSetModifications notPepe = new PeptideWithSetModifications(protein, new DigestionParams(), 9, 18, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
+            IBioPolymerWithSetMods pepe = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 8, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
+            IBioPolymerWithSetMods notPepe = new PeptideWithSetModifications(protein, new DigestionParams(), 9, 18, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
 
-            Assert.IsTrue(pepe.IsVariantPeptide());
-            Assert.IsFalse(notPepe.IsVariantPeptide());
+            Assert.IsTrue(pepe.IsVariant());
+            Assert.IsFalse(notPepe.IsVariant());
         }
 
         [Test]
@@ -620,24 +620,24 @@ namespace Test
             Protein protein = new Protein("MACDEFGHIK", "test");
 
             // mod on N-terminus
-            PeptideWithSetModifications pepe = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 10, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification> { { 1, new Modification("mod on M", "mod", "mod", "mod") } }, 0);
+            IBioPolymerWithSetMods pepe = new PeptideWithSetModifications(protein, new DigestionParams(), 1, 10, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification> { { 1, new Modification("mod on M", "mod", "mod", "mod") } }, 0);
             SequenceVariation sv1Before = new SequenceVariation(1, 1, "A", "M", ""); // n-terminal mod goes before the sequence
             Assert.AreEqual("A1[mod:mod on M]M", pepe.SequenceVariantString(sv1Before, true));
 
             // mod in middle
-            PeptideWithSetModifications pepe2 = new PeptideWithSetModifications(protein, new DigestionParams(), 2, 10, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification> { { 2, new Modification("mod on A", "mod", "mod", "mod") } }, 0);
+            IBioPolymerWithSetMods pepe2 = new PeptideWithSetModifications(protein, new DigestionParams(), 2, 10, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification> { { 2, new Modification("mod on A", "mod", "mod", "mod") } }, 0);
             SequenceVariation sv4MissenseBeginning = new SequenceVariation(2, 2, "V", "A", ""); // missense at beginning
             Assert.AreEqual("V2A[mod:mod on A]", pepe2.SequenceVariantString(sv4MissenseBeginning, true));
 
             // truncated seqvar doesn't truncate in string report (using applied variation correctly)
-            PeptideWithSetModifications pepe3 = new PeptideWithSetModifications(protein, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
+            IBioPolymerWithSetMods pepe3 = new PeptideWithSetModifications(protein, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
             SequenceVariation svvvv = new SequenceVariation(7, 10, "GHM", "GHIK", ""); // insertion
             Assert.AreEqual("GHM7GHIK", pepe3.SequenceVariantString(svvvv, true));
 
             Protein protein2 = new Protein("WACDEFGHIK", "test");
 
             //variant starts at protein start but peptide does not
-            PeptideWithSetModifications pepe4 = new PeptideWithSetModifications(protein2, new DigestionParams(), 4, 8, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
+            IBioPolymerWithSetMods pepe4 = new PeptideWithSetModifications(protein2, new DigestionParams(), 4, 8, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
             SequenceVariation variant = new SequenceVariation(1, 10, "MABCDEFGHIJKLMNOP", "WACDEFGHIK", ""); // frameshift
             Assert.AreEqual("MABCDEFGHIJKLMNOP1WACDEFGHIK", pepe4.SequenceVariantString(variant, true));
         }
@@ -677,9 +677,9 @@ namespace Test
                 new Protein("MPEPTIDE", "protein15", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(9, 13, "*", "KMPEP", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }), // stop loss at end of original protein that cannot be identified
             };
 
-            DigestionParams dp = new DigestionParams(minPeptideLength: 2);
-            DigestionParams dp2 = new DigestionParams(protease: "Asp-N", minPeptideLength: 2);
-            DigestionParams dp3 = new DigestionParams(protease: "Lys-N", minPeptideLength: 2);
+            IDigestionParams dp = new DigestionParams(minPeptideLength: 2);
+            IDigestionParams dp2 = new DigestionParams(protease: "Asp-N", minPeptideLength: 2);
+            IDigestionParams dp3 = new DigestionParams(protease: "Lys-N", minPeptideLength: 2);
 
             var protein0_variant = proteins.ElementAt(0).GetVariantBioPolymers().ElementAt(0);
             var protein1_variant = proteins.ElementAt(1).GetVariantBioPolymers().ElementAt(0);

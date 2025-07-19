@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Chemistry;
 using MassSpectrometry;
+using Omics.BioPolymer;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -60,6 +61,8 @@ namespace Omics
         /// <param name="massToLocalize">The mass to add to the BioPolymer</param>
         /// <returns></returns>
         public IBioPolymerWithSetMods Localize(int indexOfMass, double massToLocalize);
+
+
 
         public static string GetBaseSequenceFromFullSequence(string fullSequence, char modStartDelimiter = '[', char modEndDelimiter = ']')
         {
