@@ -37,6 +37,7 @@ namespace Transcriptomics
         internal static readonly Dictionary<string, Nucleotide> AllKnownResidues;
 
         internal static readonly Nucleotide[] ResiduesByLetter;
+        public static readonly List<Nucleotide> StandardRnaBases; 
 
         /// <summary>
         /// Constructs all known nucleic acids
@@ -54,6 +55,7 @@ namespace Transcriptomics
             GuanineBase = AddResidue("Guanine", 'G', "Gua", "C5H4N5O1");
             UracilBase = AddResidue("Uracil", 'U', "Ura", "C4H3N2O2");
             PseudoUracilBase = AddResidue("PseudoUracil", 'Y', "Psu", "C4H3N2O2"); // Y was choosen for pseudouridine due to it commonly being represented by Psi
+            StandardRnaBases = [AdenineBase, CytosineBase, GuanineBase, UracilBase];
 
             // DNA bases which have the same mass as the ones above
             // however, naming to deoxy- to distinguish DNA nucleotide mass calculation from RNA

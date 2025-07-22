@@ -300,6 +300,12 @@ namespace Transcriptomics.Digestion
             if (type is ProductType.M)
             {
                 yield return new Product(type, FragmentationTerminus.None, MonoisotopicMass, 0, 0, 0);
+                foreach (var standardBase in Nucleotide.StandardRnaBases.Where(b => BaseSequence.Contains(b.Letter)))
+                {
+                    yield return new Product(type, FragmentationTerminus.None,
+                        MonoisotopicMass - standardBase.BaseChemicalFormula.MonoisotopicMass, 0, 0,
+                        standardBase.BaseChemicalFormula.MonoisotopicMass);
+                }
                 yield break;
             }
 
