@@ -165,7 +165,7 @@ namespace Transcriptomics.Digestion
                 if (AllModsOneIsNterminus.TryGetValue(Length + 2, out Modification? pepCTermVariableMod))
                 {
                     if (pepCTermVariableMod is { } mod)
-                        subsequence.Append('[' + mod.ChemicalFormula.Formula + ']');
+                        subsequence.Append("-[" + mod.ChemicalFormula.Formula + ']');
                 }
 
                 _sequenceWithChemicalFormula = subsequence.ToString();
@@ -200,7 +200,15 @@ namespace Transcriptomics.Digestion
             bool calculateThreePrime =
                 fragmentationTerminus is FragmentationTerminus.ThreePrime or FragmentationTerminus.Both;
 
-            var sequence = (Parent as NucleicAcid)!.NucleicAcidArray[(OneBasedStartResidue - 1)..OneBasedEndResidue];
+            Nucleotide[] sequence;
+            if (NucleicAcid is null) // If no parent, construct the nucleotide array ourselves
+            {
+                sequence = BaseSequence.Select(p => Nucleotide.TryGetResidue(p, out Nucleotide? nuc) ? nuc : throw new MzLibUtil.MzLibException($"Invalid nucleotide '{p}' in sequence.")).ToArray();
+            }
+            else
+            {
+                sequence = NucleicAcid.NucleicAcidArray[(OneBasedStartResidue - 1)..OneBasedEndResidue];
+            }
 
             // intact product ion
             if (fragmentationTerminus is FragmentationTerminus.Both or FragmentationTerminus.None)
