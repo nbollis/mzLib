@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Omics\Omics.csproj" />
+    <ProjectReference Include="..\Proteomics\Proteomics.csproj" />
+    <ProjectReference Include="..\Readers\Readers.csproj" />
+    <ProjectReference Include="..\UsefulProteomicsDatabases\UsefulProteomicsDatabases.csproj" />
+  </ItemGroup>
+
+</Project>
