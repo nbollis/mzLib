@@ -4,6 +4,7 @@ using Proteomics.ProteolyticDigestion;
 using Readers.ExternalResults.ResultFiles;
 using Readers.ExternalResults.IndividualResultRecords;
 using UsefulProteomicsDatabases;
+using System.Text;
 
 namespace CasanovoMapper;
 
@@ -19,6 +20,22 @@ class Program
 
     static int RunMapping(CommandLineOptions options)
     {
+        // Ensure output directory exists early so log file can be created there
+        if (!string.IsNullOrWhiteSpace(options.OutputDirectory))
+            Directory.CreateDirectory(options.OutputDirectory);
+
+        // Create unique log file in output directory
+        var logPath = GetUniqueFilePath(Path.Combine(options.OutputDirectory ?? string.Empty, "CasanovoMapper.log"));
+        var logWriter = new StreamWriter(logPath) { AutoFlush = true };
+
+        // Capture original console streams
+        var originalOut = Console.Out;
+        var originalErr = Console.Error;
+
+        // Replace Console.Out/Error with a writer that duplicates to console + file
+        Console.SetOut(new MultiTextWriter(originalOut, logWriter));
+        Console.SetError(new MultiTextWriter(originalErr, logWriter));
+
         try
         {
             Console.WriteLine("CasanovoMapper - Mapping Casanovo results to protein databases");
@@ -30,18 +47,18 @@ class Program
                 return 1;
 
             // Load Casanovo files
-            Console.WriteLine("Loading Casanovo mzTab files...");
+            Console.WriteLine("  Loading Casanovo mzTab files...");
             var casanovoFiles = LoadCasanovoFiles(options);
-            Console.WriteLine($"Loaded {casanovoFiles.Count} file(s) with {casanovoFiles.Sum(f => f.Results.Count)} total PSMs");
+            Console.WriteLine($"  Loaded {casanovoFiles.Count} file(s) with {casanovoFiles.Sum(f => f.Results.Count)} total PSMs");
             Console.WriteLine();
 
             // Prepare sorted records for efficient lookup
-            Console.WriteLine("Preparing records for mapping...");
+            Console.WriteLine("  Preparing records for mapping...");
             var casanovoMelted = casanovoFiles
                 .SelectMany(p => p.Results.Select((rec, ind) => (Path.GetFileNameWithoutExtension(p.FilePath), rec, ind)))
                 .OrderBy(p => p.rec.BaseSequence, StringComparer.Ordinal)
                 .ToList();
-            Console.WriteLine($"Sorted {casanovoMelted.Count} records");
+            Console.WriteLine($"  Sorted {casanovoMelted.Count} records");
             Console.WriteLine();
 
             // Build lookup ranges
@@ -54,7 +71,7 @@ class Program
                 minPeptideLength: options.MinPeptideLength,
                 maxPeptideLength: options.MaxPeptideLength);
 
-            Console.WriteLine($"Digestion parameters: {options.Protease}, {options.MissedCleavages} missed cleavages, length {options.MinPeptideLength}-{options.MaxPeptideLength}");
+            Console.WriteLine($"  Digestion parameters: {options.Protease}, {options.MissedCleavages} missed cleavages, length {options.MinPeptideLength}-{options.MaxPeptideLength}");
             Console.WriteLine();
 
             // Prepare for parallel processing
@@ -62,15 +79,33 @@ class Program
             for (int i = 0; i < recLocks.Length; i++)
                 recLocks[i] = new object();
 
+            // Track matched protein headers for filtered FASTA output
+            var matchedProteinHeaders = options.WriteFilteredFasta
+                ? new Dictionary<string, HashSet<string>>()
+                : null;
+            var headerLocks = options.WriteFilteredFasta
+                ? new Dictionary<string, object>()
+                : null;
+
+            if (options.WriteFilteredFasta)
+            {
+                foreach (var dbPath in options.DatabasePaths)
+                {
+                    var dbName = Path.GetFileNameWithoutExtension(dbPath);
+                    matchedProteinHeaders![dbName] = new HashSet<string>();
+                    headerLocks![dbName] = new object();
+                }
+            }
+
             // Process each database
             foreach (var fastaPath in options.DatabasePaths)
             {
-                Console.WriteLine($"Processing database: {Path.GetFileName(fastaPath)}");
+                Console.WriteLine($"  Processing database: {Path.GetFileName(fastaPath)}");
                 var dbName = Path.GetFileNameWithoutExtension(fastaPath);
                 int proteinsProcessed = 0;
                 int matchesFound = 0;
 
-                foreach (var chunk in FastaStreamReader.ReadFastaChunks(fastaPath, options.ReplaceIWithL, options.ChunkSize))
+                foreach (var chunk in FastaStreamReader.ReadFastaChunks(fastaPath, options.ChunkSize))
                 {
                     int total = chunk.Count;
                     int per = (total + options.Workers - 1) / options.Workers;
@@ -79,18 +114,21 @@ class Program
                     {
                         int start = workerIndex * per;
                         int end = Math.Min(start + per, total);
-                        
+
                         for (int ci = start; ci < end; ci++)
                         {
                             var (header, sequence) = chunk[ci];
                             string[]? splits = null;
                             string? acc = null;
 
+                            if (options.ReplaceIWithL)
+                                sequence = sequence.Replace('I', 'L');
+
                             foreach (var pep in new Protein(sequence, "").Digest(digParams, [], []))
                             {
                                 var pepSeq = pep.BaseSequence;
                                 char pepFirst = pepSeq[0];
-                                
+
                                 if (!firstCharRanges.TryGetValue(pepFirst, out var range))
                                     continue;
 
@@ -112,7 +150,16 @@ class Program
                                             recTuple.rec.Accession = Join(acc, recTuple.rec.Accession);
                                             recTuple.rec.Database = Join(dbName, recTuple.rec.Database);
                                         }
-                                        
+
+                                        // Track this protein header for filtered FASTA output
+                                        if (matchedProteinHeaders != null)
+                                        {
+                                            lock (headerLocks![dbName])
+                                            {
+                                                matchedProteinHeaders[dbName].Add(header);
+                                            }
+                                        }
+
                                         Interlocked.Increment(ref matchesFound);
                                     }
                                 }
@@ -122,31 +169,73 @@ class Program
 
                     proteinsProcessed += total;
                     if (proteinsProcessed % 10000 == 0)
-                        Console.WriteLine($"  Processed {proteinsProcessed:N0} proteins...");
+                        // Overwrite the same console line to avoid long logs
+                        Console.Write($"\r    Processed {proteinsProcessed:N0} proteins...");
                 }
 
-                Console.WriteLine($"  Completed. Found {matchesFound:N0} peptide matches");
+                Console.Write($"\r    Processed {proteinsProcessed:N0} proteins...");
+                // Ensure progress line ends before writing completion
+                Console.WriteLine();
+                Console.WriteLine($"    Completed. Found {matchesFound:N0} peptide matches");
                 Console.WriteLine();
             }
 
             // Write results
-            Console.WriteLine("Writing mapped results...");
+            Console.WriteLine("  Writing mapped results...");
             Directory.CreateDirectory(options.OutputDirectory);
 
             foreach (var group in casanovoMelted.GroupBy(p => p.Item1))
             {
                 var original = casanovoFiles.First(p => p.FilePath.Contains(group.Key));
                 original.Results = group.OrderBy(p => p.ind).Select(p => p.rec).ToList();
-                
-                var outPath = Path.Combine(options.OutputDirectory, 
+
+                var outPath = Path.Combine(options.OutputDirectory,
                     Path.GetFileNameWithoutExtension(original.FilePath) + "_Mapped");
                 original.WriteResults(outPath);
-                
-                Console.WriteLine($"  Wrote {Path.GetFileName(outPath)}.mztab");
+
+                Console.WriteLine($"    Wrote {Path.GetFileName(outPath)}.mztab");
             }
 
             Console.WriteLine();
-            Console.WriteLine("Mapping completed successfully!");
+
+            // Write filtered FASTA files if requested
+            if (options.WriteFilteredFasta && matchedProteinHeaders != null)
+            {
+                Console.WriteLine("  Writing filtered FASTA files...");
+                var producedFilteredFastas = new List<string>();
+                foreach (var fastaPath in options.DatabasePaths)
+                {
+                    var dbName = Path.GetFileNameWithoutExtension(fastaPath);
+                    var headers = matchedProteinHeaders[dbName];
+
+                    if (headers.Count > 0)
+                    {
+                        var filteredFastaPath = Path.Combine(options.OutputDirectory,
+                            $"{dbName}_Matched.fasta");
+
+                        (int proteinCount, int total) = FastaStreamReader.WriteFilteredFasta(
+                            fastaPath,
+                            filteredFastaPath,
+                            headers);
+                        producedFilteredFastas.Add(filteredFastaPath);
+                        Console.WriteLine($"    Wrote {proteinCount:N0}/{total:N0} proteins to {Path.GetFileName(filteredFastaPath)}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"    No matches found in {dbName}, skipping FASTA output");
+                    }
+                }
+                Console.WriteLine();
+                // Combine all per-database filtered FASTAs into a single merged FASTA
+                if (producedFilteredFastas.Count > 0)
+                {
+                    var combinedPath = Path.Combine(options.OutputDirectory, "Combined_Matched.fasta");
+                    int merged = FastaStreamReader.CombineFastas(producedFilteredFastas, combinedPath);
+                    Console.WriteLine($"  Combined {merged:N0} unique proteins into {Path.GetFileName(combinedPath)}");
+                }
+            }
+
+            Console.WriteLine("  Mapping completed successfully!");
             return 0;
         }
         catch (Exception ex)
@@ -154,6 +243,13 @@ class Program
             Console.Error.WriteLine($"Error: {ex.Message}");
             Console.Error.WriteLine(ex.StackTrace);
             return 1;
+        }
+        finally
+        {
+            // Restore console outputs and dispose log writer
+            try { Console.SetOut(originalOut); } catch { }
+            try { Console.SetError(originalErr); } catch { }
+            try { logWriter.Dispose(); } catch { }
         }
     }
 
@@ -246,7 +342,7 @@ class Program
 
     static bool EqualsSegment(string s, int start, int length, string token)
     {
-        return length == token.Length && 
+        return length == token.Length &&
                string.Compare(s, start, token, 0, length, StringComparison.Ordinal) == 0;
     }
 
@@ -255,7 +351,7 @@ class Program
     {
         var ranges = new Dictionary<char, (int, int)>();
         if (sorted.Count == 0) return ranges;
-        
+
         int i = 0;
         while (i < sorted.Count)
         {
@@ -278,12 +374,12 @@ class Program
         int left = lo;
         int right = hi;
         int found = -1;
-        
+
         while (left <= right)
         {
             int mid = left + ((right - left) >> 1);
             int cmp = string.CompareOrdinal(sorted[mid].rec.BaseSequence, target);
-            
+
             if (cmp < 0)
             {
                 left = mid + 1;
@@ -310,12 +406,12 @@ class Program
         int left = lo;
         int right = hi;
         int found = lo - 1;
-        
+
         while (left <= right)
         {
             int mid = left + ((right - left) >> 1);
             int cmp = string.CompareOrdinal(sorted[mid].rec.BaseSequence, target);
-            
+
             if (cmp <= 0)
             {
                 if (cmp == 0) found = mid;
@@ -327,5 +423,65 @@ class Program
             }
         }
         return found;
+    }
+
+
+    /// <summary>
+    /// TextWriter that writes to two underlying writers.
+    /// </summary>
+    internal class MultiTextWriter : TextWriter
+    {
+        private readonly TextWriter _a;
+        private readonly TextWriter _b;
+
+        public MultiTextWriter(TextWriter a, TextWriter b)
+        {
+            _a = a ?? throw new ArgumentNullException(nameof(a));
+            _b = b ?? throw new ArgumentNullException(nameof(b));
+        }
+
+        public override Encoding Encoding => _a.Encoding;
+
+        public override void Write(char value)
+        {
+            _a.Write(value);
+            _b.Write(value);
+        }
+
+        public override void Write(string? value)
+        {
+            _a.Write(value);
+            _b.Write(value);
+        }
+
+        public override void WriteLine(string? value)
+        {
+            _a.WriteLine(value);
+            _b.WriteLine(value);
+        }
+
+        public override void Flush()
+        {
+            _a.Flush();
+            _b.Flush();
+        }
+    }
+
+    internal static string GetUniqueFilePath(string desiredPath)
+    {
+        if (string.IsNullOrWhiteSpace(desiredPath))
+            throw new ArgumentException("Invalid path", nameof(desiredPath));
+
+        var dir = Path.GetDirectoryName(desiredPath) ?? ".";
+        var file = Path.GetFileNameWithoutExtension(desiredPath);
+        var ext = Path.GetExtension(desiredPath);
+        var candidate = Path.Combine(dir, file + ext);
+        int i = 1;
+        while (File.Exists(candidate))
+        {
+            candidate = Path.Combine(dir, $"{file}_{i}{ext}");
+            i++;
+        }
+        return candidate;
     }
 }

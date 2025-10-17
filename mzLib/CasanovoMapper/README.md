@@ -35,12 +35,13 @@ CasanovoMapper \
 | `--casanovo-directory` | `-i` | * | Directory containing Casanovo mzTab files (*.mztab) |
 | `--output` | `-o` | Yes | Output directory for mapped results |
 | `--protease` | `-p` | No | Protease used for digestion (default: `trypsin`) |
-| `--missed-cleavages` | `-m` | No | Maximum number of missed cleavages (default: `0`) |
+| `--missed-cleavages` | `-m` | No | Maximum number of missed cleavages (default: `2`) |
 | `--min-length` | | No | Minimum peptide length for digestion (default: `7`) |
 | `--max-length` | | No | Maximum peptide length for digestion (default: `int.MaxValue`) |
 | `--replace-i-with-l` | | No | Replace I with L in sequences (default: `true`) |
 | `--chunk-size` | | No | Proteins per chunk for streaming (default: `1000`) |
 | `--workers` | | No | Number of parallel worker threads (default: `10`) |
+| `--write-filtered-fasta` | | No | Write filtered FASTA files containing only matched proteins (default: `true`) |
 
 \* Either `--casanovo-files` or `--casanovo-directory` must be specified
 
@@ -76,13 +77,34 @@ CasanovoMapper \
   --replace-i-with-l false
 ```
 
+**Skip filtered FASTA output:**
+```bash
+CasanovoMapper \
+  -d /databases/huge.fasta \
+  -i /results \
+  -o /output \
+  --write-filtered-fasta false
+```
+
 ## Output
 
-The tool creates mapped mzTab files in the output directory with `_Mapped` suffix. Each record is annotated with:
+The tool creates two types of output files in the output directory:
+
+### 1. Mapped mzTab Files
+Files with `_Mapped` suffix containing annotated Casanovo results. Each record is annotated with:
 - **Accession**: Protein accession(s) matching the peptide sequence
 - **Database**: Database name(s) where the peptide was found
 
 Multiple matches are pipe-delimited (e.g., `P12345|Q67890`).
+
+### 2. Filtered FASTA Files (Optional)
+Files with `_Matched.fasta` suffix containing only proteins with at least one matched peptide. This feature:
+- **Memory-efficient**: Streams through input FASTAs without loading entire files
+- **Standard format**: Writes sequences in 60-character lines
+- **I→L reversal**: Automatically reverses I→L replacement if it was applied during reading
+- **Per-database**: Creates one filtered FASTA per input database
+
+Disable with `--write-filtered-fasta false` if not needed.
 
 ## Performance Tips
 

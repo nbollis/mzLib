@@ -19,8 +19,8 @@ public class CommandLineOptions
     [Option('p', "protease", Default = "trypsin", HelpText = "Protease used for digestion (e.g., trypsin, lysc, argc).")]
     public string Protease { get; set; } = "trypsin";
 
-    [Option('m', "missed-cleavages", Default = 0, HelpText = "Maximum number of missed cleavages allowed.")]
-    public int MissedCleavages { get; set; } = 0;
+    [Option('m', "missed-cleavages", Default = 2, HelpText = "Maximum number of missed cleavages allowed.")]
+    public int MissedCleavages { get; set; } = 2;
 
     [Option("min-length", Default = 7, HelpText = "Minimum peptide length for digestion.")]
     public int MinPeptideLength { get; set; } = 7;
@@ -36,4 +36,7 @@ public class CommandLineOptions
 
     [Option("workers", Default = 10, HelpText = "Number of parallel worker threads.")]
     public int Workers { get; set; } = 10;
+
+    [Option("write-filtered-fasta", Default = true, HelpText = "Write a filtered FASTA file containing only proteins with mapped peptides.")]
+    public bool WriteFilteredFasta { get; set; } = true;
 }
