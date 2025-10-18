@@ -72,6 +72,8 @@ class Program
                 maxPeptideLength: options.MaxPeptideLength);
 
             Console.WriteLine($"  Digestion parameters: {options.Protease}, {options.MissedCleavages} missed cleavages, length {options.MinPeptideLength}-{options.MaxPeptideLength}");
+            if (options.GenerateDecoys)
+                Console.WriteLine($"  Decoy generation with prefix '{options.DecoyPrefix}'");
             Console.WriteLine();
 
             // Prepare for parallel processing
@@ -79,11 +81,12 @@ class Program
             for (int i = 0; i < recLocks.Length; i++)
                 recLocks[i] = new object();
 
-            // Track matched protein headers for filtered FASTA output
-            var matchedProteinHeaders = options.WriteFilteredFasta
-                ? new Dictionary<string, HashSet<string>>()
+            // Track matched proteins for filtered FASTA output
+            // For each protein, track whether target and/or decoy had matches
+            var matchedProteins = options.WriteFilteredFasta
+                ? new Dictionary<string, Dictionary<string, (MinimalProtein Protein, bool TargetMatched, bool DecoyMatched)>>()
                 : null;
-            var headerLocks = options.WriteFilteredFasta
+            var proteinLocks = options.WriteFilteredFasta
                 ? new Dictionary<string, object>()
                 : null;
 
@@ -92,8 +95,8 @@ class Program
                 foreach (var dbPath in options.DatabasePaths)
                 {
                     var dbName = Path.GetFileNameWithoutExtension(dbPath);
-                    matchedProteinHeaders![dbName] = new HashSet<string>();
-                    headerLocks![dbName] = new object();
+                    matchedProteins![dbName] = new Dictionary<string, (MinimalProtein, bool, bool)>();
+                    proteinLocks![dbName] = new object();
                 }
             }
 
@@ -104,6 +107,8 @@ class Program
                 var dbName = Path.GetFileNameWithoutExtension(fastaPath);
                 int proteinsProcessed = 0;
                 int matchesFound = 0;
+                int targetMatches = 0;
+                int decoyMatches = 0;
 
                 foreach (var chunk in FastaStreamReader.ReadFastaChunks(fastaPath, options.ChunkSize))
                 {
@@ -121,12 +126,22 @@ class Program
                             string[]? splits = null;
                             string? acc = null;
 
-                            if (options.ReplaceIWithL)
-                                sequence = sequence.Replace('I', 'L');
+                            // Apply I->L replacement if needed
+                            var processedSequence = options.ReplaceIWithL 
+                                ? sequence.Replace('I', 'L') 
+                                : sequence;
 
-                            foreach (var pep in new Protein(sequence, "").Digest(digParams, [], []))
+                            // Create minimal protein for target
+                            splits = header.Split('|');
+                            acc = splits.Length > 1 ? splits[1] : header;
+                            var targetProtein = new MinimalProtein(acc, header, processedSequence);
+                            
+                            bool targetMatched = false;
+                            bool decoyMatched = false;
+
+                            // Check target peptides
+                            foreach (var pepSeq in targetProtein.Digest(digParams))
                             {
-                                var pepSeq = pep.BaseSequence;
                                 char pepFirst = pepSeq[0];
 
                                 if (!firstCharRanges.TryGetValue(pepFirst, out var range))
@@ -142,25 +157,74 @@ class Program
                                     var recTuple = casanovoMelted[i];
                                     if (StringComparer.Ordinal.Equals(recTuple.rec.BaseSequence, pepSeq))
                                     {
-                                        splits ??= header.Split('|');
-                                        acc ??= splits.Length > 1 ? splits[1] : header;
-
                                         lock (recLocks[i])
                                         {
                                             recTuple.rec.Accession = Join(acc, recTuple.rec.Accession);
                                             recTuple.rec.Database = Join(dbName, recTuple.rec.Database);
                                         }
 
-                                        // Track this protein header for filtered FASTA output
-                                        if (matchedProteinHeaders != null)
-                                        {
-                                            lock (headerLocks![dbName])
-                                            {
-                                                matchedProteinHeaders[dbName].Add(header);
-                                            }
-                                        }
-
+                                        targetMatched = true;
                                         Interlocked.Increment(ref matchesFound);
+                                        Interlocked.Increment(ref targetMatches);
+                                    }
+                                }
+                            }
+
+                            // Check decoy peptides if decoy generation is enabled
+                            if (options.GenerateDecoys)
+                            {
+                                var decoyAcc = $"{options.DecoyPrefix}_{acc}";
+                                
+                                foreach (var pepSeq in targetProtein.GetDecoyPeptides(digParams))
+                                {
+                                    char pepFirst = pepSeq[0];
+
+                                    if (!firstCharRanges.TryGetValue(pepFirst, out var range))
+                                        continue;
+
+                                    int startIdx = LowerBound(casanovoMelted, pepSeq, range.start, range.end);
+                                    if (startIdx < 0)
+                                        continue;
+                                    int endIdx = UpperBound(casanovoMelted, pepSeq, startIdx, range.end);
+
+                                    for (int i = startIdx; i <= endIdx; i++)
+                                    {
+                                        var recTuple = casanovoMelted[i];
+                                        if (StringComparer.Ordinal.Equals(recTuple.rec.BaseSequence, pepSeq))
+                                        {
+                                            lock (recLocks[i])
+                                            {
+                                                recTuple.rec.Accession = Join(decoyAcc, recTuple.rec.Accession);
+                                                recTuple.rec.Database = Join(dbName, recTuple.rec.Database);
+                                                recTuple.rec.IsDecoy = true;
+                                            }
+
+                                            decoyMatched = true;
+                                            Interlocked.Increment(ref matchesFound);
+                                            Interlocked.Increment(ref decoyMatches);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Store matched protein for FASTA output
+                            if (matchedProteins != null && (targetMatched || decoyMatched))
+                            {
+                                lock (proteinLocks![dbName])
+                                {
+                                    if (matchedProteins[dbName].TryGetValue(header, out var existing))
+                                    {
+                                        // Update existing entry
+                                        matchedProteins[dbName][header] = (
+                                            existing.Protein,
+                                            existing.TargetMatched || targetMatched,
+                                            existing.DecoyMatched || decoyMatched
+                                        );
+                                    }
+                                    else
+                                    {
+                                        // Add new entry
+                                        matchedProteins[dbName][header] = (targetProtein, targetMatched, decoyMatched);
                                     }
                                 }
                             }
@@ -169,20 +233,29 @@ class Program
 
                     proteinsProcessed += total;
                     if (proteinsProcessed % 10000 == 0)
-                        // Overwrite the same console line to avoid long logs
                         Console.Write($"\r    Processed {proteinsProcessed:N0} proteins...");
                 }
 
                 Console.Write($"\r    Processed {proteinsProcessed:N0} proteins...");
-                // Ensure progress line ends before writing completion
                 Console.WriteLine();
-                Console.WriteLine($"    Completed. Found {matchesFound:N0} peptide matches");
+                
+                if (options.GenerateDecoys)
+                {
+                    Console.WriteLine($"    Completed. Found {matchesFound:N0} peptide matches ({targetMatches:N0} target, {decoyMatches:N0} decoy)");
+                }
+                else
+                {
+                    Console.WriteLine($"    Completed. Found {matchesFound:N0} peptide matches");
+                }
                 Console.WriteLine();
             }
 
             // Write results
             Console.WriteLine("  Writing mapped results...");
             Directory.CreateDirectory(options.OutputDirectory);
+
+            int totalMappedPSMs = 0;
+            int totalDecoyPSMs = 0;
 
             foreach (var group in casanovoMelted.GroupBy(p => p.Item1))
             {
@@ -193,45 +266,68 @@ class Program
                     Path.GetFileNameWithoutExtension(original.FilePath) + "_Mapped");
                 original.WriteResults(outPath);
 
-                Console.WriteLine($"    Wrote {Path.GetFileName(outPath)}.mztab");
+                // Count mapped and decoy PSMs
+                var mappedPSMs = original.Results.Count(r => !string.IsNullOrWhiteSpace(r.Accession));
+                var decoyPSMs = original.Results.Count(r => r.IsDecoy && !string.IsNullOrWhiteSpace(r.Accession));
+                
+                totalMappedPSMs += mappedPSMs;
+                totalDecoyPSMs += decoyPSMs;
+
+                if (options.GenerateDecoys)
+                {
+                    Console.WriteLine($"    Wrote {Path.GetFileName(outPath)}.mztab ({mappedPSMs:N0} mapped PSMs, {decoyPSMs:N0} decoy matches)");
+                }
+                else
+                {
+                    Console.WriteLine($"    Wrote {Path.GetFileName(outPath)}.mztab ({mappedPSMs:N0} mapped PSMs)");
+                }
+            }
+
+            if (options.GenerateDecoys && totalMappedPSMs > 0)
+            {
+                double decoyRate = (double)totalDecoyPSMs / totalMappedPSMs * 100;
+                Console.WriteLine($"  Overall decoy rate: {decoyRate:F1}% ({totalDecoyPSMs:N0}/{totalMappedPSMs:N0})");
             }
 
             Console.WriteLine();
 
             // Write filtered FASTA files if requested
-            if (options.WriteFilteredFasta && matchedProteinHeaders != null)
+            if (options.WriteFilteredFasta && matchedProteins != null)
             {
                 Console.WriteLine("  Writing filtered FASTA files...");
                 var producedFilteredFastas = new List<string>();
+                
                 foreach (var fastaPath in options.DatabasePaths)
                 {
                     var dbName = Path.GetFileNameWithoutExtension(fastaPath);
-                    var headers = matchedProteinHeaders[dbName];
+                    var proteins = matchedProteins[dbName];
 
-                    if (headers.Count > 0)
+                    if (proteins.Count > 0)
                     {
                         var filteredFastaPath = Path.Combine(options.OutputDirectory,
-                            $"{dbName}_Matched.fasta");
+                            options.GenerateDecoys ? $"{dbName}_TargetDecoy_Matched.fasta" : $"{dbName}_Matched.fasta");
 
-                        (int proteinCount, int total) = FastaStreamReader.WriteFilteredFasta(
-                            fastaPath,
-                            filteredFastaPath,
-                            headers);
+                        int proteinCount = WriteMatchedFasta(filteredFastaPath, proteins, options);
+                        
                         producedFilteredFastas.Add(filteredFastaPath);
-                        Console.WriteLine($"    Wrote {proteinCount:N0}/{total:N0} proteins to {Path.GetFileName(filteredFastaPath)}");
+                        var suffix = options.GenerateDecoys ? " entries (targets+decoys)" : " proteins";
+                        Console.WriteLine($"    Wrote {proteinCount:N0}{suffix} to {Path.GetFileName(filteredFastaPath)}");
                     }
                     else
                     {
                         Console.WriteLine($"    No matches found in {dbName}, skipping FASTA output");
                     }
                 }
+                
                 Console.WriteLine();
+                
                 // Combine all per-database filtered FASTAs into a single merged FASTA
                 if (producedFilteredFastas.Count > 0)
                 {
-                    var combinedPath = Path.Combine(options.OutputDirectory, "Combined_Matched.fasta");
+                    var combinedPath = Path.Combine(options.OutputDirectory, 
+                        options.GenerateDecoys ? "Combined_TargetDecoy_Matched.fasta" : "Combined_Matched.fasta");
                     int merged = FastaStreamReader.CombineFastas(producedFilteredFastas, combinedPath);
-                    Console.WriteLine($"  Combined {merged:N0} unique proteins into {Path.GetFileName(combinedPath)}");
+                    Console.WriteLine($"  Combined {merged:N0} unique entries into {Path.GetFileName(combinedPath)}");
                 }
             }
 
@@ -290,7 +386,6 @@ class Program
             Console.Error.WriteLine("Must specify either --casanovo-files or --casanovo-directory");
             return false;
         }
-
         return true;
     }
 
@@ -483,5 +578,52 @@ class Program
             i++;
         }
         return candidate;
+    }
+
+    /// <summary>
+    /// Writes matched proteins to a FASTA file. Only writes targets/decoys that had peptide matches.
+    /// Decoys are generated on-demand from target sequences.
+    /// </summary>
+    static int WriteMatchedFasta(string outputPath, Dictionary<string, (MinimalProtein Protein, bool TargetMatched, bool DecoyMatched)> matchedProteins, CommandLineOptions options)
+    {
+        int written = 0;
+        using var writer = new StreamWriter(outputPath);
+
+        foreach (var (protein, targetMatched, decoyMatched) in matchedProteins.Values)
+        {
+            // Write target if it had matches
+            if (targetMatched)
+            {
+                writer.WriteLine(">" + protein.Header);
+                WriteSequenceInLines(writer, protein.Sequence);
+                written++;
+            }
+
+            // Write decoy only if it had matches AND decoy generation is enabled
+            if (options.GenerateDecoys && decoyMatched)
+            {
+                var decoyAccession = $"{options.DecoyPrefix}_{protein.Accession}";
+                var decoyHeader = protein.Header.Replace(protein.Accession, decoyAccession);
+                var decoySequence = protein.GetDecoySequence();
+                
+                writer.WriteLine(">" + decoyHeader);
+                WriteSequenceInLines(writer, decoySequence);
+                written++;
+            }
+        }
+
+        return written;
+    }
+
+    /// <summary>
+    /// Writes a protein sequence in 60-character lines (standard FASTA format)
+    /// </summary>
+    static void WriteSequenceInLines(StreamWriter writer, string sequence)
+    {
+        for (int i = 0; i < sequence.Length; i += 60)
+        {
+            int length = Math.Min(60, sequence.Length - i);
+            writer.WriteLine(sequence.Substring(i, length));
+        }
     }
 }

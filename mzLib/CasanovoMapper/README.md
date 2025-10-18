@@ -42,6 +42,8 @@ CasanovoMapper \
 | `--chunk-size` | | No | Proteins per chunk for streaming (default: `1000`) |
 | `--workers` | | No | Number of parallel worker threads (default: `10`) |
 | `--write-filtered-fasta` | | No | Write filtered FASTA files containing only matched proteins (default: `true`) |
+| `--generate-decoys` | | No | Generate decoy proteins and include them in mapping and output FASTA files (default: `false`) |
+| `--decoy-prefix` | | No | Prefix for decoy protein accessions (default: `DECOY`) |
 
 \* Either `--casanovo-files` or `--casanovo-directory` must be specified
 
@@ -86,6 +88,16 @@ CasanovoMapper \
   --write-filtered-fasta false
 ```
 
+**Generate target-decoy database:**
+```bash
+CasanovoMapper \
+  -d /databases/human.fasta \
+  -i /results \
+  -o /output \
+  --generate-decoys true \
+```
+
+
 ## Output
 
 The tool creates two types of output files in the output directory:
@@ -98,19 +110,31 @@ Files with `_Mapped` suffix containing annotated Casanovo results. Each record i
 Multiple matches are pipe-delimited (e.g., `P12345|Q67890`).
 
 ### 2. Filtered FASTA Files (Optional)
-Files with `_Matched.fasta` suffix containing only proteins with at least one matched peptide. This feature:
+Files with `_Matched.fasta` suffix (or `_TargetDecoy_Matched.fasta` when decoys are generated) containing only proteins with at least one matched peptide. This feature:
 - **Memory-efficient**: Streams through input FASTAs without loading entire files
 - **Standard format**: Writes sequences in 60-character lines
 - **I→L reversal**: Automatically reverses I→L replacement if it was applied during reading
 - **Per-database**: Creates one filtered FASTA per input database
+- **Target-decoy support**: When `--generate-decoys` is enabled, includes both target proteins and their corresponding decoys
 
 Disable with `--write-filtered-fasta false` if not needed.
+
+### 3. Decoy Generation (Optional)
+When `--generate-decoys` is enabled, the tool also:
+- **Generates decoy proteins** using the specified method (reverse, slide, or shuffle)
+- **Maps peptides to decoys** in addition to target proteins  
+- **Annotates records** with decoy status in the `IsDecoy` field
+- **Includes decoys in FASTA output** with the specified prefix
+- **Supports multiple algorithms**: Choose from reverse (default), slide, or shuffle decoy generation
+
+The decoy generation uses the same proteolytic digestion parameters as target mapping.
 
 ## Performance Tips
 
 - **Workers**: Increase for more CPU cores (e.g., `--workers 20`)
 - **Chunk size**: Larger chunks (e.g., `2000-5000`) reduce overhead but use more memory
 - **Database order**: Place smaller/more likely databases first for faster early termination
+- **Decoy generation**: Adds computational overhead but provides valuable FDR estimation metrics
 
 ## Requirements
 

@@ -39,4 +39,10 @@ public class CommandLineOptions
 
     [Option("write-filtered-fasta", Default = true, HelpText = "Write a filtered FASTA file containing only proteins with mapped peptides.")]
     public bool WriteFilteredFasta { get; set; } = true;
+
+    [Option("generate-decoys", Default = false, HelpText = "Generate decoy proteins and include them in mapping and output FASTA files.")]
+    public bool GenerateDecoys { get; set; } = false;
+
+    [Option("decoy-prefix", Default = "DECOY", HelpText = "Prefix for decoy protein accessions (default: DECOY).")]
+    public string DecoyPrefix { get; set; } = "DECOY";
 }
