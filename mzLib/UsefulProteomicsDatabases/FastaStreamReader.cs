@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace UsefulProteomicsDatabases;
 
@@ -223,5 +224,99 @@ public class FastaStreamReader
         }
 
         return written;
+    }
+
+    /// <summary>
+    /// Writes a filtered target-decoy FASTA file containing only proteins whose headers match the provided set.
+    /// Includes both target proteins and their corresponding decoys if decoys are generated.
+    /// </summary>
+    /// <param name="inputFilePath">Path to the input FASTA file.</param>
+    /// <param name="outputFilePath">Path where the filtered FASTA will be written.</param>
+    /// <param name="headersToInclude">Set of protein headers to include (as they appear after '>' in the FASTA file).</param>
+    /// <param name="includeDecoys">Whether to generate and include decoy proteins.</param>
+    /// <param name="decoyType">Type of decoy to generate (only used if includeDecoys is true).</param>
+    /// <param name="decoyPrefix">Prefix for decoy protein accessions.</param>
+    /// <param name="maxThreads">Maximum number of threads for decoy generation.</param>
+    /// <returns>Tuple containing (proteins written, total proteins processed).</returns>
+    public static (int Written, int Total) WriteFilteredTargetDecoyFasta(string inputFilePath, string outputFilePath, 
+        HashSet<string> headersToInclude, bool includeDecoys = false, DecoyType decoyType = DecoyType.Reverse, 
+        string decoyPrefix = "DECOY_", int maxThreads = -1)
+    {
+        if (headersToInclude == null || headersToInclude.Count == 0)
+            return (0, 0);
+
+        int proteinCount = 0;
+        int proteinTotal = 0;
+        var matchedProteins = new List<(string Header, string Sequence)>();
+
+        // First pass: collect matched proteins
+        using (var reader = new StreamReader(inputFilePath))
+        {
+            string? line;
+            string? currentHeader = null;
+            var sequenceBuilder = new System.Text.StringBuilder();
+            bool includeCurrentProtein = false;
+
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (line.StartsWith(">"))
+                {
+                    // Save previous protein if it should be included
+                    if (includeCurrentProtein && currentHeader != null)
+                    {
+                        matchedProteins.Add((currentHeader, sequenceBuilder.ToString()));
+                    }
+
+                    // Start new protein
+                    proteinTotal++;
+                    currentHeader = line.Substring(1).Trim();
+                    sequenceBuilder.Clear();
+                    includeCurrentProtein = headersToInclude.Contains(currentHeader);
+                }
+                else if (includeCurrentProtein)
+                {
+                    sequenceBuilder.Append(line.Trim());
+                }
+            }
+
+            // Handle last protein
+            if (includeCurrentProtein && currentHeader != null)
+            {
+                matchedProteins.Add((currentHeader, sequenceBuilder.ToString()));
+            }
+        }
+
+        // Generate decoys if requested
+        var allProteinsToWrite = new List<(string Header, string Sequence)>(matchedProteins);
+        if (includeDecoys && matchedProteins.Count > 0)
+        {
+            var proteins = matchedProteins.Select(p => new Proteomics.Protein(p.Sequence, p.Header)).ToList();
+            var decoys = DecoyProteinGenerator.GenerateDecoys(proteins, decoyType, maxThreads, decoyPrefix.TrimEnd('_'));
+            
+            foreach (var decoy in decoys)
+            {
+                allProteinsToWrite.Add((decoy.Accession, decoy.BaseSequence));
+            }
+        }
+
+        // Write all proteins to output
+        using (var writer = new StreamWriter(outputFilePath))
+        {
+            foreach (var (header, sequence) in allProteinsToWrite)
+            {
+                writer.WriteLine(">" + header);
+                
+                // Write sequence in 60-character lines (standard FASTA format)
+                for (int i = 0; i < sequence.Length; i += 60)
+                {
+                    int length = Math.Min(60, sequence.Length - i);
+                    writer.WriteLine(sequence.Substring(i, length));
+                }
+                
+                proteinCount++;
+            }
+        }
+
+        return (proteinCount, proteinTotal);
     }
 }

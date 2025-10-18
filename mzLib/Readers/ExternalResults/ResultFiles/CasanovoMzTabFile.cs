@@ -5,6 +5,7 @@ using Readers.ExternalResults.IndividualResultRecords;
 using System.Globalization;
 
 namespace Readers.ExternalResults.ResultFiles;
+
 public class CasanovoMzTabFile : ResultFile<CasanovoMzTabRecord>, IResultFile
 {
     private static readonly CsvConfiguration CsvConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
