@@ -92,7 +92,15 @@ public abstract class ModificationLookupBase : IModificationLookup
 
     #endregion
 
-    #region Caching
+#region Caching
+
+    /// <summary>
+    /// Clears the instance cache. Useful for testing to ensure fresh resolution.
+    /// </summary>
+    public void ClearCache()
+    {
+        _instanceCache.Clear();
+    }
 
     private Modification? ResolveWithCache(
         string normalizedRepresentation,
