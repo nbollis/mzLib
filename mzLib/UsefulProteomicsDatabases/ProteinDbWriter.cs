@@ -9,11 +9,18 @@ using Easy.Common.Extensions;
 using Omics;
 using Omics.BioPolymer;
 using Omics.Modifications;
+using Omics.SequenceConversion;
 using Transcriptomics;
 using System.Data;
 
 namespace UsefulProteomicsDatabases
 {
+
+    public enum XmlDbType
+    {
+        MzLib,
+        UniProt
+    }
 
     /// <summary>
     /// Provides methods for writing rna and nucleic acid databases to XML and FASTA formats.
@@ -21,6 +28,9 @@ namespace UsefulProteomicsDatabases
     /// </summary>
     public class ProteinDbWriter
     {
+        private static readonly ISequenceConverter MzLibToUniProtConverter =
+            new SequenceConverter(MzLibSequenceParser.Instance, UniProtSequenceSerializer.Instance);
+
         /// <summary>
         /// Writes an XML database for a list of RNA sequences, including additional modifications.
         /// </summary>
@@ -28,11 +38,27 @@ namespace UsefulProteomicsDatabases
         /// <param name="bioPolymerList">A list of RNA sequences to be written to the database.</param>
         /// <param name="outputFileName">The name of the output XML file.</param>
         /// <returns>A dictionary of new modification residue entries.</returns>
-        public static Dictionary<string, int> WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, Modification>>> additionalModsToAddToProteins, List<IBioPolymer> bioPolymerList, string outputFileName)
+        public static Dictionary<string, int> WriteXmlDatabase(
+            Dictionary<string, HashSet<Tuple<int, Modification>>> additionalModsToAddToProteins,
+            List<IBioPolymer> bioPolymerList,
+            string outputFileName,
+            XmlDbType xmlDbType = XmlDbType.MzLib)
         {
-            return bioPolymerList.Any(p => p is Protein)
-                ? WriteXmlDatabase(additionalModsToAddToProteins, bioPolymerList.Cast<Protein>().ToList(), outputFileName)
-                : WriteXmlDatabase(additionalModsToAddToProteins, bioPolymerList.Cast<RNA>().ToList(), outputFileName);
+            if (bioPolymerList.Any(p => p is Protein))
+            {
+                return WriteXmlDatabase(
+                    additionalModsToAddToProteins,
+                    bioPolymerList.Cast<Protein>().ToList(),
+                    outputFileName,
+                    xmlDbType: xmlDbType);
+            }
+
+            if (xmlDbType != XmlDbType.MzLib)
+            {
+                throw new ArgumentException("UniProt export is only supported for protein databases.", nameof(xmlDbType));
+            }
+
+            return WriteXmlDatabase(additionalModsToAddToProteins, bioPolymerList.Cast<RNA>().ToList(), outputFileName);
         }
 
         /// <summary>
@@ -186,7 +212,7 @@ namespace UsefulProteomicsDatabases
                         writer.WriteEndElement();
                     }
 
-                    foreach (var hm in GetModsForThisBioPolymer(nucleicAcid, null, additionalModsToAddToNucleicAcids, newModResEntries).OrderBy(b => b.Key))
+                    foreach (var hm in GetModsForThisBioPolymer(nucleicAcid, null, additionalModsToAddToNucleicAcids, newModResEntries, convertToUniProt: false).OrderBy(b => b.Key))
                     {
                         foreach (var modId in hm.Value)
                         {
@@ -229,7 +255,7 @@ namespace UsefulProteomicsDatabases
                             writer.WriteAttributeString("position", hm.OneBasedEndPosition.ToString());
                             writer.WriteEndElement();
                         }
-                        foreach (var hmm in GetModsForThisBioPolymer(nucleicAcid, hm, additionalModsToAddToNucleicAcids, newModResEntries).OrderBy(b => b.Key))
+                        foreach (var hmm in GetModsForThisBioPolymer(nucleicAcid, hm, additionalModsToAddToNucleicAcids, newModResEntries, convertToUniProt: false).OrderBy(b => b.Key))
                         {
                             foreach (var modId in hmm.Value)
                             {
@@ -293,12 +319,21 @@ namespace UsefulProteomicsDatabases
         /// <param name="proteinList"></param>
         /// <param name="outputFileName"></param>
         /// <returns>The new "modified residue" entries that are added due to being in the Mods dictionary</returns>
-        public static Dictionary<string, int> WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, Modification>>> additionalModsToAddToProteins, List<Protein> proteinList, string outputFileName, bool updateTimeStamp = false)
+        public static Dictionary<string, int> WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, Modification>>> additionalModsToAddToProteins, List<Protein> proteinList, string outputFileName, bool updateTimeStamp = false, XmlDbType xmlDbType = XmlDbType.MzLib)
         {
             additionalModsToAddToProteins = additionalModsToAddToProteins ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
 
             // write nonvariant proteins (for cases where variants aren't applied, this just gets the rna itself)
             var nonVariantProteins = proteinList.Select(p => p.ConsensusVariant).Distinct().ToList();
+            bool exportAsUniProt = xmlDbType == XmlDbType.UniProt;
+
+            if (exportAsUniProt)
+            {
+                foreach (var protein in nonVariantProteins)
+                {
+                    protein.ConvertModifications(MzLibToUniProtConverter);
+                }
+            }
 
             var xmlWriterSettings = new XmlWriterSettings
             {
@@ -311,7 +346,8 @@ namespace UsefulProteomicsDatabases
             using (XmlWriter writer = XmlWriter.Create(outputFileName, xmlWriterSettings))
             {
                 writer.WriteStartDocument();
-                writer.WriteStartElement("mzLibProteinDb");
+                string startElement = exportAsUniProt ? "uniprot" : "mzLibProteinDb";
+                writer.WriteStartElement(startElement);
 
                 List<Modification> myModificationList = new List<Modification>();
                 foreach (Protein p in nonVariantProteins)
@@ -322,24 +358,27 @@ namespace UsefulProteomicsDatabases
                     }
                 }
 
-                HashSet<Modification> allRelevantModifications = new HashSet<Modification>(
-                    nonVariantProteins
-                        .SelectMany(p => p.SequenceVariations
-                            .SelectMany(sv => sv.OneBasedModifications)
-                            .Concat(p.OneBasedPossibleLocalizedModifications)
-                            .SelectMany(kv => kv.Value))
-                        .Concat(additionalModsToAddToProteins
-                            .Where(kv => nonVariantProteins
-                                .SelectMany(p => p.SequenceVariations
-                                    .Select(sv => VariantApplication.GetAccession(p, new[] { sv })).Concat(new[] { p.Accession }))
-                                .Contains(kv.Key))
-                            .SelectMany(kv => kv.Value.Select(v => v.Item2))));
-
-                foreach (Modification mod in allRelevantModifications.OrderBy(m => m.IdWithMotif))
+                if (!exportAsUniProt)
                 {
-                    writer.WriteStartElement("modification");
-                    writer.WriteString(mod.ToString() + Environment.NewLine + "//");
-                    writer.WriteEndElement();
+                    HashSet<Modification> allRelevantModifications = new HashSet<Modification>(
+                        nonVariantProteins
+                            .SelectMany(p => p.SequenceVariations
+                                .SelectMany(sv => sv.OneBasedModifications)
+                                .Concat(p.OneBasedPossibleLocalizedModifications)
+                                .SelectMany(kv => kv.Value))
+                            .Concat(additionalModsToAddToProteins
+                                .Where(kv => nonVariantProteins
+                                    .SelectMany(p => p.SequenceVariations
+                                        .Select(sv => VariantApplication.GetAccession(p, new[] { sv })).Concat(new[] { p.Accession }))
+                                    .Contains(kv.Key))
+                                .SelectMany(kv => kv.Value.Select(v => v.Item2))));
+
+                    foreach (Modification mod in allRelevantModifications.OrderBy(m => m.IdWithMotif))
+                    {
+                        writer.WriteStartElement("modification");
+                        writer.WriteString(mod.ToString() + Environment.NewLine + "//");
+                        writer.WriteEndElement();
+                    }
                 }
 
                 foreach (Protein protein in nonVariantProteins)
@@ -443,7 +482,7 @@ namespace UsefulProteomicsDatabases
                         writer.WriteEndElement();
                     }
 
-                    foreach (var positionModKvp in GetModsForThisBioPolymer(protein, null, additionalModsToAddToProteins, newModResEntries).OrderBy(b => b.Key))
+                    foreach (var positionModKvp in GetModsForThisBioPolymer(protein, null, additionalModsToAddToProteins, newModResEntries, exportAsUniProt).OrderBy(b => b.Key))
                     {
                         foreach (var modId in positionModKvp.Value.OrderBy(mod => mod))
                         {
@@ -487,7 +526,7 @@ namespace UsefulProteomicsDatabases
                             writer.WriteAttributeString("position", hm.OneBasedEndPosition.ToString());
                             writer.WriteEndElement();
                         }
-                        foreach (var hmm in GetModsForThisBioPolymer(protein, hm, additionalModsToAddToProteins, newModResEntries).OrderBy(b => b.Key))
+                        foreach (var hmm in GetModsForThisBioPolymer(protein, hm, additionalModsToAddToProteins, newModResEntries, exportAsUniProt).OrderBy(b => b.Key))
                         {
                             foreach (var modId in hmm.Value.OrderBy(mod => mod))
                             {
@@ -613,7 +652,12 @@ namespace UsefulProteomicsDatabases
             }
         }
 
-        private static Dictionary<int, HashSet<string>> GetModsForThisBioPolymer(IBioPolymer protein, SequenceVariation seqvar, Dictionary<string, HashSet<Tuple<int, Modification>>> additionalModsToAddToProteins, Dictionary<string, int> newModResEntries)
+        private static Dictionary<int, HashSet<string>> GetModsForThisBioPolymer(
+            IBioPolymer protein,
+            SequenceVariation seqvar,
+            Dictionary<string, HashSet<Tuple<int, Modification>>> additionalModsToAddToProteins,
+            Dictionary<string, int> newModResEntries,
+            bool convertToUniProt)
         {
             var modsToWriteForThisSpecificProtein = new Dictionary<int, HashSet<string>>();
 
@@ -622,20 +666,29 @@ namespace UsefulProteomicsDatabases
             {
                 foreach (var mod in mods.Value)
                 {
+                    var representation = convertToUniProt ? mod.OriginalId : mod.IdWithMotif;
+                    if (string.IsNullOrEmpty(representation))
+                        continue;
                     if (modsToWriteForThisSpecificProtein.TryGetValue(mods.Key, out HashSet<string> val))
-                        val.Add(mod.IdWithMotif);
+                        val.Add(representation);
                     else
-                        modsToWriteForThisSpecificProtein.Add(mods.Key, new HashSet<string> { mod.IdWithMotif });
+                        modsToWriteForThisSpecificProtein.Add(mods.Key, new HashSet<string> { representation });
                 }
             }
 
-            string accession = seqvar == null ? protein.Accession : VariantApplication.GetAccession(protein, new[] { seqvar }); 
+            string accession = seqvar == null ? protein.Accession : VariantApplication.GetAccession(protein, new[] { seqvar });
             if (additionalModsToAddToProteins.ContainsKey(accession))
             {
                 foreach (var ye in additionalModsToAddToProteins[accession])
                 {
                     int additionalModResidueIndex = ye.Item1;
-                    string additionalModId = ye.Item2.IdWithMotif;
+                    var additionalMod = ye.Item2;
+                    var additionalModId = convertToUniProt ? additionalMod.OriginalId : additionalMod.IdWithMotif;
+                    if (string.IsNullOrEmpty(additionalModId))
+                    {
+                        continue;
+                    }
+
                     bool modAdded = false;
 
                     // If we already have modifications that need to be written to the specific residue, get the hash set of those mods
