@@ -1,7 +1,10 @@
-﻿using NUnit.Framework;
+﻿using Chemistry;
+using NUnit.Framework;
 using Omics;
+using Omics.BioPolymer;
 using Omics.Digestion;
 using Omics.Modifications;
+using Omics.SequenceConversion;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -9,8 +12,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Chemistry;
-using Omics.SequenceConversion;
 
 namespace Test.Omics.SequenceConversion;
 [TestFixture]
@@ -277,4 +278,220 @@ public class PeptideAndProteinConversion
     }
 
     #endregion
+
+    [Test]
+    public static void TestConvertModsOnProtein_OneBasedPossibleLocalizedModifications()
+    {
+        // Create modifications in MetaMorpheus convention
+        ModificationMotif.TryGetMotif("S", out var motifS);
+        ModificationMotif.TryGetMotif("T", out var motifT);
+        ModificationMotif.TryGetMotif("K", out var motifK);
+
+        var phosphoMM = new Modification(
+            _originalId: "Phosphorylation",
+            _modificationType: "Common Biological",
+            _target: motifS,
+            _locationRestriction: "Anywhere.",
+            _chemicalFormula: ChemicalFormula.ParseFormula("H1O3P1"));
+
+        var phosphoTMM = new Modification(
+            _originalId: "Phosphorylation",
+            _modificationType: "Common Biological",
+            _target: motifT,
+            _locationRestriction: "Anywhere.",
+            _chemicalFormula: ChemicalFormula.ParseFormula("H1O3P1"));
+
+        var acetylMM = new Modification(
+            _originalId: "Acetylation",
+            _modificationType: "Common Biological",
+            _target: motifK,
+            _locationRestriction: "Anywhere.",
+            _chemicalFormula: ChemicalFormula.ParseFormula("C2H2O1"));
+
+        // Create protein with modifications
+        var oneBasedMods = new Dictionary<int, List<Modification>>
+            {
+                { 3, new List<Modification> { phosphoMM } },      // S at position 3
+                { 5, new List<Modification> { phosphoTMM } },     // T at position 5
+                { 7, new List<Modification> { acetylMM } }        // K at position 7
+            };
+
+        var protein = new Protein(
+            "MASATDKE",
+            "TestProtein",
+            oneBasedModifications: oneBasedMods);
+
+        // Verify original mods are MetaMorpheus style
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[3][0].ModificationType,
+            Is.EqualTo("Common Biological"));
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[5][0].ModificationType,
+            Is.EqualTo("Common Biological"));
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[7][0].ModificationType,
+            Is.EqualTo("Common Biological"));
+
+        // Convert to UniProt convention
+        protein.ConvertModifications(UniProtSequenceSerializer.Instance);
+
+        // Verify conversions
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[3][0].ModificationType,
+            Is.EqualTo("UniProt"));
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[5][0].ModificationType,
+            Is.EqualTo("UniProt"));
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[7][0].ModificationType,
+            Is.EqualTo("UniProt"));
+
+        // Verify chemical formulas are preserved
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[3][0].ChemicalFormula.Equals(
+            ChemicalFormula.ParseFormula("H1O3P1")), Is.True);
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[5][0].ChemicalFormula.Equals(
+            ChemicalFormula.ParseFormula("H1O3P1")), Is.True);
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[7][0].ChemicalFormula.Equals(
+            ChemicalFormula.ParseFormula("C2H2O1")), Is.True);
+    }
+
+    [Test]
+    public static void TestConvertModsOnProtein_SequenceVariations()
+    {
+        // Create modifications
+        ModificationMotif.TryGetMotif("S", out var motifS);
+
+        var phosphoMM = new Modification(
+            _originalId: "Phosphorylation",
+            _modificationType: "Common Biological",
+            _target: motifS,
+            _locationRestriction: "Anywhere.",
+            _chemicalFormula: ChemicalFormula.ParseFormula("H1O3P1"));
+
+        // Create sequence variation with modification
+        var variantMods = new Dictionary<int, List<Modification>>
+            {
+                { 1, new List<Modification> { phosphoMM } }  // Mod on the variant sequence
+            };
+
+        var sequenceVariation = new SequenceVariation(
+            oneBasedBeginPosition: 3,
+            oneBasedEndPosition: 3,
+            originalSequence: "A",
+            variantSequence: "S",
+            description: "A3S",
+            oneBasedModifications: variantMods);
+
+        var protein = new Protein(
+            "MAAADE",
+            "TestProtein",
+            sequenceVariations: new List<SequenceVariation> { sequenceVariation });
+
+        // Apply the variation
+        protein = protein.GetVariantBioPolymers().Skip(1).First();
+
+        // Verify original mod is MetaMorpheus style
+        Assert.That(protein.SequenceVariations.First().OneBasedModifications[1][0].ModificationType,
+            Is.EqualTo("Common Biological"));
+
+        // Convert to UniProt convention
+        protein.ConvertModifications(UniProtSequenceSerializer.Instance);
+
+        // Verify conversion in sequence variation
+        Assert.That(protein.SequenceVariations.First().OneBasedModifications[1][0].ModificationType,
+            Is.EqualTo("UniProt"));
+
+        // Also verify it converted in AppliedSequenceVariations
+        Assert.That(protein.AppliedSequenceVariations.First().OneBasedModifications[1][0].ModificationType,
+            Is.EqualTo("UniProt"));
+    }
+
+    [Test]
+    public static void TestConvertModsOnProtein_OriginalNonVariantModifications()
+    {
+        // This tests the OriginalNonVariantModifications dictionary conversion
+        ModificationMotif.TryGetMotif("K", out var motifK);
+
+        var acetylMM = new Modification(
+            _originalId: "Acetylation",
+            _modificationType: "Common Biological",
+            _target: motifK,
+            _locationRestriction: "Anywhere.",
+            _chemicalFormula: ChemicalFormula.ParseFormula("C2H2O1"));
+
+        // Create modification dictionaries
+        var oneBasedMods = new Dictionary<int, List<Modification>>
+            {
+                { 4, new List<Modification> { acetylMM } }
+            };
+
+        // Apply a variant that doesn't affect the modification position
+        var variant = new SequenceVariation(2, "A", "V", "A2V");
+        var proteinWithVariant = new Protein(
+            "MVP KDE",
+            "TestProteinWithVariant",
+            sequenceVariations: new List<SequenceVariation> { variant },
+            oneBasedModifications: oneBasedMods);
+
+        proteinWithVariant = proteinWithVariant.GetVariantBioPolymers().Skip(1).First();
+
+        // The original mods should be stored in OriginalNonVariantModifications
+        // Verify it's MetaMorpheus style initially
+        if (proteinWithVariant.OriginalNonVariantModifications.Any())
+        {
+            Assert.That(proteinWithVariant.OriginalNonVariantModifications.First().Value[0].ModificationType,
+                Is.EqualTo("Common Biological"));
+        }
+
+        // Convert to UniProt
+        proteinWithVariant.ConvertModifications(UniProtSequenceSerializer.Instance);
+
+        // Verify conversion in OriginalNonVariantModifications if present
+        if (proteinWithVariant.OriginalNonVariantModifications.Any())
+        {
+            Assert.That(proteinWithVariant.OriginalNonVariantModifications.First().Value[0].ModificationType,
+                Is.EqualTo("UniProt"));
+        }
+    }
+
+    [Test]
+    public static void TestConvertModsOnProteinWithMultipleModsPerSite()
+    {
+        // Test conversion when multiple modifications are possible at the same site
+        ModificationMotif.TryGetMotif("S", out var motifS);
+
+        var phosphoMM = new Modification(
+            _originalId: "Phosphorylation",
+            _modificationType: "Common Biological",
+            _target: motifS,
+            _locationRestriction: "Anywhere.",
+            _chemicalFormula: ChemicalFormula.ParseFormula("H1O3P1"));
+
+        var sulfoMM = new Modification(
+            _originalId: "Sulfonation",
+            _modificationType: "Common Biological",
+            _target: motifS,
+            _locationRestriction: "Anywhere.",
+            _chemicalFormula: ChemicalFormula.ParseFormula("O3S1"));
+
+        // Multiple mods at same position
+        var oneBasedMods = new Dictionary<int, List<Modification>>
+            {
+                { 3, new List<Modification> { phosphoMM, sulfoMM } }
+            };
+
+        var protein = new Protein(
+            "MASIDE",
+            "TestProtein",
+            oneBasedModifications: oneBasedMods);
+
+        // Verify both mods are MetaMorpheus style
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[3][0].ModificationType,
+            Is.EqualTo("Common Biological"));
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[3][1].ModificationType,
+            Is.EqualTo("Common Biological"));
+
+        // Convert to UniProt
+        protein.ConvertModifications(UniProtSequenceSerializer.Instance);
+
+        // Verify both mods were converted
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[3][0].ModificationType,
+            Is.EqualTo("UniProt"));
+        Assert.That(protein.OneBasedPossibleLocalizedModifications[3][1].ModificationType,
+            Is.EqualTo("UniProt"));
+    }
 }

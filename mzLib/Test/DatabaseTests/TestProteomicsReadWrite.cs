@@ -180,6 +180,43 @@ namespace Test.DatabaseTests
                 }
             }
             // Clean up the output file after the test
+            //if (File.Exists(outputPath))
+            //{
+            //    File.Delete(outputPath);
+            //}
+        }
+
+        [Test]
+        public void WriteProteinDbAsUniProtFiltersModifications()
+        {
+            var psiModDeserialized = Loaders.LoadPsiMod(Path.Combine(TestContext.CurrentContext.TestDirectory, "PSI-MOD.obo2.xml"));
+            Dictionary<string, int> formalChargesDictionary = Loaders.GetFormalChargesDictionary(psiModDeserialized);
+            var uniprotPtms = Loaders.LoadUniprot(Path.Combine(TestContext.CurrentContext.TestDirectory, "ptmlist2.txt"), formalChargesDictionary).ToList();
+
+            string inputXmlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "cRAP_databaseGPTMD.xml");
+            List<Protein> proteins = ProteinDbLoader.LoadProteinXML(
+                inputXmlPath,
+                true,
+                DecoyType.None,
+                uniprotPtms,
+                false,
+                null,
+                out Dictionary<string, Modification> _);
+
+            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "rewrite_uniprot_export.xml");
+            if (File.Exists(outputPath))
+            {
+                File.Delete(outputPath);
+            }
+
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteins, outputPath, xmlDbType: XmlDbType.UniProt);
+
+            string writtenText = File.ReadAllText(outputPath);
+            Assert.False(writtenText.Contains("<modification>"));
+            Assert.False(writtenText.Contains("description=\"Sodium\""));
+            Assert.True(writtenText.Contains("description=\"Phosphoserine\""));
+            Assert.False(writtenText.Contains("Phosphoserine on"));
+
             if (File.Exists(outputPath))
             {
                 File.Delete(outputPath);
