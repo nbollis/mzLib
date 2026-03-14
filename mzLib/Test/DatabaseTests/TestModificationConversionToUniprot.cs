@@ -300,5 +300,76 @@ namespace Test.DatabaseTests
             // Clean up
             File.Delete(xmlPath);
         }
+
+        [Test]
+        public void GptmdDatabase_AllMzlibGetConverted()
+        {
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "cRAP_databaseGPTMD.xml");
+            var proteins = ProteinDbLoader.LoadProteinXML(
+                dbPath,
+                true,
+                DecoyType.None,
+                new List<Modification>(),
+                false,
+                new List<string>(),
+                out var unknownMods);
+
+            foreach (var protein in proteins)
+                protein.ConvertModifications(UniProtSequenceSerializer.Instance);
+
+            string tempDbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "cRAP_databaseGPTMD_converted.xml");
+            ProteinDbWriter.WriteXmlDatabase(
+                new Dictionary<string, HashSet<System.Tuple<int, Modification>>>(),
+                proteins,
+                tempDbPath);
+
+            var convertedProteins = ProteinDbLoader.LoadProteinXML(
+                tempDbPath,
+                true,
+                DecoyType.None,
+                new List<Modification>(),
+                false,
+                new List<string>(),
+                out var unknownMods2);
+
+            Assert.That(convertedProteins.Count, Is.EqualTo(proteins.Count));
+
+            // One Base Possible
+            for (int i = 0; i < proteins.Count; i++)
+            {
+                var originalMods = proteins[i].OneBasedPossibleLocalizedModifications;
+                var convertedMods = convertedProteins[i].OneBasedPossibleLocalizedModifications;
+                Assert.That(convertedMods.Keys, Is.EquivalentTo(originalMods.Keys));
+                foreach (var position in originalMods.Keys)
+                {
+                    var originalMod = originalMods[position][0];
+                    var convertedMod = convertedMods[position][0];
+                    Assert.That(convertedMod.ChemicalFormula.Equals(originalMod.ChemicalFormula), Is.True,
+                        $"Chemical formulas should match for protein {i} at position {position}");
+                    Assert.That(convertedMod.Target.ToString(), Is.EqualTo(originalMod.Target.ToString()),
+                        $"Targets should match for protein {i} at position {position}");
+                }
+            }
+
+            // Original Non-Variant
+            for (int i = 0; i < proteins.Count; i++)
+            {
+                var originalMods = proteins[i].OriginalNonVariantModifications;
+                var convertedMods = convertedProteins[i].OriginalNonVariantModifications;
+                Assert.That(convertedMods.Keys, Is.EquivalentTo(originalMods.Keys));
+                foreach (var position in originalMods.Keys)
+                {
+                    var originalMod = originalMods[position][0];
+                    var convertedMod = convertedMods[position][0];
+                    Assert.That(convertedMod.ChemicalFormula.Equals(originalMod.ChemicalFormula), Is.True,
+                        $"Chemical formulas should match for protein {i} at position {position}");
+                    Assert.That(convertedMod.Target.ToString(), Is.EqualTo(originalMod.Target.ToString()),
+                        $"Targets should match for protein {i} at position {position}");
+                }
+            }
+
+            // Cleanup 
+            File.Delete(tempDbPath);
+        }
     }
 }
