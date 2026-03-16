@@ -44,3 +44,17 @@ public interface IModificationLookup
     /// <returns>An enriched modification if found; otherwise, null.</returns>
     CanonicalModification? TryResolve(string originalRepresentation, char? targetResidue = null, ChemicalFormula? chemicalFormula = null, ModificationPositionType? positionType = null);
 }
+
+/// <summary>
+/// Optional interface that lookups can implement to indicate certain modifications
+/// should be completely suppressed/removed rather than resolved (e.g., fixed modifications).
+/// </summary>
+public interface IUnresolvableModificationChecker
+{
+    /// <summary>
+    /// Determines if a modification should be suppressed/removed rather than resolved.
+    /// </summary>
+    /// <param name="mod">The modification to check.</param>
+    /// <returns>True if the modification should be suppressed; otherwise, false.</returns>
+    bool ShouldSuppressModification(CanonicalModification mod);
+}

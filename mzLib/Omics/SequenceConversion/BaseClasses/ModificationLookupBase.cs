@@ -219,7 +219,7 @@ public abstract class ModificationLookupBase : IModificationLookup
             if (primaryList.Count > 0)
             {
                 // We have primary candidates from specific identifiers - try to select best match
-                var uniqueFromPrimary = SelectBestCandidate(primaryList, context.TargetResidue);
+                var uniqueFromPrimary = SelectBestCandidate(primaryList, context.TargetResidue, context.Representation, context.ChemicalFormula);
                 if (uniqueFromPrimary != null)
                 {
                     return uniqueFromPrimary;
@@ -263,9 +263,9 @@ public abstract class ModificationLookupBase : IModificationLookup
             var byName = FilterByName(candidates, context.Representation, context.TargetResidue).ToList();
             if (byName.Count > 0)
             {
-                anyFilterMatched = true;
+            anyFilterMatched = true;
                 candidates = byName;
-                var result = SelectBestCandidate(candidates, context.TargetResidue);
+                var result = SelectBestCandidate(candidates, context.TargetResidue, context.Representation, context.ChemicalFormula);
                 if (result != null)
                 {
                     return result;
@@ -287,9 +287,9 @@ public abstract class ModificationLookupBase : IModificationLookup
             var byFormula = FilterByFormula(candidates, context.ChemicalFormula).ToList();
             if (byFormula.Count > 0)
             {
-                anyFilterMatched = true;
+            anyFilterMatched = true;
                 candidates = byFormula;
-                var result = SelectBestCandidate(candidates, context.TargetResidue);
+                var result = SelectBestCandidate(candidates, context.TargetResidue, context.Representation, context.ChemicalFormula);
                 if (result != null)
                 {
                     return result;
@@ -308,9 +308,9 @@ public abstract class ModificationLookupBase : IModificationLookup
             var byMass = FilterByMass(candidates, context.Mass.Value).ToList();
             if (byMass.Count > 0)
             {
-                anyFilterMatched = true;
+            anyFilterMatched = true;
                 candidates = byMass;
-                var result = SelectBestCandidate(candidates, context.TargetResidue);
+                var result = SelectBestCandidate(candidates, context.TargetResidue, context.Representation, context.ChemicalFormula);
                 if (result != null)
                 {
                     return result;
@@ -328,9 +328,9 @@ public abstract class ModificationLookupBase : IModificationLookup
             var byMotif = FilterByMotif(candidates, context.TargetResidue.Value).ToList();
             if (byMotif.Count > 0)
             {
-                anyFilterMatched = true;
+            anyFilterMatched = true;
                 candidates = byMotif;
-                var result = SelectBestCandidate(candidates, context.TargetResidue);
+                var result = SelectBestCandidate(candidates, context.TargetResidue, context.Representation, context.ChemicalFormula);
                 if (result != null)
                 {
                     return result;
@@ -351,14 +351,33 @@ public abstract class ModificationLookupBase : IModificationLookup
         }
 
         // Final attempt with remaining candidates (only if filters matched or no filters applied)
-        return anyFilterMatched ? SelectBestCandidate(candidates, context.TargetResidue) : null;
+        return anyFilterMatched ? SelectBestCandidate(candidates, context.TargetResidue, context.Representation, context.ChemicalFormula) : null;
     }
 
     /// <summary>
     /// Selects the best candidate from a list based on residue matching and other criteria.
     /// Does NOT mutate the input list.
+    /// <summary>
+    /// Override to provide custom scoring logic for candidate selection.
+    /// Called when multiple candidates remain and additional ranking is needed.
+    /// Return null to use default selection logic.
     /// </summary>
-    private static Modification? SelectBestCandidate(IList<Modification> candidates, char? targetResidue)
+    /// <param name="candidates">Remaining candidates after initial filtering</param>
+    /// <param name="targetResidue">Target residue if known</param>
+    /// <param name="originalRepresentation">Original modification representation</param>
+    /// <param name="chemicalFormula">Chemical formula if provided</param>
+    /// <returns>The best candidate based on custom scoring, or null to use default logic</returns>
+    protected virtual Modification? ScoreCandidates(
+        IList<Modification> candidates,
+        char? targetResidue,
+        string? originalRepresentation,
+        Chemistry.ChemicalFormula? chemicalFormula)
+    {
+        return null;
+    }
+
+    /// </summary>
+    private Modification? SelectBestCandidate(IList<Modification> candidates, char? targetResidue, string? originalRepresentation = null, Chemistry.ChemicalFormula? chemicalFormula = null)
     {
         if (candidates.Count == 0)
         {
@@ -368,6 +387,13 @@ public abstract class ModificationLookupBase : IModificationLookup
         if (candidates.Count == 1)
         {
             return candidates[0];
+        }
+
+        // Allow subclass to provide custom scoring
+        var scored = ScoreCandidates(candidates, targetResidue, originalRepresentation, chemicalFormula);
+        if (scored != null)
+        {
+            return scored;
         }
 
         // Create a working copy to avoid mutating input
