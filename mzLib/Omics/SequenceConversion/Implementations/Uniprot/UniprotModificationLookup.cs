@@ -153,12 +153,6 @@ public class UniProtModificationLookup : ModificationLookupBase
                 yield return $"{initialUpper}{lowerResidue} on {upperResidue}";
             }
         }
-        
-        if (modificationName.IndexOf("phosphory", StringComparison.OrdinalIgnoreCase) >= 0)
-        {
-            yield return $"Phospho{lowerResidue}";
-            yield return $"Phospho{lowerResidue} on {upperResidue}";
-        }
     }
 
     private static string TryRemoveSuffix(string name, string suffix)
@@ -167,6 +161,10 @@ public class UniProtModificationLookup : ModificationLookupBase
         {
             return null;
         }
+
+        int onIndex = name.IndexOf(" on ", StringComparison.Ordinal);
+        if (onIndex > 0)
+            name = name.Substring(0, onIndex).Trim();
 
         var ending = name.AsSpan(name.Length - suffix.Length);
         if (ending.Equals(suffix, StringComparison.OrdinalIgnoreCase))

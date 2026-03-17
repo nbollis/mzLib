@@ -1,4 +1,5 @@
 using Chemistry;
+using Easy.Common.Extensions;
 using MzLibUtil;
 using Omics.Modifications;
 using System;
@@ -629,7 +630,7 @@ public abstract class ModificationLookupBase : IModificationLookup
 
         foreach (var identifier in identifiers)
         {
-            if (MatchesIdentifier(modification, identifier))
+            if (ContainsIdentifier(modification, identifier))
             {
                 return true;
             }
@@ -751,7 +752,7 @@ public abstract class ModificationLookupBase : IModificationLookup
 
     #region Utilities
 
-    protected virtual bool MatchesIdentifier(Modification modification, string identifier)
+    protected virtual bool ContainsIdentifier(Modification modification, string identifier)
     {
         if (string.IsNullOrWhiteSpace(identifier))
         {
@@ -759,13 +760,13 @@ public abstract class ModificationLookupBase : IModificationLookup
         }
 
         // Direct match on IdWithMotif
-        if (string.Equals(modification.IdWithMotif, identifier, StringComparison.OrdinalIgnoreCase))
+        if (modification.IdWithMotif.Contains(identifier, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
         // Match on OriginalId
-        if (string.Equals(modification.OriginalId, identifier, StringComparison.OrdinalIgnoreCase))
+        if (modification.OriginalId.Contains(identifier, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -774,7 +775,7 @@ public abstract class ModificationLookupBase : IModificationLookup
         if (modification is { ModificationType: not null, IdWithMotif: not null })
         {
             var fullId = $"{modification.ModificationType}:{modification.IdWithMotif}";
-            if (string.Equals(fullId, identifier, StringComparison.OrdinalIgnoreCase))
+            if (fullId.Contains(identifier, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -785,8 +786,8 @@ public abstract class ModificationLookupBase : IModificationLookup
         if (colonIndex > 0 && colonIndex < identifier.Length - 1)
         {
             var suffix = identifier[(colonIndex + 1)..];
-            if (string.Equals(modification.IdWithMotif, suffix, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(modification.OriginalId, suffix, StringComparison.OrdinalIgnoreCase))
+            if (modification.IdWithMotif!.Contains(suffix, StringComparison.OrdinalIgnoreCase) ||
+                modification.OriginalId.Contains(suffix, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

@@ -614,7 +614,7 @@ public class ModificationLookupBaseTests
             => BuildCacheKey(representation, residue, formula, mass, tolerance, term);
 
         public bool MatchesIdentifierPublic(Modification modification, string identifier)
-            => MatchesIdentifier(modification, identifier);
+            => ContainsIdentifier(modification, identifier);
 
         public IEnumerable<string> ExpandNameCandidatesPublic(string representation, char? residue)
             => ExpandNameCandidates(representation, residue);
