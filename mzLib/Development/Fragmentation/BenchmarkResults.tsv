@@ -1,0 +1,2 @@
+Timestamp	Label	Branch	Proteins	Peptides	LoadElapsed_s	DigestionElapsed_s	DigestionPps	AvgPeptideLength	PeptidesWithMods_pct	SerialFragments	AvgFragsPerPeptide	SerialElapsed_s	SerialPps	ParallelElapsed_s	ParallelPps	LogicalProcessors	Speedup	ParallelEfficiency_pct
+2026-04-10 16:44	baseline	opts	76212	11360959	48.389	89.730	126613.170	22.936	11.716	498433698	43.873	102.559	110775.232	17.411	652524.124	24	5.891	24.544
