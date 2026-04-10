@@ -281,7 +281,7 @@ namespace Proteomics.ProteolyticDigestion
                     nTermMass += mod.MonoisotopicMass.Value;
 
                     // n-term mod neutral loss
-                    if (mod.NeutralLosses.IsNotNullOrEmpty())
+                    if (mod.NeutralLosses != null)
                         AddNeutralLossesFromMods(mod, nTermNeutralLosses, dissociationType);
                 }
             }
@@ -294,7 +294,7 @@ namespace Proteomics.ProteolyticDigestion
                     cTermMass += mod.MonoisotopicMass.Value;
 
                     // c-term mod neutral loss
-                    if (mod.NeutralLosses.IsNotNullOrEmpty())
+                    if (mod.NeutralLosses != null)
                         AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
                 }
             }
@@ -317,9 +317,11 @@ namespace Proteomics.ProteolyticDigestion
                     }
 
                     // add side-chain mod
-                    if (AllModsOneIsNterminus.TryGetValue(r + 2, out Modification mod))
+                    if (AllModsOneIsNterminus.TryGetValue(r + 2, out Modification? mod))
                     {
-                        nTermMass += mod.MonoisotopicMass.Value;
+                        nTermMass += mod.MonoisotopicMass.Value; 
+                        if (mod.NeutralLosses != null)
+                            AddNeutralLossesFromMods(mod, nTermNeutralLosses, dissociationType);
                     }
 
                     // handle star and degree ions for low-res CID
@@ -366,9 +368,6 @@ namespace Proteomics.ProteolyticDigestion
                             r + 1,
                             0));
 
-                        if (mod.NeutralLosses.IsNotNullOrEmpty())
-                            AddNeutralLossesFromMods(mod, nTermNeutralLosses, dissociationType);
-
                         if (nTermNeutralLosses.Count > 0)
                         {
                             foreach (double neutralLoss in nTermNeutralLosses)
@@ -402,9 +401,11 @@ namespace Proteomics.ProteolyticDigestion
                     }
 
                     // add side-chain mod
-                    if (AllModsOneIsNterminus.TryGetValue(BaseSequence.Length - r + 1, out Modification mod))
+                    if (AllModsOneIsNterminus.TryGetValue(BaseSequence.Length - r + 1, out Modification? mod))
                     {
                         cTermMass += mod.MonoisotopicMass.Value;
+                        if (mod.NeutralLosses != null)
+                            AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
                     }
 
                     // handle star and degree ions for low-res CID
@@ -453,8 +454,6 @@ namespace Proteomics.ProteolyticDigestion
                             BaseSequence.Length - r,
                             0));
 
-                        if (mod.NeutralLosses.IsNotNullOrEmpty())
-                            AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
 
                         if (cTermNeutralLosses.Count > 0)
                         {
@@ -491,6 +490,8 @@ namespace Proteomics.ProteolyticDigestion
                 if (AllModsOneIsNterminus.TryGetValue(2, out Modification mod))
                 {
                     cTermMass += mod.MonoisotopicMass.Value;
+                    if (mod.NeutralLosses != null)
+                        AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
                 }
 
                 // generate zDot product
@@ -502,8 +503,6 @@ namespace Proteomics.ProteolyticDigestion
                     1,
                     0));
 
-                if (mod.NeutralLosses.IsNotNullOrEmpty())
-                    AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
 
                 if (cTermNeutralLosses.Count > 0)
                 {
