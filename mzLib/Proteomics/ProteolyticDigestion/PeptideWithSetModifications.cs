@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using MzLibUtil;
 using ClassExtensions = Chemistry.ClassExtensions;
+using Easy.Common.Extensions;
 
 namespace Proteomics.ProteolyticDigestion
 {
@@ -112,7 +113,7 @@ namespace Proteomics.ProteolyticDigestion
 
                     _monoisotopicMass = monoMass;
                 }
-                return (double)ClassExtensions.RoundedDouble(_monoisotopicMass.Value);
+                return _monoisotopicMass.Value;
             }
 
         }
@@ -280,7 +281,8 @@ namespace Proteomics.ProteolyticDigestion
                     nTermMass += mod.MonoisotopicMass.Value;
 
                     // n-term mod neutral loss
-                    AddNeutralLossesFromMods(mod, nTermNeutralLosses, dissociationType);
+                    if (mod.NeutralLosses.IsNotNullOrEmpty())
+                        AddNeutralLossesFromMods(mod, nTermNeutralLosses, dissociationType);
                 }
             }
 
@@ -292,7 +294,8 @@ namespace Proteomics.ProteolyticDigestion
                     cTermMass += mod.MonoisotopicMass.Value;
 
                     // c-term mod neutral loss
-                    AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
+                    if (mod.NeutralLosses.IsNotNullOrEmpty())
+                        AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
                 }
             }
 
@@ -363,7 +366,8 @@ namespace Proteomics.ProteolyticDigestion
                             r + 1,
                             0));
 
-                        AddNeutralLossesFromMods(mod, nTermNeutralLosses, dissociationType);
+                        if (mod.NeutralLosses.IsNotNullOrEmpty())
+                            AddNeutralLossesFromMods(mod, nTermNeutralLosses, dissociationType);
 
                         if (nTermNeutralLosses.Count > 0)
                         {
@@ -449,7 +453,8 @@ namespace Proteomics.ProteolyticDigestion
                             BaseSequence.Length - r,
                             0));
 
-                        AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
+                        if (mod.NeutralLosses.IsNotNullOrEmpty())
+                            AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
 
                         if (cTermNeutralLosses.Count > 0)
                         {
@@ -497,7 +502,8 @@ namespace Proteomics.ProteolyticDigestion
                     1,
                     0));
 
-                AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
+                if (mod.NeutralLosses.IsNotNullOrEmpty())
+                    AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
 
                 if (cTermNeutralLosses.Count > 0)
                 {
