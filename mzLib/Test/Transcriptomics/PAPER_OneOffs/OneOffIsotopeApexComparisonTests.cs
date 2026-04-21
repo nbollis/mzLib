@@ -21,6 +21,9 @@ namespace Test.Transcriptomics.PAPER_OneOffs
     {
         private const int MaxPeptidePrecursorsToScan = 10000000;
         private const int MaxOligoPrecursorsToScan = 10000000;
+        private static readonly Color TheoreticalColor = Color.fromHex("#1f77b4");
+        private static readonly Color ExperimentalColor = Color.fromHex("#d62728");
+        private const double ScatterOpacity = 0.5;
 
         [Test]
         [Explicit("One-off report: formula vs average residue isotope apex offsets")]
@@ -70,29 +73,167 @@ namespace Test.Transcriptomics.PAPER_OneOffs
             WriteRowsFromCache(oligoCache.Records, "Oligo", oligoCache.ModelName);
 
             string plotRoot = Path.Combine(cacheRoot, "plots");
-            string peptidePlotPath = GenerateScatterPlot(peptideCache.Records, peptideCache.ModelName, "Peptide", plotRoot);
-            string oligoPlotPath = GenerateScatterPlot(oligoCache.Records, oligoCache.ModelName, "Oligo", plotRoot);
-            TestContext.Out.WriteLine($"# Peptide plot: {peptidePlotPath}");
-            TestContext.Out.WriteLine($"# Oligo plot: {oligoPlotPath}");
+            string peptideCombinedPlot = GenerateCombinedScatterFigure(peptideCache.Records, peptideCache.ModelName, "Peptide", plotRoot);
+            string oligoCombinedPlot = GenerateCombinedScatterFigure(oligoCache.Records, oligoCache.ModelName, "Oligo", plotRoot);
+            string stackedModelsPlot = GenerateStackedModelsFigure(
+                peptideCache.Records,
+                peptideCache.ModelName,
+                "Peptide",
+                oligoCache.Records,
+                oligoCache.ModelName,
+                "Oligo",
+                plotRoot);
+            TestContext.Out.WriteLine($"# Peptide combined plot (3 panels): {peptideCombinedPlot}");
+            TestContext.Out.WriteLine($"# Oligo combined plot (3 panels): {oligoCombinedPlot}");
+            TestContext.Out.WriteLine($"# Stacked model plot (2x3 panels): {stackedModelsPlot}");
 
             Assert.That(peptideCache.FoundCount + oligoCache.FoundCount, Is.GreaterThan(0), "No rows generated for report.");
         }
 
-        private static string GenerateScatterPlot(
+        private static string GenerateCombinedScatterFigure(
             IEnumerable<AverageResidueCacheRecord> records,
             string modelName,
             string label,
             string plotRoot)
         {
+            GenericChart monoVsMostAbundant = CreateScatterPanel(
+                records,
+                label,
+                r => r.TheoMonoMass,
+                r => r.TheoMostIntenseMass,
+                r => r.ExpMonoMass,
+                r => r.ExpMostIntenseMass,
+                "Mono Mass (Da)",
+                "Most Abundant Mass (Da)");
+
+            GenericChart monoVsDiff = CreateScatterPanel(
+                records,
+                label,
+                r => r.TheoMonoMass,
+                r => r.TheoDiffToMono,
+                r => r.ExpMonoMass,
+                r => r.ExpDiffToMono,
+                "Mono Mass (Da)",
+                "Diff to Mono (Da)");
+
+            GenericChart mostAbundantVsDiff = CreateScatterPanel(
+                records,
+                label,
+                r => r.TheoMostIntenseMass,
+                r => r.TheoDiffToMono,
+                r => r.ExpMostIntenseMass,
+                r => r.ExpDiffToMono,
+                "Most Abundant Mass (Da)",
+                "Diff to Mono (Da)");
+
+            var grid = CSharpChart.Grid(
+                new[] { monoVsMostAbundant, monoVsDiff, mostAbundantVsDiff },
+                1,
+                3,
+                SubPlotTitles: new[]
+                {
+                    "Mono vs Most Abundant",
+                    "Mono vs Diff to Mono",
+                    "Most Abundant vs Diff to Mono"
+                });
+
+            var figure = Plotly.NET.CSharp.GenericChartExtensions.WithSize(grid, Width: 1800, Height: 600);
+            Directory.CreateDirectory(plotRoot);
+            string filePath = Path.Combine(plotRoot, $"{label}_{modelName}_ThreePanelScatter_{DateTime.UtcNow:yyyyMMdd_HHmmss}.html");
+            Plotly.NET.CSharp.GenericChartExtensions.SaveHtml(figure, filePath);
+            return filePath;
+        }
+
+        private static string GenerateStackedModelsFigure(
+            IEnumerable<AverageResidueCacheRecord> recordsA,
+            string modelNameA,
+            string labelA,
+            IEnumerable<AverageResidueCacheRecord> recordsB,
+            string modelNameB,
+            string labelB,
+            string plotRoot)
+        {
+            GenericChart[] topRow = BuildThreePanels(recordsA, labelA);
+            GenericChart[] bottomRow = BuildThreePanels(recordsB, labelB);
+
+            var grid = CSharpChart.Grid(
+                new[]
+                {
+                    topRow[0], topRow[1], topRow[2],
+                    bottomRow[0], bottomRow[1], bottomRow[2]
+                },
+                2,
+                3,
+                SubPlotTitles: new[]
+                {
+                    $"{labelA} ({modelNameA}) Mono vs Most Abundant",
+                    $"{labelA} ({modelNameA}) Mono vs Diff to Mono",
+                    $"{labelA} ({modelNameA}) Most Abundant vs Diff to Mono",
+                    $"{labelB} ({modelNameB}) Mono vs Most Abundant",
+                    $"{labelB} ({modelNameB}) Mono vs Diff to Mono",
+                    $"{labelB} ({modelNameB}) Most Abundant vs Diff to Mono"
+                });
+
+            var figure = Plotly.NET.CSharp.GenericChartExtensions.WithSize(grid, Width: 1800, Height: 1200);
+            Directory.CreateDirectory(plotRoot);
+            string filePath = Path.Combine(plotRoot, $"StackedModels_{modelNameA}_and_{modelNameB}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.html");
+            Plotly.NET.CSharp.GenericChartExtensions.SaveHtml(figure, filePath);
+            return filePath;
+        }
+
+        private static GenericChart[] BuildThreePanels(IEnumerable<AverageResidueCacheRecord> records, string label)
+        {
+            return
+            [
+                CreateScatterPanel(
+                    records,
+                    label,
+                    r => r.TheoMonoMass,
+                    r => r.TheoMostIntenseMass,
+                    r => r.ExpMonoMass,
+                    r => r.ExpMostIntenseMass,
+                    "Mono Mass (Da)",
+                    "Most Abundant Mass (Da)"),
+                CreateScatterPanel(
+                    records,
+                    label,
+                    r => r.TheoMonoMass,
+                    r => r.TheoDiffToMono,
+                    r => r.ExpMonoMass,
+                    r => r.ExpDiffToMono,
+                    "Mono Mass (Da)",
+                    "Diff to Mono (Da)"),
+                CreateScatterPanel(
+                    records,
+                    label,
+                    r => r.TheoMostIntenseMass,
+                    r => r.TheoDiffToMono,
+                    r => r.ExpMostIntenseMass,
+                    r => r.ExpDiffToMono,
+                    "Most Abundant Mass (Da)",
+                    "Diff to Mono (Da)")
+            ];
+        }
+
+        private static GenericChart CreateScatterPanel(
+            IEnumerable<AverageResidueCacheRecord> records,
+            string label,
+            Func<AverageResidueCacheRecord, double> theoX,
+            Func<AverageResidueCacheRecord, double> theoY,
+            Func<AverageResidueCacheRecord, double?> expX,
+            Func<AverageResidueCacheRecord, double?> expY,
+            string xAxisLabel,
+            string yAxisLabel)
+        {
             var allRecords = records.ToList();
 
             var theoretical = allRecords
-                .Select(r => (x: r.TheoMonoMass, y: r.TheoMostIntenseMass))
+                .Select(r => (x: theoX(r), y: theoY(r)))
                 .ToList();
 
             var experimental = allRecords
-                .Where(r => r.HasObservation && r.ExpMonoMass.HasValue && r.ExpMostIntenseMass.HasValue)
-                .Select(r => (x: r.ExpMonoMass!.Value, y: r.ExpMostIntenseMass!.Value))
+                .Where(r => r.HasObservation && expX(r).HasValue && expY(r).HasValue)
+                .Select(r => (x: expX(r)!.Value, y: expY(r)!.Value))
                 .ToList();
 
             var charts = new List<GenericChart>
@@ -100,11 +241,15 @@ namespace Test.Transcriptomics.PAPER_OneOffs
                 CSharpChart.Point<double, double, string>(
                     theoretical.Select(p => p.x),
                     theoretical.Select(p => p.y),
-                    Name: $"{label} Theoretical"),
+                    Name: $"{label} Theoretical",
+                    Opacity: ScatterOpacity,
+                    MarkerColor: TheoreticalColor),
                 CSharpChart.Point<double, double, string>(
                     experimental.Select(p => p.x),
                     experimental.Select(p => p.y),
-                    Name: $"{label} Experimental")
+                    Name: $"{label} Experimental",
+                    Opacity: ScatterOpacity,
+                    MarkerColor: ExperimentalColor)
             };
 
             if (TryFitLine(theoretical, out var theoSlope, out var theoIntercept, out var theoMinX, out var theoMaxX))
@@ -112,7 +257,8 @@ namespace Test.Transcriptomics.PAPER_OneOffs
                 charts.Add(CSharpChart.Line<double, double, string>(
                     new[] { theoMinX, theoMaxX },
                     new[] { theoSlope * theoMinX + theoIntercept, theoSlope * theoMaxX + theoIntercept },
-                    Name: $"{label} Theoretical Trend"));
+                    Name: $"{label} Theoretical Trend",
+                    LineColor: TheoreticalColor));
             }
 
             if (TryFitLine(experimental, out var expSlope, out var expIntercept, out var expMinX, out var expMaxX))
@@ -120,14 +266,18 @@ namespace Test.Transcriptomics.PAPER_OneOffs
                 charts.Add(CSharpChart.Line<double, double, string>(
                     new[] { expMinX, expMaxX },
                     new[] { expSlope * expMinX + expIntercept, expSlope * expMaxX + expIntercept },
-                    Name: $"{label} Experimental Trend"));
+                    Name: $"{label} Experimental Trend",
+                    LineColor: ExperimentalColor));
             }
 
-            var figure = Plotly.NET.Chart.Combine(charts);
-            Directory.CreateDirectory(plotRoot);
-            string filePath = Path.Combine(plotRoot, $"{label}_{modelName}_MonoVsMostAbundant_{DateTime.UtcNow:yyyyMMdd_HHmmss}.html");
-            Plotly.NET.CSharp.GenericChartExtensions.SaveHtml(figure, filePath);
-            return filePath;
+            var panel = Plotly.NET.Chart.Combine(charts);
+            panel = Plotly.NET.CSharp.GenericChartExtensions.WithXAxisStyle<double, double, string>(
+                panel,
+                TitleText: xAxisLabel);
+            panel = Plotly.NET.CSharp.GenericChartExtensions.WithYAxisStyle<double, double, string>(
+                panel,
+                TitleText: yAxisLabel);
+            return panel;
         }
 
         private static bool TryFitLine(
