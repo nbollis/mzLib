@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Transcriptomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 using UsefulProteomicsDatabases.Transcriptomics;
@@ -25,6 +26,15 @@ namespace Test.Transcriptomics.PAPER_OneOffs
         private static readonly Color ExperimentalColor = Color.fromHex("#d62728");
         private const double ScatterOpacity = 0.5;
 
+        private sealed class ModelPlotInput
+        {
+            public required IEnumerable<AverageResidueCacheRecord> Records { get; init; }
+
+            public required string ModelName { get; init; }
+
+            public required string Label { get; init; }
+        }
+
         [Test]
         [Explicit("One-off report: formula vs average residue isotope apex offsets")]
         public static void OneOff_CompareFormulaVsAverageResidueApexOffsets()
@@ -33,7 +43,7 @@ namespace Test.Transcriptomics.PAPER_OneOffs
             var oxyriboAveragine = new OxyriboAveragine();
             var noMods = new List<Modification>();
 
-            string cacheRoot = Path.Combine("D:\\Projects\\SingleOligoPaperGit\\results\\averatide", "AverageResidueCache");
+            string cacheRoot = Path.Combine("D:\\Projects\\SingleOligoPaperGit\\results\\averatide", "AverageResidueCache2");
             var peptideCache = new AverageResidueModelCache(cacheRoot, averagine);
             var oligoCache = new AverageResidueModelCache(cacheRoot, oxyriboAveragine);
 
@@ -56,36 +66,45 @@ namespace Test.Transcriptomics.PAPER_OneOffs
                 .SelectMany(r => r.Digest(new RnaDigestionParams("RNase T1", 10, 1), noMods, noMods))
                 .Concat(rnas.SelectMany(r => r.Digest(new RnaDigestionParams("colicin_E5", 12, 1), noMods, noMods)))
                 .Concat(rnas.SelectMany(r => r.Digest(new RnaDigestionParams("top-down", 0, 1), noMods, noMods)))
-                .Cast<IBioPolymerWithSetMods>();
+                .Cast<IBioPolymerWithSetMods>()
+                .ToList();
+
+
 
             CacheUpdateStats peptideUpdate = peptideCache.UpdateFromBioPolymers(peptideStream, MaxPeptidePrecursorsToScan, "ProteinDigest");
             CacheUpdateStats oligoUpdate = oligoCache.UpdateFromBioPolymers(oligoStream, MaxOligoPrecursorsToScan, "RnaDigest");
 
-            TestContext.Out.WriteLine("# One-off isotope apex comparison report");
-            TestContext.Out.WriteLine($"# Cache root: {cacheRoot}");
-            TestContext.Out.WriteLine($"# Protein DB: {proteinDbPath}");
-            TestContext.Out.WriteLine($"# RNA DBs: {string.Join("; ", rnaDbPaths)}");
-            TestContext.Out.WriteLine($"# Peptides scanned: {peptideUpdate.ScannedCount}; eligible: {peptideUpdate.EligibleCount}; updated: {peptideUpdate.UpdatedCount}; skipped-filled: {peptideUpdate.SkippedAlreadyFilledCount}; found bins: {peptideUpdate.FoundCount}; missing bins: {peptideUpdate.MissingCount}");
-            TestContext.Out.WriteLine($"# Oligos scanned: {oligoUpdate.ScannedCount}; eligible: {oligoUpdate.EligibleCount}; updated: {oligoUpdate.UpdatedCount}; skipped-filled: {oligoUpdate.SkippedAlreadyFilledCount}; found bins: {oligoUpdate.FoundCount}; missing bins: {oligoUpdate.MissingCount}");
-            TestContext.Out.WriteLine("Type\tSequence\tLength\tChemicalFormula\tExpMonoMass\tExpMostIntenseMass\tExpDiffToMono\tTheoModel\tModelIndex\tIndexBin\tTheoMonoMass\tTheoMostIntenseMass\tTheoDiffToMono\tDeltaDa\tDeltaPpm");
 
-            WriteRowsFromCache(peptideCache.Records, "Peptide", peptideCache.ModelName);
-            WriteRowsFromCache(oligoCache.Records, "Oligo", oligoCache.ModelName);
+            var emp = new EmpiricalAverageResidue(oligoStream);
+            var empCache = new AverageResidueModelCache(cacheRoot, emp);
+            CacheUpdateStats empUpdates = empCache.UpdateFromBioPolymers(oligoStream, MaxOligoPrecursorsToScan, "RnaDigest");
 
             string plotRoot = Path.Combine(cacheRoot, "plots");
-            string peptideCombinedPlot = GenerateCombinedScatterFigure(peptideCache.Records, peptideCache.ModelName, "Peptide", plotRoot);
-            string oligoCombinedPlot = GenerateCombinedScatterFigure(oligoCache.Records, oligoCache.ModelName, "Oligo", plotRoot);
-            string stackedModelsPlot = GenerateStackedModelsFigure(
-                peptideCache.Records,
-                peptideCache.ModelName,
-                "Peptide",
-                oligoCache.Records,
-                oligoCache.ModelName,
-                "Oligo",
+            _ = GenerateCombinedScatterFigure(peptideCache.Records, peptideCache.ModelName, "Peptide", plotRoot);
+            _ = GenerateCombinedScatterFigure(oligoCache.Records, oligoCache.ModelName, "Oligo", plotRoot);
+            _ = GenerateCombinedScatterFigure(empCache.Records, empCache.ModelName, "Empirical Oligo", plotRoot);
+            _ = GenerateStackedModelsFigure(
+                [
+                    new ModelPlotInput
+                    {
+                        Records = peptideCache.Records,
+                        ModelName = peptideCache.ModelName,
+                        Label = "Peptide"
+                    },
+                    new ModelPlotInput
+                    {
+                        Records = oligoCache.Records,
+                        ModelName = oligoCache.ModelName,
+                        Label = "Oligo"
+                    },
+                    new ModelPlotInput
+                    {
+                        Records = empCache.Records,
+                        ModelName = empCache.ModelName,
+                        Label = "Empirical Oligo"
+                    }
+                ],
                 plotRoot);
-            TestContext.Out.WriteLine($"# Peptide combined plot (3 panels): {peptideCombinedPlot}");
-            TestContext.Out.WriteLine($"# Oligo combined plot (3 panels): {oligoCombinedPlot}");
-            TestContext.Out.WriteLine($"# Stacked model plot (2x3 panels): {stackedModelsPlot}");
 
             Assert.That(peptideCache.FoundCount + oligoCache.FoundCount, Is.GreaterThan(0), "No rows generated for report.");
         }
@@ -144,75 +163,43 @@ namespace Test.Transcriptomics.PAPER_OneOffs
             return filePath;
         }
 
-        private static string GenerateStackedModelsFigure(
-            IEnumerable<AverageResidueCacheRecord> recordsA,
-            string modelNameA,
-            string labelA,
-            IEnumerable<AverageResidueCacheRecord> recordsB,
-            string modelNameB,
-            string labelB,
-            string plotRoot)
+        private static string GenerateStackedModelsFigure(IReadOnlyList<ModelPlotInput> modelInputs, string plotRoot)
         {
-            GenericChart[] topRow = BuildThreePanels(recordsA, labelA);
-            GenericChart[] bottomRow = BuildThreePanels(recordsB, labelB);
+            if (modelInputs.Count == 0)
+            {
+                throw new ArgumentException("At least one model is required for stacked plotting.", nameof(modelInputs));
+            }
+
+            var allPanels = new List<GenericChart>(modelInputs.Count * 3);
+            var subplotTitles = new List<string>(modelInputs.Count * 3);
+
+            foreach (ModelPlotInput modelInput in modelInputs)
+            {
+                var plot = CreateScatterPanel(
+                    modelInput.Records,
+                    modelInput.Label,
+                    r => r.TheoMonoMass,
+                    r => r.TheoDiffToMono,
+                    r => r.ExpMonoMass,
+                    r => r.ExpDiffToMono,
+                    "Mono Mass (Da)",
+                    "Diff to Mono (Da)");
+
+                allPanels.Add(plot);
+                subplotTitles.Add($"{modelInput.Label} ({modelInput.ModelName})");
+            }
 
             var grid = CSharpChart.Grid(
-                new[]
-                {
-                    topRow[0], topRow[1], topRow[2],
-                    bottomRow[0], bottomRow[1], bottomRow[2]
-                },
-                2,
-                3,
-                SubPlotTitles: new[]
-                {
-                    $"{labelA} ({modelNameA}) Mono vs Most Abundant",
-                    $"{labelA} ({modelNameA}) Mono vs Diff to Mono",
-                    $"{labelA} ({modelNameA}) Most Abundant vs Diff to Mono",
-                    $"{labelB} ({modelNameB}) Mono vs Most Abundant",
-                    $"{labelB} ({modelNameB}) Mono vs Diff to Mono",
-                    $"{labelB} ({modelNameB}) Most Abundant vs Diff to Mono"
-                });
+                allPanels,
+                1,
+                modelInputs.Count,
+                SubPlotTitles: subplotTitles);
 
-            var figure = Plotly.NET.CSharp.GenericChartExtensions.WithSize(grid, Width: 1800, Height: 1200);
+            var figure = Plotly.NET.CSharp.GenericChartExtensions.WithSize(grid, Width: 1800, Height: 600);
             Directory.CreateDirectory(plotRoot);
-            string filePath = Path.Combine(plotRoot, $"StackedModels_{modelNameA}_and_{modelNameB}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.html");
+            string filePath = Path.Combine(plotRoot, $"AllModels_{modelInputs.Count}Models_{DateTime.UtcNow:yyyyMMdd_HHmmss}.html");
             Plotly.NET.CSharp.GenericChartExtensions.SaveHtml(figure, filePath);
             return filePath;
-        }
-
-        private static GenericChart[] BuildThreePanels(IEnumerable<AverageResidueCacheRecord> records, string label)
-        {
-            return
-            [
-                CreateScatterPanel(
-                    records,
-                    label,
-                    r => r.TheoMonoMass,
-                    r => r.TheoMostIntenseMass,
-                    r => r.ExpMonoMass,
-                    r => r.ExpMostIntenseMass,
-                    "Mono Mass (Da)",
-                    "Most Abundant Mass (Da)"),
-                CreateScatterPanel(
-                    records,
-                    label,
-                    r => r.TheoMonoMass,
-                    r => r.TheoDiffToMono,
-                    r => r.ExpMonoMass,
-                    r => r.ExpDiffToMono,
-                    "Mono Mass (Da)",
-                    "Diff to Mono (Da)"),
-                CreateScatterPanel(
-                    records,
-                    label,
-                    r => r.TheoMostIntenseMass,
-                    r => r.TheoDiffToMono,
-                    r => r.ExpMostIntenseMass,
-                    r => r.ExpDiffToMono,
-                    "Most Abundant Mass (Da)",
-                    "Diff to Mono (Da)")
-            ];
         }
 
         private static GenericChart CreateScatterPanel(
@@ -252,6 +239,10 @@ namespace Test.Transcriptomics.PAPER_OneOffs
                     MarkerColor: ExperimentalColor)
             };
 
+            var trendEquations = new List<string>(2);
+            double? theoreticalSlope = null;
+            double? experimentalSlope = null;
+
             if (TryFitLine(theoretical, out var theoSlope, out var theoIntercept, out var theoMinX, out var theoMaxX))
             {
                 charts.Add(CSharpChart.Line<double, double, string>(
@@ -259,6 +250,8 @@ namespace Test.Transcriptomics.PAPER_OneOffs
                     new[] { theoSlope * theoMinX + theoIntercept, theoSlope * theoMaxX + theoIntercept },
                     Name: $"{label} Theoretical Trend",
                     LineColor: TheoreticalColor));
+                theoreticalSlope = theoSlope;
+                trendEquations.Add($"      Theo: y = {theoSlope:F6}x + {theoIntercept:F3}");
             }
 
             if (TryFitLine(experimental, out var expSlope, out var expIntercept, out var expMinX, out var expMaxX))
@@ -268,6 +261,40 @@ namespace Test.Transcriptomics.PAPER_OneOffs
                     new[] { expSlope * expMinX + expIntercept, expSlope * expMaxX + expIntercept },
                     Name: $"{label} Experimental Trend",
                     LineColor: ExperimentalColor));
+                experimentalSlope = expSlope;
+                trendEquations.Add($"      Exp: y = {expSlope:F6}x + {expIntercept:F3}");
+            }
+
+            if (theoreticalSlope.HasValue && experimentalSlope.HasValue)
+            {
+                double tanTheta = Math.Abs((experimentalSlope.Value - theoreticalSlope.Value)
+                    / (1 + (theoreticalSlope.Value * experimentalSlope.Value)));
+                double angleDegrees = Math.Atan(tanTheta) * (180.0 / Math.PI);
+                trendEquations.Add($"      Angle: {angleDegrees:F5} deg");
+            }
+
+            if (trendEquations.Count > 0)
+            {
+                var allX = theoretical.Select(p => p.x).Concat(experimental.Select(p => p.x)).ToList();
+                var allY = theoretical.Select(p => p.y).Concat(experimental.Select(p => p.y)).ToList();
+
+                if (allX.Count > 0 && allY.Count > 0)
+                {
+                    double minX = allX.Min();
+                    double maxX = allX.Max();
+                    double minY = allY.Min();
+                    double maxY = allY.Max();
+                    double xPadding = Math.Max((maxX - minX) * 0.02, 1e-6);
+                    double yPadding = Math.Max((maxY - minY) * 0.02, 1e-6);
+
+                    charts.Add(CSharpChart.Scatter<double, double, string>(
+                        new[] { minX + (xPadding * 28.0) },
+                        new[] { maxY - (yPadding * 4.0) },
+                        StyleParam.Mode.Text,
+                        ShowLegend: false,
+                        MultiText: new[] { string.Join("<br>", trendEquations) },
+                        TextPosition: StyleParam.TextPosition.MiddleLeft));
+                }
             }
 
             var panel = Plotly.NET.Chart.Combine(charts);
@@ -320,29 +347,6 @@ namespace Test.Transcriptomics.PAPER_OneOffs
             slope = numerator / denominator;
             intercept = meanY - slope * meanX;
             return true;
-        }
-
-        private static void WriteRowsFromCache(IEnumerable<AverageResidueCacheRecord> records, string type, string modelName)
-        {
-            foreach (var record in records.OrderBy(p => p.ModelIndex))
-            {
-                if (!record.HasObservation)
-                {
-                    TestContext.Out.WriteLine(
-                        $"{type}\tNA\tNA\tNA\tNA\tNA\tNA\t{modelName}\t{record.ModelIndex}\t{record.ModelIndex}\t{record.TheoMonoMass:F6}\t{record.TheoMostIntenseMass:F6}\t{record.TheoDiffToMono:F6}\tNA\tNA");
-                    continue;
-                }
-
-                string chemicalFormula = string.IsNullOrWhiteSpace(record.ChemicalFormula) ? "NA" : record.ChemicalFormula;
-                string expMonoMass = record.ExpMonoMass?.ToString("F6") ?? "NA";
-                string expMostIntenseMass = record.ExpMostIntenseMass?.ToString("F6") ?? "NA";
-                string expDiffToMono = record.ExpDiffToMono?.ToString("F6") ?? "NA";
-                string deltaDa = record.DeltaDa?.ToString("F6") ?? "NA";
-                string deltaPpm = record.DeltaPpm?.ToString("F2") ?? "NA";
-
-                TestContext.Out.WriteLine(
-                    $"{type}\t{record.Sequence}\t{record.Length}\t{chemicalFormula}\t{expMonoMass}\t{expMostIntenseMass}\t{expDiffToMono}\t{modelName}\t{record.ModelIndex}\t{record.ModelIndex}\t{record.TheoMonoMass:F6}\t{record.TheoMostIntenseMass:F6}\t{record.TheoDiffToMono:F6}\t{deltaDa}\t{deltaPpm}");
-            }
         }
     }
 }
