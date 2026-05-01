@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using Omics.Fragmentation;
+using System.Collections.Concurrent;
 
 namespace Omics.Fragmentation.Peptide
 {
@@ -34,29 +35,17 @@ namespace Omics.Fragmentation.Peptide
         /// <returns></returns>
         public static List<ProductType> GetTerminusSpecificProductTypesFromDissociation(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus)
         {
-            List<ProductType> productTypes;
             // if using custom dissociation, calculate every time instead of caching
             if (dissociationType == DissociationType.Custom)
             {
-                productTypes = TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[fragmentationTerminus]
+                return TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[fragmentationTerminus]
                     .Intersect(DissociationTypeCollection.ProductsFromDissociationType[dissociationType]).ToList();
             }
-            else if (!TerminusSpecificProductTypesFromDissociation.TryGetValue((dissociationType, fragmentationTerminus), out productTypes))
-            {
-                lock (TerminusSpecificProductTypesFromDissociation)
-                {
-                    var productCollection = TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[fragmentationTerminus]
-                        .Intersect(DissociationTypeCollection.ProductsFromDissociationType[dissociationType]);
 
-                    if (!TerminusSpecificProductTypesFromDissociation.TryGetValue((dissociationType, fragmentationTerminus), out productTypes))
-                    {
-                        productTypes = productCollection.ToList();
-                        TerminusSpecificProductTypesFromDissociation.Add((dissociationType, fragmentationTerminus), productTypes);
-                    }
-                }
-            }
-
-            return productTypes;
+            return TerminusSpecificProductTypesFromDissociation.GetOrAdd(
+                (dissociationType, fragmentationTerminus),
+                static key => TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[key.Item2]
+                    .Intersect(ProductsFromDissociationType[key.Item1]).ToList());
         }
 
         /// <summary>
@@ -101,8 +90,8 @@ namespace Omics.Fragmentation.Peptide
             return productList;
         }
 
-        private static Dictionary<(DissociationType, FragmentationTerminus), List<ProductType>> TerminusSpecificProductTypesFromDissociation
-            = new Dictionary<(DissociationType, FragmentationTerminus), List<ProductType>>();
+        private static readonly ConcurrentDictionary<(DissociationType, FragmentationTerminus), List<ProductType>> TerminusSpecificProductTypesFromDissociation
+            = new();
 
         private static Dictionary<ProductType, double?> NeutralMassShiftFromProductType = new Dictionary<ProductType, double?>
         {
