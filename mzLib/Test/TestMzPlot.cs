@@ -1,15 +1,18 @@
-﻿using NUnit.Framework;
+﻿using Chemistry;
+using MassSpectrometry;
+using MzLibUtil;
+using mzPlot;
+using NUnit.Framework;
+using OxyPlot;
+using OxyPlot.Series;
+using Readers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
-using mzPlot;
-using BayesianEstimation;
-using System.Threading;
-using OxyPlot.Series;
-using MzLibUtil;
 using System.IO;
-using OxyPlot;
+using System.Linq;
+using System.Threading;
+using Test.FileReadingTests;
 
 namespace Test
 {
@@ -17,6 +20,125 @@ namespace Test
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public class TestMzPlot
     {
+
+        [Test]
+        public static void TESTNAME()
+        {
+            string path = @"B:\Users\Nic\RNA\Standards\250529_NewStandards_Better\250529_Standards_nowash-5uLflow-100Aload_longer-equil_80washRep1.raw";
+            MsDataFile file = MsDataFileReader.GetDataFile(path);
+            var tic = new AnnotatedTicPlot(file, 65, 80);
+
+
+            var naAdduct = ChemicalFormula.ParseFormula("Na1H-1").MonoisotopicMass;
+            var kAdduct = ChemicalFormula.ParseFormula("K1H-1").MonoisotopicMass;
+
+            bool plotAdductsSeparately = true;
+
+            var tolerance = new PpmTolerance(40);
+            var charges = new List<int> { -4, -5, -6, -7, -8, -9, -10, -11 };
+            if (!plotAdductsSeparately)
+            {
+                // 16 mer
+                tic.AddXicGroup([5078.709], charges, 68, tolerance, 5, "16 mer");
+                tic.AddXicGroup([5078.709 + naAdduct], charges, 68, tolerance, 5, "16 mer + Na");
+                tic.AddXicGroup([5078.709 + kAdduct], charges, 68, tolerance, 5, "16 mer + K");
+                tic.AddXicGroup([5078.709 + naAdduct + kAdduct], charges, 68, tolerance, 5, "16 mer + Na + K");
+                tic.AddXicGroup([5078.709 + 2 * naAdduct], charges, 68, tolerance, 5, "16 mer + 2Na");
+                tic.AddXicGroup([5078.709 + 2 * kAdduct], charges, 68, tolerance, 5, "16 mer + 2K");
+                tic.AddXicGroup([5078.709 + 2 * naAdduct + kAdduct], charges, 68, tolerance, 5, "16 mer + 2Na + K");
+                tic.AddXicGroup([5078.709 + naAdduct + 2 * kAdduct], charges, 68, tolerance, 5, "16 mer + Na + 2K");
+                tic.AddXicGroup([5078.709 + 2 * naAdduct + 2 * kAdduct], charges, 68, tolerance, 5, "16 mer + 2Na + 2K");
+
+                // 20 mer
+                tic.AddXicGroup([6363.874], charges, 72.8, tolerance, 5, "20 mer");
+                tic.AddXicGroup([6363.874 + naAdduct], charges, 72.8, tolerance, 5, "20 mer + Na");
+                tic.AddXicGroup([6363.874 + kAdduct], charges, 72.8, tolerance, 5, "20 mer + K");
+                tic.AddXicGroup([6363.874 + naAdduct + kAdduct], charges, 72.8, tolerance, 5, "20 mer + Na + K");
+                tic.AddXicGroup([6363.874 + 2 * naAdduct], charges, 72.8, tolerance, 5, "20 mer + 2Na");
+                tic.AddXicGroup([6363.874 + 2 * kAdduct], charges, 72.8, tolerance, 5, "20 mer + 2K");
+                tic.AddXicGroup([6363.874 + 2 * naAdduct + kAdduct], charges, 72.8, tolerance, 5, "20 mer + 2Na + K");
+                tic.AddXicGroup([6363.874 + naAdduct + 2 * kAdduct], charges, 72.8, tolerance, 5, "20 mer + Na + 2K");
+                tic.AddXicGroup([6363.874 + 2 * naAdduct + 2 * kAdduct], charges, 72.8, tolerance, 5, "20 mer + 2Na + 2K");
+
+                // 3m16 mer 
+                tic.AddXicGroup([5120.752], charges, 73.2, tolerance, 5, "Trimethyl 16 mer");
+                tic.AddXicGroup([5120.752 + naAdduct], charges, 73.2, tolerance, 5, "Trimethyl 16 mer + Na");
+                tic.AddXicGroup([5120.752 + kAdduct], charges, 73.2, tolerance, 5, "Trimethyl 16 mer + K");
+                tic.AddXicGroup([5120.752 + naAdduct + kAdduct], charges, 73.2, tolerance, 5, "Trimethyl 16 mer + Na + K");
+                tic.AddXicGroup([5120.752 + 2 * naAdduct], charges, 73.2, tolerance, 5, "Trimethyl 16 mer + 2Na");
+                tic.AddXicGroup([5120.752 + 2 * kAdduct], charges, 73.2, tolerance, 5, "Trimethyl 16 mer + 2K");
+                tic.AddXicGroup([5120.752 + 2 * naAdduct + kAdduct], charges, 73.2, tolerance, 5, "Trimethyl 16 mer + 2Na + K");
+                tic.AddXicGroup([5120.752 + naAdduct + 2 * kAdduct], charges, 73.2, tolerance, 5, "Trimethyl 16 mer + Na + 2K");
+                tic.AddXicGroup([5120.752 + 2 * naAdduct + 2 * kAdduct], charges, 73.2, tolerance, 5, "Trimethyl 16 mer + 2Na + 2K");
+
+                // 4m 20 mer
+                tic.AddXicGroup([6419.933], charges, 77.6, tolerance, 5, "Tetramethyl 20 mer");
+                tic.AddXicGroup([6419.933 + naAdduct], charges, 77.6, tolerance, 5, "Tetramethyl 20 mer + Na");
+                tic.AddXicGroup([6419.933 + kAdduct], charges, 77.6, tolerance, 5, "Tetramethyl 20 mer + K");
+                tic.AddXicGroup([6419.933 + naAdduct + kAdduct], charges, 77.6, tolerance, 5, "Tetramethyl 20 mer + Na + K");
+                tic.AddXicGroup([6419.933 + 2 * naAdduct], charges, 77.6, tolerance, 5, "Tetramethyl 20 mer + 2Na");
+                tic.AddXicGroup([6419.933 + 2 * kAdduct], charges, 77.6, tolerance, 5, "Tetramethyl 20 mer + 2K");
+                tic.AddXicGroup([6419.933 + 2 * naAdduct + kAdduct], charges, 77.6, tolerance, 5, "Tetramethyl 20 mer + 2Na + K");
+                tic.AddXicGroup([6419.933 + naAdduct + 2 * kAdduct], charges, 77.6, tolerance, 5, "Tetramethyl 20 mer + Na + 2K");
+            }
+            else
+            {
+                tic.AddXicGroup([
+                    5078.709, 
+                    5078.709 + naAdduct,
+                    5078.709 + kAdduct,
+                    5078.709 + naAdduct + kAdduct,
+                    5078.709 + 2 * naAdduct,
+                    5078.709 + 2 * kAdduct,
+                    5078.709 + 2 * naAdduct + kAdduct,
+                    5078.709 + naAdduct + 2 * kAdduct,
+                    5078.709 + 2 * naAdduct + 2 * kAdduct
+                ], charges, 68, tolerance, 3, "16-mer");
+
+                // 20 mer
+
+                tic.AddXicGroup([
+                    6363.874,
+                    6363.874 + naAdduct,
+                    6363.874 + kAdduct,
+                    6363.874 + naAdduct + kAdduct,
+                    6363.874 + 2 * naAdduct,
+                    6363.874 + 2 * kAdduct,
+                    6363.874 + 2 * naAdduct + kAdduct,
+                    6363.874 + naAdduct + 2 * kAdduct,
+                    6363.874 + 2 * naAdduct + 2 * kAdduct
+                ], charges, 72.8, tolerance, 3, "20-mer");
+
+                // 3m16 mer 
+                tic.AddXicGroup([
+                    5120.752,
+                    5120.752 + naAdduct,
+                    5120.752 + kAdduct,
+                    5120.752 + naAdduct + kAdduct,
+                    5120.752 + 2 * naAdduct,
+                    5120.752 + 2 * kAdduct,
+                    5120.752 + 2 * naAdduct + kAdduct,
+                    5120.752 + naAdduct + 2 * kAdduct,
+                    5120.752 + 2 * naAdduct + 2 * kAdduct
+                ], charges, 73.2, tolerance, 3, "Trimethyl 16-mer");
+
+                // 4m 20 mer
+                tic.AddXicGroup([
+                    6419.933,
+                    6419.933 + naAdduct,
+                    6419.933 + kAdduct,
+                    6419.933 + naAdduct + kAdduct,
+                    6419.933 + 2 * naAdduct,
+                    6419.933 + 2 * kAdduct,
+                    6419.933 + 2 * naAdduct + kAdduct,
+                    6419.933 + naAdduct + 2 * kAdduct
+                ], charges, 77.6, tolerance, 3, "Tetramethyl 20-mer");
+            }
+
+            tic.Plot();
+        }
+
+
         private static Stopwatch Stopwatch { get; set; }
 
         [SetUp]
@@ -312,6 +434,65 @@ namespace Test
 
             plot = new SpectrumPlot(examplePlotView, data);
             Assert.That(plot.Model.Series.Count == 0);
+        }
+
+        [Test]
+        public static void TestEnvelopeXicExtractionSumsIsotopes()
+        {
+            double neutralMass = 5078.709;
+            int charge = -5;
+            var tolerance = new PpmTolerance(40);
+            var averageResidue = new OxyriboAveragine();
+            int massIndex = averageResidue.GetMostIntenseMassIndex(neutralMass);
+            double[] theoreticalMasses = averageResidue.GetAllTheoreticalMasses(massIndex);
+            double[] theoreticalIntensities = averageResidue.GetAllTheoreticalIntensities(massIndex);
+            double monoisotopicTheoreticalMass = theoreticalMasses[0] - averageResidue.GetDiffToMonoisotopic(massIndex);
+
+            var isotopes = theoreticalMasses
+                .Zip(theoreticalIntensities, (mass, intensity) => (massShift: mass - monoisotopicTheoreticalMass, intensity))
+                .OrderBy(p => p.massShift)
+                .Take(4)
+                .ToList();
+
+            MsDataScan[] scans = new MsDataScan[3];
+            double[] scanScalers = [1.0, 2.0, 1.5];
+            for (int i = 0; i < scans.Length; i++)
+            {
+                List<double> mzs = new();
+                List<double> intensities = new();
+
+                foreach (var isotope in isotopes)
+                {
+                    double mz = (neutralMass + isotope.massShift).ToMz(charge);
+                    mzs.Add(mz);
+                    intensities.Add(isotope.intensity * 1000 * scanScalers[i]);
+                }
+
+                var ordered = mzs.Zip(intensities, (mz, intensity) => (mz, intensity)).OrderBy(p => p.mz).ToList();
+                scans[i] = new MsDataScan(
+                    new MzSpectrum(ordered.Select(p => p.mz).ToArray(), ordered.Select(p => p.intensity).ToArray(), false),
+                    i + 1,
+                    1,
+                    true,
+                    Polarity.Negative,
+                    70 + i * 0.1,
+                    new MzRange(100, 2000),
+                    "f",
+                    MZAnalyzerType.Orbitrap,
+                    ordered.Sum(p => p.intensity),
+                    1.0,
+                    null,
+                    $"scan={i + 1}");
+            }
+
+            var file = new FakeMsDataFile(scans);
+            var singleIsotopeXic = file.ExtractIonChromatogram(neutralMass, charge, tolerance, 70.1, 1, 1);
+            var envelopeXic = file.ExtractEnvelopeIonChromatogram(neutralMass, charge, tolerance, 70.1, 1, 1);
+
+            Assert.That(singleIsotopeXic.Peaks.Count, Is.EqualTo(3));
+            Assert.That(envelopeXic.Peaks.Count, Is.EqualTo(3));
+            Assert.That(envelopeXic.Peaks.Sum(p => p.Intensity), Is.GreaterThan(singleIsotopeXic.Peaks.Sum(p => p.Intensity)));
+            Assert.That(envelopeXic.ApexPeak.Intensity, Is.GreaterThan(singleIsotopeXic.ApexPeak.Intensity));
         }
     }
 }

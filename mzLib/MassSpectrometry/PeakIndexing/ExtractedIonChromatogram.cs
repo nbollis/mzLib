@@ -1,9 +1,11 @@
 ﻿using Easy.Common.Extensions;
 using MathNet.Numerics.Interpolation;
+using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -152,5 +154,71 @@ namespace MassSpectrometry
             EndScanIndex = Peaks.Max(p => p.ZeroBasedScanIndex);
             AveragedMassOrMz = AverageM();
         }
+
+        #region Summing
+
+        private sealed class SummedIndexedPeak : IIndexedPeak
+        {
+            public float Intensity { get; }
+            public float RetentionTime { get; }
+            public int ZeroBasedScanIndex { get; }
+            public float M { get; }
+
+            public SummedIndexedPeak(double m, double intensity, int zeroBasedScanIndex, double retentionTime)
+            {
+                M = (float)m;
+                Intensity = (float)intensity;
+                RetentionTime = (float)retentionTime;
+                ZeroBasedScanIndex = zeroBasedScanIndex;
+            }
+        }
+
+        public static ExtractedIonChromatogram operator +(ExtractedIonChromatogram left, ExtractedIonChromatogram right)
+        {
+            ArgumentNullException.ThrowIfNull(left);
+            ArgumentNullException.ThrowIfNull(right);
+
+            return Sum(left, right);
+        }
+
+        public static ExtractedIonChromatogram Sum(params ExtractedIonChromatogram[] chromatograms)
+        {
+            return Sum((IEnumerable<ExtractedIonChromatogram>)chromatograms);
+        }
+
+        public static ExtractedIonChromatogram Sum(IEnumerable<ExtractedIonChromatogram> chromatograms)
+        {
+            ArgumentNullException.ThrowIfNull(chromatograms);
+
+            var validChromatograms = chromatograms
+                .Where(p => p is not null && p.Peaks is not null && p.Peaks.Count > 0)
+                .ToList();
+
+            if (validChromatograms.Count == 0)
+            {
+                throw new ArgumentException("At least one chromatogram containing peaks is required.", nameof(chromatograms));
+            }
+
+            var mergedPeaks = validChromatograms
+                .SelectMany(p => p.Peaks)
+                .GroupBy(p => p.ZeroBasedScanIndex)
+                .OrderBy(g => g.Key)
+                .Select(g =>
+                {
+                    var scanPeaks = g.ToList();
+                    double summedIntensity = scanPeaks.Sum(p => p.Intensity);
+                    double retentionTime = scanPeaks.Average(p => p.RetentionTime);
+                    double averagedM = summedIntensity > 0
+                        ? scanPeaks.Sum(p => p.Intensity * p.M) / summedIntensity
+                        : scanPeaks.Average(p => p.M);
+
+                    return (IIndexedPeak)new SummedIndexedPeak(averagedM, summedIntensity, g.Key, retentionTime);
+                })
+                .ToList();
+
+            return new ExtractedIonChromatogram(mergedPeaks);
+        }
+
+        #endregion
     }
 }
