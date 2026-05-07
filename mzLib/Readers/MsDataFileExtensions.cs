@@ -1,10 +1,29 @@
 ﻿using Chemistry;
 using MzLibUtil;
 using MassSpectrometry; 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 namespace Readers
 {
     public static class MsDataFileExtensions
     {
+        private sealed class SummedEnvelopePeak : IIndexedPeak
+        {
+            public float Intensity { get; }
+            public float RetentionTime { get; }
+            public int ZeroBasedScanIndex { get; }
+            public float M { get; }
+
+            public SummedEnvelopePeak(double mz, double intensity, int zeroBasedScanIndex, double retentionTime)
+            {
+                M = (float)mz;
+                Intensity = (float)intensity;
+                ZeroBasedScanIndex = zeroBasedScanIndex;
+                RetentionTime = (float)retentionTime;
+            }
+        }
+
         // <summary>
         /// Extracts an ion chromatogram from the spectra file, given a mass, charge, retention time, and mass tolerance.
         /// </summary>
@@ -28,6 +47,89 @@ namespace Readers
                     xicData.Add(new IndexedMassSpectralPeak(expMz, 0, scan.OneBasedScanNumber - 1, scan.RetentionTime));
                 }
             }
+            return new ExtractedIonChromatogram(xicData);
+        }
+
+        /// <summary>
+        /// Extracts an ion chromatogram from the spectra file by summing the isotopic envelope in each scan.
+        /// Peak finding begins at the most abundant theoretical isotope and all matching isotopes are summed.
+        /// </summary>
+        public static ExtractedIonChromatogram ExtractEnvelopeIonChromatogram(this MsDataFile file, double neutralMass, int charge, Tolerance massTolerance,
+            double retentionTimeInMinutes, int msOrder = 1, double retentionTimeWindowWidthInMinutes = 5, int maxIsotopes = 6)
+        {
+            var averageResidue = new OxyriboAveragine();
+            int massIndex = averageResidue.GetMostIntenseMassIndex(neutralMass);
+            double[] theoreticalMasses = averageResidue.GetAllTheoreticalMasses(massIndex);
+            double[] theoreticalIntensities = averageResidue.GetAllTheoreticalIntensities(massIndex);
+            double monoisotopicTheoreticalMass = theoreticalMasses[0] - averageResidue.GetDiffToMonoisotopic(massIndex);
+            var isotopes = theoreticalMasses
+                .Zip(theoreticalIntensities, (mass, intensity) => (massShift: mass - monoisotopicTheoreticalMass, intensity))
+                .OrderBy(p => p.massShift)
+                .ToList();
+
+            int apexIndex = isotopes
+                .Select((isotope, index) => (isotope, index))
+                .MaxBy(p => p.isotope.intensity)
+                .index;
+
+            int startIsotopeIndex = Math.Max(0, apexIndex - maxIsotopes + 1);
+            var selectedIsotopes = isotopes
+                .Skip(startIsotopeIndex)
+                .Take(maxIsotopes)
+                .ToList();
+
+            double mostAbundantMass = neutralMass + isotopes[apexIndex].massShift;
+            double mostAbundantMz = mostAbundantMass.ToMz(charge);
+
+            double startRt = retentionTimeInMinutes - retentionTimeWindowWidthInMinutes / 2;
+            double endRt = retentionTimeInMinutes + retentionTimeWindowWidthInMinutes / 2;
+            List<IIndexedPeak> xicData = new();
+            IEnumerable<MsDataScan> scansInRtWindow = file.GetMsScansInTimeRange(startRt, endRt);
+
+            foreach (MsDataScan scan in scansInRtWindow.Where(p => p.MsnOrder == msOrder))
+            {
+                if (scan.MassSpectrum.Size == 0)
+                {
+                    xicData.Add(new SummedEnvelopePeak(mostAbundantMz, 0, scan.OneBasedScanNumber - 1, scan.RetentionTime));
+                    continue;
+                }
+
+                int seedIndex = scan.MassSpectrum.GetClosestPeakIndex(mostAbundantMz);
+                double seedMz = scan.MassSpectrum.XArray[seedIndex];
+                double seedMass = seedMz.ToMass(charge);
+
+                if (!massTolerance.Within(seedMass, mostAbundantMass))
+                {
+                    xicData.Add(new SummedEnvelopePeak(mostAbundantMz, 0, scan.OneBasedScanNumber - 1, scan.RetentionTime));
+                    continue;
+                }
+
+                double massOffset = seedMass - mostAbundantMass;
+                double totalIntensity = 0;
+                double weightedMz = 0;
+
+                foreach (var isotope in selectedIsotopes)
+                {
+                    double expectedMass = neutralMass + isotope.massShift + massOffset;
+                    double expectedMz = expectedMass.ToMz(charge);
+                    int isotopePeakIndex = scan.MassSpectrum.GetClosestPeakIndex(expectedMz);
+                    double observedMz = scan.MassSpectrum.XArray[isotopePeakIndex];
+                    double observedMass = observedMz.ToMass(charge);
+
+                    if (!massTolerance.Within(observedMass, expectedMass))
+                    {
+                        continue;
+                    }
+
+                    double intensity = scan.MassSpectrum.YArray[isotopePeakIndex];
+                    totalIntensity += intensity;
+                    weightedMz += observedMz * intensity;
+                }
+
+                double averagedMz = totalIntensity > 0 ? weightedMz / totalIntensity : mostAbundantMz;
+                xicData.Add(new SummedEnvelopePeak(averagedMz, totalIntensity, scan.OneBasedScanNumber - 1, scan.RetentionTime));
+            }
+
             return new ExtractedIonChromatogram(xicData);
         }
 
