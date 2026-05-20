@@ -264,6 +264,11 @@ public static List<RNA> LoadRnaFasta(string rnaDbLocation, bool generateTargets,
                             else
                                 identifier = entrapmentIdentifier + "_" + identifier;
                         }
+
+
+                        if (sequence.Contains('N'))
+                            sequence = sequence.Replace("N", "");
+
                         RNA rna = new RNA(sequence, identifier,
                             null, fivePrimeTerminus: fivePrimeTerm, threePrimeTerminus: threePrimeTerm, name: name, organism: organism, databaseFilePath: rnaDbLocation, isContaminant: isContaminant, isDecoy: isDecoy, geneNames: geneNames, databaseAdditionalFields: additonalDatabaseFields, isEntrapment: rnaIsEntrapment);
                         if (rna.Length == 0)
