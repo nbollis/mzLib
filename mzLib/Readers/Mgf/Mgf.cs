@@ -148,6 +148,11 @@ namespace Readers
             double? precursorIntensity = null; //default when unknown
             double rtInMinutes = double.NaN; //default when unknown
             int? msLevel = null; //from the MSLEVEL line when present
+            DissociationType? dissociationType = null; //from ACTIVATIONMETHOD, an mzLib extension header
+            int? precursorScanNumber = null;           //from PRECURSORSCAN, an mzLib extension header
+            double? isolationWidth = null;             //from ISOLATIONWIDTH, an mzLib extension header
+            double? isolationMz = null;                //from ISOLATIONMZ, an mzLib extension header
+            double? totalIonCurrent = null;            //from TIC, an mzLib extension header
             bool sawPrecursorMz = false;
             bool sawCharge = false;
 
@@ -226,6 +231,44 @@ namespace Readers
                         rtInMinutes = parsedRt / 60.0;
                     }
                 }
+                // mzLib extension headers -- see MgfMethods.WriteScan for why these exist. TryParse
+                // throughout: these come from files we did not necessarily write, and one unparseable
+                // value must not take the whole file down.
+                else if (line.StartsWith("TIC") && sArray.Length > 1)
+                {
+                    if (double.TryParse(sArray[1], NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out double parsedTic))
+                    {
+                        totalIonCurrent = parsedTic;
+                    }
+                }
+                else if (line.StartsWith("ACTIVATIONMETHOD") && sArray.Length > 1)
+                {
+                    if (Enum.TryParse(sArray[1].Trim(), ignoreCase: true, out DissociationType parsedDissociation))
+                    {
+                        dissociationType = parsedDissociation;
+                    }
+                }
+                else if (line.StartsWith("PRECURSORSCAN") && sArray.Length > 1)
+                {
+                    if (int.TryParse(sArray[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedPrecursorScan))
+                    {
+                        precursorScanNumber = parsedPrecursorScan;
+                    }
+                }
+                else if (line.StartsWith("ISOLATIONMZ") && sArray.Length > 1)
+                {
+                    if (double.TryParse(sArray[1], NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out double parsedIsolationMz))
+                    {
+                        isolationMz = parsedIsolationMz;
+                    }
+                }
+                else if (line.StartsWith("ISOLATIONWIDTH") && sArray.Length > 1)
+                {
+                    if (double.TryParse(sArray[1], NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out double parsedIsolationWidth))
+                    {
+                        isolationWidth = parsedIsolationWidth;
+                    }
+                }
                 else if (line.StartsWith("END IONS"))
                 {
                     break;
@@ -256,8 +299,12 @@ namespace Readers
 
             MzRange scanRange = new MzRange(mzArray[0], mzArray[mzArray.Length - 1]);
 
+            // MSLEVEL when the writer supplied one; otherwise a block with a precursor is MS2 and a
+            // block without one is MS1. Files predating MSLEVEL all carry PEPMASS, so they read as before.
+            int msnOrder = msLevel ?? (sawPrecursorMz ? 2 : 1);
+
             // peak filtering
-            if (filterParams != null && intensityArray.Length > 0 && filterParams.ApplyTrimmingToMsMs)
+            if (filterParams != null && intensityArray.Length > 0 && ShouldTrim(filterParams, msnOrder))
             {
                 WindowModeHelper.Run(ref intensityArray, ref mzArray, 
                     filterParams, scanRange.Minimum, scanRange.Maximum);
@@ -272,10 +319,6 @@ namespace Readers
 
             scanNumbersAlreadyObserved.Add(scanNumber);
 
-            // MSLEVEL when the writer supplied one; otherwise a block with a precursor is MS2 and a
-            // block without one is MS1. Files predating MSLEVEL all carry PEPMASS, so they read as before.
-            int msnOrder = msLevel ?? (sawPrecursorMz ? 2 : 1);
-
             // MGF has no polarity field, so it is only inferrable from the sign of CHARGE. A block with
             // no CHARGE line reads as positive on both the static and dynamic paths -- inheriting it from
             // a neighbouring block would make the two disagree, since a random-access read cannot see
@@ -286,14 +329,25 @@ namespace Readers
             {
                 return new MsDataScan(spectrum, scanNumber, msnOrder, true, polarity,
                     rtInMinutes, scanRange, null, MZAnalyzerType.Unknown,
-                    intensities.Sum(), 0, null, null);
+                    totalIonCurrent ?? intensities.Sum(), 0, null, null);
             }
 
             return new MsDataScan(spectrum, scanNumber, msnOrder, true, polarity,
                 rtInMinutes, scanRange, null, MZAnalyzerType.Unknown,
-                intensities.Sum(), 0, null, null, precursorMz, charge,
-                precursorIntensity, precursorMz, null, DissociationType.Unknown,
-                null, precursorMz);
+                totalIonCurrent ?? intensities.Sum(), 0, null, null, precursorMz, charge,
+                precursorIntensity, isolationMz ?? precursorMz, isolationWidth,
+                dissociationType ?? DissociationType.Unknown,
+                precursorScanNumber, precursorMz);
+        }
+
+        // Peak trimming must honor the per-MS-level FilteringParams flags, exactly as the mzML/Thermo/Bruker
+        // readers do. Trimming an MS1 precursor scan strips its isotope envelopes and precursor
+        // deconvolution then finds nothing.
+        private static bool ShouldTrim(IFilteringParams filterParams, int msnOrder)
+        {
+            return (filterParams.ApplyTrimmingToMs1 && msnOrder == 1)
+                   || (filterParams.ApplyTrimmingToMsMs && msnOrder == 2)
+                   || (filterParams.ApplyTrimmingToMsN && msnOrder > 2);
         }
 
         /// <summary>
