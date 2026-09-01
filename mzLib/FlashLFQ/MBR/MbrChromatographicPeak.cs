@@ -1,4 +1,4 @@
-﻿using FlashLFQ.PEP;
+using FlashLFQ.PEP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,7 +61,7 @@ namespace FlashLFQ
             sb.Append(Identifications.First().MonoisotopicMass.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append('\t'); // No Ms2 ID means no MS2 ID Retention time
             sb.Append(Identifications.First().PrecursorChargeState.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(ClassExtensions.ToMz(Identifications.First().MonoisotopicMass, Identifications.First().PrecursorChargeState).ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(Identifications.First().MonoisotopicMass.ToMz(Identifications.First().PrecursorChargeState).ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(Intensity.ToString(CultureInfo.InvariantCulture) + "\t");
 
             if (Apex != null)

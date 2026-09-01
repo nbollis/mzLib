@@ -252,7 +252,7 @@ namespace Omics.Fragmentation.Peptide
 
         public static double ProductTypeSpecificFragmentNeutralMass(double mass, ProductType p)
         {
-            return (double)ClassExtensions.RoundedDouble(mass + GetMassShiftFromProductType(p), 9);
+            return (double)Chemistry.ClassExtensions.RoundedDouble(mass + GetMassShiftFromProductType(p), 9);
         }
     }
 }

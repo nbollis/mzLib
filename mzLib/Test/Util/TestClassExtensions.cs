@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System.Diagnostics.CodeAnalysis;
 using MzLibUtil;
@@ -112,6 +112,29 @@ namespace Test.Util
         {
             NUnit.Framework.Assert.That(mass, Is.EqualTo(mz.ToMass(charge)).Within(0.01));
             NUnit.Framework.Assert.That(mz, Is.EqualTo(mass.ToMz(charge)).Within(0.01));
+        }
+
+[Test]
+        [TestCase(1874.28, 5)]
+        [TestCase(1874.28, 4)]
+        [TestCase(1874.28, 3)]
+        [TestCase(1874.28, 2)]
+        [TestCase(1874.28, 1)]
+
+        public static void TestToMzAndMassWithPolarity(double mass, int charge)
+        {
+            double protonMass = Chemistry.Constants.ProtonMass;
+            double positivePolarityMz = mass / charge + protonMass;
+            double negativePolarityMz = mass / charge - protonMass;
+
+            Assert.That(mass, Is.EqualTo((float)positivePolarityMz.ToMass(charge, Polarity.Positive)).Within(0.01));
+            Assert.That(mass, Is.EqualTo(negativePolarityMz.ToMass(charge, Polarity.Negative)).Within(0.01));
+
+            Assert.That(positivePolarityMz, Is.EqualTo((float)mass.ToMz(charge, Polarity.Positive)).Within(0.01));
+            Assert.That(negativePolarityMz, Is.EqualTo(mass.ToMz(charge, Polarity.Negative)).Within(0.01));
+
+            Assert.That(positivePolarityMz, Is.EqualTo(mass.ToMz(charge, Polarity.Positive)).Within(0.01));
+            Assert.That(negativePolarityMz, Is.EqualTo((float)mass.ToMz(charge, Polarity.Negative)).Within(0.01));
         }
 
         [Test]

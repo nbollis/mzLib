@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using MassSpectrometry;
 using System.Text;
 
@@ -36,7 +36,7 @@ namespace Omics.Modifications
         {
             get
             {
-                return ClassExtensions.RoundedDouble(monoisotopicMass);
+                return Chemistry.ClassExtensions.RoundedDouble(monoisotopicMass);
             }
             private set
             {
@@ -228,7 +228,7 @@ namespace Omics.Modifications
                         myValues.Sort();
                         for (int i = 0; i < myValues.Count; i++)
                         {
-                            myLine.Append(dissociationType + ":" + ClassExtensions.RoundedDouble(myValues[i]));
+                            myLine.Append(dissociationType + ":" + Chemistry.ClassExtensions.RoundedDouble(myValues[i]));
                             if (i < myValues.Count - 1)
                                 myLine.Append(" or ");
                         }
@@ -253,7 +253,7 @@ namespace Omics.Modifications
                         myValues.Sort();
                         for (int i = 0; i < myValues.Count; i++)
                         {
-                            myLine.Append(dissociationType + ":" + ClassExtensions.RoundedDouble(myValues[i]));
+                            myLine.Append(dissociationType + ":" + Chemistry.ClassExtensions.RoundedDouble(myValues[i]));
                             if (i < myValues.Count - 1)
                                 myLine.Append(" or ");
                         }

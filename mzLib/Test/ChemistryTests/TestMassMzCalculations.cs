@@ -1,4 +1,4 @@
-﻿// Copyright 2012, 2013, 2014 Derek J. Bailey
+// Copyright 2012, 2013, 2014 Derek J. Bailey
 //
 // This file (MassTestFixture.cs) is part of CSMSL.Tests.
 //
@@ -17,6 +17,7 @@
 
 using System;
 using Chemistry;
+using MassSpectrometry;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Stopwatch = System.Diagnostics.Stopwatch;
@@ -48,6 +49,20 @@ namespace Test.ChemistryTests
             ObjectWithMass1000 a = new ObjectWithMass1000();
             double mz = a.ToMz(2).ToMass(2);
             Assert.AreEqual(1000, mz);
+        }
+
+        [Test]
+        public static void MassToMzToMassWithPolarity()
+        {
+            ObjectWithMass1000 a = new ObjectWithMass1000();
+            double mzPositive = a.ToMz(2, Polarity.Positive).ToMass(2, Polarity.Positive);
+            double mzNegative = a.ToMz(-2, Polarity.Positive).ToMass(-2, Polarity.Positive);
+            double mzNegativeToPositive = a.ToMz(2, Polarity.Negative).ToMass(2, Polarity.Negative);
+            double mzPositiveToNegative = a.ToMz(-2, Polarity.Negative).ToMass(-2, Polarity.Negative);
+            Assert.AreEqual(1000, mzPositive);
+            Assert.AreEqual(1000, mzNegative);
+            Assert.AreEqual(1000, mzNegativeToPositive);
+            Assert.AreEqual(1000, mzPositiveToNegative);
         }
 
         [Test]
