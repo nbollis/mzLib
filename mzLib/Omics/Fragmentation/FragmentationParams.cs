@@ -1,9 +1,15 @@
+using MassSpectrometry;
+
 namespace Omics.Fragmentation;
 
 public class FragmentationParams : IFragmentationParams, IEquatable<FragmentationParams>
 {
+    public static readonly FragmentationParams Default = new();
+
     public bool GenerateMIon { get; set; } = false;
+    public bool GenerateDiagnosticIons { get; set; } = true;
     public List<MIonLoss> MIonLosses { get; set; } = new();
+    public Polarity Polarity { get; set; } = Polarity.Positive;
 
     #region Equality
 
@@ -17,10 +23,11 @@ public class FragmentationParams : IFragmentationParams, IEquatable<Fragmentatio
     {
         if (other is null) return false;
         return GenerateMIon == other.GenerateMIon
+               && GenerateDiagnosticIons == other.GenerateDiagnosticIons
                && MIonListComparer.Instance.Equals(MIonLosses, other.MIonLosses);
     }
 
-    public override int GetHashCode() => HashCode.Combine(GenerateMIon, MIonListComparer.Instance.GetHashCode(MIonLosses));
+    public override int GetHashCode() => HashCode.Combine(GenerateMIon, GenerateDiagnosticIons, MIonListComparer.Instance.GetHashCode(MIonLosses));
 
     #endregion
 }

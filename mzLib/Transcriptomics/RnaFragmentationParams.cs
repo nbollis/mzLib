@@ -1,4 +1,5 @@
 using Chemistry;
+using MassSpectrometry;
 using Omics.Fragmentation;
 using System;
 
@@ -6,9 +7,13 @@ namespace Transcriptomics;
 
 public class RnaFragmentationParams : IFragmentationParams, IEquatable<RnaFragmentationParams>
 {
+    public static readonly RnaFragmentationParams Default = new();
+
     public bool GenerateMIon { get; set; } = true;
+    public bool GenerateDiagnosticIons { get; set; } = false;
     public List<MIonLoss> MIonLosses { get; set; } = new();
     public bool ModificationsCanSuppressBaseLossIons { get; set; } = false;
+    public Polarity Polarity { get; set; } = Polarity.Negative;
 
     #region Equality
 
@@ -21,18 +26,22 @@ public class RnaFragmentationParams : IFragmentationParams, IEquatable<RnaFragme
     {
         if (other is null) return false;
         return GenerateMIon == other.GenerateMIon
+                
+               && GenerateDiagnosticIons == other.GenerateDiagnosticIons
                && MIonListComparer.Instance.Equals(MIonLosses, other.MIonLosses)
                && ModificationsCanSuppressBaseLossIons == other.ModificationsCanSuppressBaseLossIons;
     }
 
-    public override int GetHashCode() => HashCode.Combine(GenerateMIon, MIonListComparer.Instance.GetHashCode(MIonLosses), ModificationsCanSuppressBaseLossIons);
+    public override int GetHashCode() => HashCode.Combine(
+        GenerateMIon,
+        GenerateDiagnosticIons,
+        MIonListComparer.Instance.GetHashCode(MIonLosses),
+        ModificationsCanSuppressBaseLossIons);
 
     #endregion
 
     static RnaFragmentationParams()
     {
-        Default = new();
-
         // Initialize common RNA M-Ion Losses
         var phosphoLossFomula = MIonLoss.PhosphoLoss.ThisChemicalFormula;
         var waterLossFormula = MIonLoss.WaterLoss.ThisChemicalFormula;
@@ -108,6 +117,4 @@ public class RnaFragmentationParams : IFragmentationParams, IEquatable<RnaFragme
         var uPhosphoWaterLoss = new MIonLoss("Uracil Base Phospho Water Loss", "-U-P-H2O", uPhosphoWaterLossFormula);
         MIonLoss.AllMIonLosses.Add(uPhosphoWaterLoss.Annotation, uPhosphoWaterLoss);
     }
-
-    public static readonly RnaFragmentationParams Default;
 }
