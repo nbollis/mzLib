@@ -1,6 +1,8 @@
-﻿using Chemistry;
+using Chemistry;
 using Chromatography.RetentionTimePrediction;
+using Easy.Common.Extensions;
 using MassSpectrometry;
+using MzLibUtil;
 using Omics;
 using Omics.BioPolymer;
 using Omics.Digestion;
@@ -13,13 +15,12 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
-using MzLibUtil;
 using ClassExtensions = Chemistry.ClassExtensions;
 
 namespace Proteomics.ProteolyticDigestion
 {
     [Serializable]
-    public class PeptideWithSetModifications : ProteolyticPeptide, IBioPolymerWithSetMods, IRetentionPredictable,  IEquatable<PeptideWithSetModifications>
+    public class PeptideWithSetModifications : ProteolyticPeptide, IBioPolymerWithSetMods, IRetentionPredictable, IFragmentable, IEquatable<PeptideWithSetModifications>
     {
         public string FullSequence { get; init; } //sequence with modifications
 
@@ -229,6 +230,8 @@ namespace Proteomics.ProteolyticDigestion
         /// </summary>
         public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<Product> products, IFragmentationParams? fragmentationParams = null)
         {
+            fragmentationParams ??= FragmentationParams.Default;
+
             // This code is specifically written to be memory- and CPU -efficient because it is 
             // called millions of times for a typical search (i.e., at least once per peptide). 
             // If you modify this code, BE VERY CAREFUL about allocating new memory, especially 
@@ -239,8 +242,13 @@ namespace Proteomics.ProteolyticDigestion
 
             products.Clear();
 
-            if (fragmentationParams is { GenerateMIon: true})
-                products.AddRange(this.GetMIons(fragmentationParams));
+            IEnumerable<Product> workingProducts = Enumerable.Empty<Product>();
+
+            if (fragmentationParams.GenerateMIon)
+            {
+                products.Add(((IFragmentable)this).DefaultMIon);
+                workingProducts = workingProducts.Concat(((IFragmentable)this).GetMIonsWithNeturalLosses(fragmentationParams));
+            }
 
             var massCaps = DissociationTypeCollection.GetNAndCTerminalMassShiftsForDissociationType(dissociationType);
 
@@ -514,46 +522,13 @@ namespace Proteomics.ProteolyticDigestion
                 }
             }
 
-            foreach (var mod in AllModsOneIsNterminus.Where(p => p.Value.NeutralLosses != null))
-            {
-                // molecular ion minus neutral losses
-                if (mod.Value.NeutralLosses.TryGetValue(dissociationType, out List<double> losses))
-                {
-                    foreach (double neutralLoss in losses.Where(p => p != 0))
-                    {
-                        if (neutralLoss != 0)
-                        {
-                            products.Add(new Product(ProductType.M, FragmentationTerminus.Both, MonoisotopicMass - neutralLoss, 0, 0, neutralLoss));
-                        }
-                    }
-                }
-
-                if (mod.Value.NeutralLosses.TryGetValue(DissociationType.AnyActivationType, out losses))
-                {
-                    foreach (double neutralLoss in losses.Where(p => p != 0))
-                    {
-                        if (neutralLoss != 0)
-                        {
-                            products.Add(new Product(ProductType.M, FragmentationTerminus.Both, MonoisotopicMass - neutralLoss, 0, 0, neutralLoss));
-                        }
-                    }
-                }
-            }
+            // Create M ions minus the neutral loss of any mod. 
+            workingProducts = workingProducts.Concat(((IFragmentable)this).GetMIonsFromModifications(AllModsOneIsNterminus.Values, dissociationType));
 
             // generate diagnostic ions
-            // TODO: this code is memory-efficient but sort of CPU inefficient; it can be further optimized.
-            // however, diagnostic ions are fairly rare so it's probably OK for now
-            foreach (double diagnosticIon in AllModsOneIsNterminus
-                .Where(p => p.Value.DiagnosticIons != null)
-                .SelectMany(p => p.Value.DiagnosticIons.Where(v => v.Key == dissociationType || v.Key == DissociationType.AnyActivationType))
-                .SelectMany(p => p.Value)
-                .Distinct())
-            {
-                int diagnosticIonLabel = (int)Math.Round(diagnosticIon.ToMz(1), 0);
+            workingProducts = workingProducts.Concat(((IFragmentable)this).GetDiagnosticIonsFromModifications(AllModsOneIsNterminus.Values, dissociationType, fragmentationParams));
 
-                // the diagnostic ion is assumed to be annotated in the mod info as the *neutral mass* of the diagnostic ion, not the ionized species
-                products.Add(new Product(ProductType.D, FragmentationTerminus.Both, diagnosticIon, diagnosticIonLabel, 0, 0));
-            }
+            products.AddRange(workingProducts);
         }
 
         /// <summary>

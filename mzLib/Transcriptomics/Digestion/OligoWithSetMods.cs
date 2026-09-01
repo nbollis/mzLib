@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using MassSpectrometry;
 using Omics.Digestion;
 using Omics.Fragmentation;
@@ -20,7 +20,7 @@ namespace Transcriptomics.Digestion
     /// always available based on the current state of the oligonucleotide and its modifications. Therefor, it is important to set those
     /// properties to null whenever a termini or modification is changed.
     /// </remarks>
-    public class OligoWithSetMods : NucleolyticOligo, IBioPolymerWithSetMods, INucleicAcid, IEquatable<OligoWithSetMods>
+    public class OligoWithSetMods : NucleolyticOligo, IBioPolymerWithSetMods, IFragmentable, INucleicAcid, IEquatable<OligoWithSetMods>
     {
         public OligoWithSetMods(NucleicAcid nucleicAcid, RnaDigestionParams digestionParams, int oneBaseStartResidue,
             int oneBasedEndResidue, int missedCleavages, CleavageSpecificity cleavageSpecificity,
@@ -219,7 +219,10 @@ namespace Transcriptomics.Digestion
 
             // intact product ion
             if (fragmentationParams.GenerateMIon && fragmentationTerminus is FragmentationTerminus.Both or FragmentationTerminus.None)
-                products.AddRange(this.GetMIons(fragmentationParams));
+            {
+                products.Add(((IFragmentable)this).DefaultMIon);
+                products.AddRange(((IFragmentable)this).GetMIonsWithNeturalLosses(fragmentationParams));
+            }
 
             if (calculateFivePrime)
                 foreach (var type in fivePrimeProductTypes)
