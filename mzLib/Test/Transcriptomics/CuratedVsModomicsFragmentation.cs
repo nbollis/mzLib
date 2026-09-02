@@ -60,11 +60,14 @@ public static class CuratedVsModomicsFragmentation
     [Test]
     public static void N6_2O_Dimethyladenosine_Single()
     {
-        // Curated sends the N6 methyl off with the base and keeps the ribose methyl; MODOMICS keeps both.
+        // Curated declares the split topology by hand (BL Suppressed:C1H2 — the N6 methyl leaves with
+        // the base, the ribose methyl stays), and MODOMICS derives the same C1H2 from its product ion:
+        // [N6-methyladenine]+ (150) is [adenine]+ plus exactly one of the two methyls, and C1H2 is the
+        // unique sub-formula of C2H4 matching that measurement. Every fragment is now identical.
         CompareSources("N6,2'-O-dimethyl single",
             "GUA[N6,2'-O-dimethyladenosine on A]CUG",
             "GUA[N6,2'-O-dimethyladenosine on A]CUG",
-            [(3, ChemicalFormula.ParseFormula("CH2").MonoisotopicMass)]);
+            []);
     }
 
     [Test]
@@ -83,8 +86,14 @@ public static class CuratedVsModomicsFragmentation
         curated.Fragment(DissociationType.CID, FragmentationTerminus.Both, curatedProducts, fragmentationParams);
         modomics.Fragment(DissociationType.CID, FragmentationTerminus.Both, modomicsProducts, fragmentationParams);
 
+        // Diagnostic ions are always generated now, and only the MODOMICS mods carry them: the single
+        // Am occurrence emits its measured [adenine]+ cation as one annotation product.
+        Assert.That(modomicsProducts.Count(p => p.ProductType == ProductType.D), Is.EqualTo(1));
+
         // Only the curated BaseModification can suppress its base-loss ion; a plain MODOMICS mod cannot.
-        Assert.That(curatedProducts.Count, Is.EqualTo(modomicsProducts.Count - 1));
+        // Diagnostic ions are excluded from the counts: their presence is a source-data difference.
+        Assert.That(curatedProducts.Count(p => p.ProductType != ProductType.D),
+            Is.EqualTo(modomicsProducts.Count(p => p.ProductType != ProductType.D) - 1));
         var curatedBaseLossFragments = curatedProducts.Where(p => p.ProductType.IsBaseLoss())
             .Select(p => p.FragmentNumber).ToHashSet();
         var modomicsOnly = modomicsProducts.Where(p => p.ProductType.IsBaseLoss()
@@ -110,11 +119,15 @@ public static class CuratedVsModomicsFragmentation
         modomics.Fragment(DissociationType.CID, FragmentationTerminus.Both, modomicsProducts);
 
         TestContext.Progress.WriteLine($"[{label}] fragment counts: curated={curatedProducts.Count} modomics={modomicsProducts.Count}");
+        TestContext.Progress.WriteLine($"[{label}] diagnostic-ion products: curated={curatedProducts.Count(p => p.ProductType == ProductType.D)} modomics={modomicsProducts.Count(p => p.ProductType == ProductType.D)}");
 
         // Non-base-loss products are independent of base-loss semantics: identical count and masses.
-        var curatedBackbone = curatedProducts.Where(p => !p.ProductType.IsBaseLoss())
+        // Diagnostic ions are excluded from that comparison: only the MODOMICS mods carry them (their
+        // measured base cations), so their presence is a source-data difference, not a fragmentation
+        // difference.
+        var curatedBackbone = curatedProducts.Where(p => !p.ProductType.IsBaseLoss() && p.ProductType != ProductType.D)
             .OrderBy(p => p.ProductType).ThenBy(p => p.FragmentNumber).ToList();
-        var modomicsBackbone = modomicsProducts.Where(p => !p.ProductType.IsBaseLoss())
+        var modomicsBackbone = modomicsProducts.Where(p => !p.ProductType.IsBaseLoss() && p.ProductType != ProductType.D)
             .OrderBy(p => p.ProductType).ThenBy(p => p.FragmentNumber).ToList();
         Assert.That(modomicsBackbone.Count, Is.EqualTo(curatedBackbone.Count), label);
         for (int i = 0; i < curatedBackbone.Count; i++)
