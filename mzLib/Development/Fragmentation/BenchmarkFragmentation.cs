@@ -41,7 +41,7 @@ namespace Development
 
             // This path points to a human database where I have run GPTMD with a large number of variable modifications, which should yield a very large number of peptides and fragments to maximize the fragmentation time and thus the potential speedup from parallelization. Adjust the path as needed to point to a suitable test database on your machine.
             // I'm specifically interested in benchmarking performance with neutral losses, and a standard uniprot xml does not contain neutral losses
-            var dbPath = @"D:\Kelly_ALS_motor_nueron_dataset\MM1p1p4_GPTMD_Search_Carboxymethyl_Carbamido_2\Task1-GPTMDTask\uniprotkb_Human_AND_model_organism_9606_2025_03_19GPTMD.xml";
+            var dbPath = @"D:\Proteomes\uniprotkb_human_proteome_AND_reviewed_t_2024_03_22.xml";
 
             var loadSw = Stopwatch.StartNew();
             var proteins = ProteinDbLoader.LoadProteinXML(dbPath, true, DecoyType.Reverse, Mods.AllKnownMods, false, null, out _, maxHeterozygousVariants: 0);
