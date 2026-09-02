@@ -10,6 +10,10 @@ public class FragmentationParams : IFragmentationParams, IEquatable<Fragmentatio
     public bool GenerateDiagnosticIons { get; set; } = true;
     public List<MIonLoss> MIonLosses { get; set; } = new();
     public Polarity Polarity { get; set; } = Polarity.Positive;
+    public DissociationType DissociationType { get; set; }
+    public FragmentationTerminus FragmentationTerminus { get; set; }
+    public double MaximumFragmentMassDa { get; set; } = double.MaxValue;
+    public int MinimumInternalFragmentLength { get; set; } = 4;
 
     #region Equality
 
@@ -23,11 +27,19 @@ public class FragmentationParams : IFragmentationParams, IEquatable<Fragmentatio
     {
         if (other is null) return false;
         return GenerateMIon == other.GenerateMIon
+               && Polarity == other.Polarity
+               && DissociationType == other.DissociationType
+               && FragmentationTerminus == other.FragmentationTerminus
+               && MaximumFragmentMassDa == other.MaximumFragmentMassDa
+               && MinimumInternalFragmentLength == other.MinimumInternalFragmentLength
                && GenerateDiagnosticIons == other.GenerateDiagnosticIons
                && MIonListComparer.Instance.Equals(MIonLosses, other.MIonLosses);
     }
 
-    public override int GetHashCode() => HashCode.Combine(GenerateMIon, GenerateDiagnosticIons, MIonListComparer.Instance.GetHashCode(MIonLosses));
+    public override int GetHashCode() => HashCode.Combine(
+        GenerateMIon, GenerateDiagnosticIons, Polarity, FragmentationTerminus,
+        DissociationType, MaximumFragmentMassDa, MinimumInternalFragmentLength,
+        MIonListComparer.Instance.GetHashCode(MIonLosses));
 
     #endregion
 }

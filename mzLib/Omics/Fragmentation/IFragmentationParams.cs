@@ -21,10 +21,29 @@ public interface IFragmentationParams : IEquatable<IFragmentationParams>
 
     /// <summary>
     /// The polarity of the ions to generate (positive or negative). 
-    /// 
-    /// <remarks>
-    /// Currently used only in diagnost ion label generation. 
-    /// </remarks>
     /// </summary>
+    /// <remarks>
+    /// Currently used only in diagnostic ion label generation. 
+    /// </remarks>
     Polarity Polarity { get; set; }
+
+    /// <summary>
+    /// The type of dissociation to use for fragmenting the molecule.
+    /// </summary>
+    DissociationType DissociationType { get; set; }
+
+    /// <summary>
+    /// The terminus of the molecule to fragment (N-terminal, C-terminal, or both).
+    /// </summary>
+    FragmentationTerminus FragmentationTerminus { get; set; }
+
+    /// <summary>
+    /// The minimum length of internal fragments to generate.
+    /// </summary>
+    int MinimumInternalFragmentLength { get; set; }
+
+    /// <summary>
+    /// The maximum mass of fragments to generate.
+    /// </summary>
+    double MaximumFragmentMassDa { get; set; }
 }

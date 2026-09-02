@@ -8,12 +8,15 @@ namespace Transcriptomics;
 public class RnaFragmentationParams : IFragmentationParams, IEquatable<RnaFragmentationParams>
 {
     public static readonly RnaFragmentationParams Default = new();
-
     public bool GenerateMIon { get; set; } = true;
     public bool GenerateDiagnosticIons { get; set; } = false;
     public List<MIonLoss> MIonLosses { get; set; } = new();
     public bool ModificationsCanSuppressBaseLossIons { get; set; } = false;
     public Polarity Polarity { get; set; } = Polarity.Negative;
+    public DissociationType DissociationType { get; set; }
+    public FragmentationTerminus FragmentationTerminus { get; set; }
+    public double MaximumFragmentMassDa { get; set; } = double.MaxValue;
+    public int MinimumInternalFragmentLength { get; set; } = int.MaxValue; // RNA internal fragments are not currently supported
 
     #region Equality
 
@@ -26,17 +29,24 @@ public class RnaFragmentationParams : IFragmentationParams, IEquatable<RnaFragme
     {
         if (other is null) return false;
         return GenerateMIon == other.GenerateMIon
-                
+               && Polarity == other.Polarity
+               && DissociationType == other.DissociationType
+               && FragmentationTerminus == other.FragmentationTerminus
+               && MaximumFragmentMassDa == other.MaximumFragmentMassDa
+               && MinimumInternalFragmentLength == other.MinimumInternalFragmentLength
                && GenerateDiagnosticIons == other.GenerateDiagnosticIons
                && MIonListComparer.Instance.Equals(MIonLosses, other.MIonLosses)
                && ModificationsCanSuppressBaseLossIons == other.ModificationsCanSuppressBaseLossIons;
     }
 
-    public override int GetHashCode() => HashCode.Combine(
-        GenerateMIon,
-        GenerateDiagnosticIons,
-        MIonListComparer.Instance.GetHashCode(MIonLosses),
-        ModificationsCanSuppressBaseLossIons);
+    public override int GetHashCode()
+    {
+        var partial = HashCode.Combine(
+            GenerateMIon, GenerateDiagnosticIons, Polarity, FragmentationTerminus,
+            DissociationType, MaximumFragmentMassDa, MinimumInternalFragmentLength,
+            MIonListComparer.Instance.GetHashCode(MIonLosses));
+        return HashCode.Combine(partial, ModificationsCanSuppressBaseLossIons);
+    }
 
     #endregion
 
