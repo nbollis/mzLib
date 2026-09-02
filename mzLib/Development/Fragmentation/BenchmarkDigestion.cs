@@ -69,11 +69,13 @@ public class BenchmarkDigestion
 
     private IReadOnlyList<OligoWithSetMods> _rnaOligos;
     private IReadOnlyList<PeptideWithSetModifications> _peptides;
+    private IReadOnlyList<PeptideWithSetModifications> _proteins;
 
     [GlobalSetup]
     public void GlobalSetup()
     {
         _peptides = BuildPeptideCorpus();
+        _proteins = BuildProteinCorpus();
         _rnaOligos = BuildRnaCorpus().Take(RnaSequenceCap).ToList();
 
         // Warm up: trigger JIT and lazy mod/static initialization before timing.
@@ -83,6 +85,7 @@ public class BenchmarkDigestion
         var warmupProducts = new List<Product>();
         _peptides[0].Fragment(DissociationType.HCD, FragmentationTerminus.Both, warmupProducts);
         _rnaOligos[0].Fragment(DissociationType.CID, FragmentationTerminus.Both, warmupProducts);
+        _proteins[0].Fragment(DissociationType.HCD, FragmentationTerminus.Both, warmupProducts);
     }
 
     private static IReadOnlyList<PeptideWithSetModifications> BuildPeptideCorpus()
@@ -91,6 +94,18 @@ public class BenchmarkDigestion
         var proteins = ProteinDbLoader.LoadProteinXML(dbPath, generateTargets: true, DecoyType.None,
             Mods.AllKnownMods, false, null, out _, maxHeterozygousVariants: 0);
         var digestionParams = new DigestionParams();
+
+        return proteins.Take(ProteinCap)
+            .SelectMany(p => p.Digest(digestionParams, new List<Modification>(), new List<Modification>()))
+            .ToList();
+    }
+
+    private static IReadOnlyList<PeptideWithSetModifications> BuildProteinCorpus()
+    {
+        var dbPath = Environment.GetEnvironmentVariable("MZLIB_BENCH_DB_FILE") ?? DefaultProteinDbPath;
+        var proteins = ProteinDbLoader.LoadProteinXML(dbPath, generateTargets: true, DecoyType.None,
+            Mods.AllKnownMods, false, null, out _, maxHeterozygousVariants: 0);
+        var digestionParams = new DigestionParams("top-down");
 
         return proteins.Take(ProteinCap)
             .SelectMany(p => p.Digest(digestionParams, new List<Modification>(), new List<Modification>()))
@@ -118,10 +133,22 @@ public class BenchmarkDigestion
     }
 
     [Benchmark]
-    public int FragmentProteins()
+    public int FragmentPeptides()
     {
         var products = new List<Product>();
         foreach (var peptide in _peptides)
+        {
+            peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+        }
+
+        return products.Count;
+    }
+
+    [Benchmark]
+    public int FragmentProteins()
+    {
+        var products = new List<Product>();
+        foreach (var peptide in _proteins)
         {
             peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
         }
