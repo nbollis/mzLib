@@ -164,7 +164,12 @@ namespace Test.Omics.FragmentationTests
             var aPeptideWithSetModifications = p.Digest(digestionParams, new List<Modification>(), new List<Modification>()).First();
 
             var theseTheoreticalFragments = new List<Product>();
-            aPeptideWithSetModifications.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theseTheoreticalFragments);
+            FragmentationParams fragmentationParams = new FragmentationParams()
+            {
+                DissociationType = DissociationType.HCD,
+                FragmentationTerminus = FragmentationTerminus.Both
+            };
+            aPeptideWithSetModifications.Fragment(fragmentationParams, ref theseTheoreticalFragments);
 
             //evaluate N-terminal masses
             var nTerminalMasses = theseTheoreticalFragments.Where(f => f.Terminus == FragmentationTerminus.N).ToList();

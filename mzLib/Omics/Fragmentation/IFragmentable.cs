@@ -15,7 +15,6 @@ public interface IFragmentable : IHasMass, IHasChemicalFormula
     /// Generates theoretical fragments for given dissociation type for this peptide. 
     /// The "products" parameter is filled with these fragments.
     /// </summary>
-    [Obsolete("Use Fragment(IFragmentationParams fragmentationParameters, ref List<Product> products) instead.")]
     public virtual void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<Product> products, IFragmentationParams? fragmentationParams = null)
     {
         fragmentationParams ??= DefaultFragmentationParams;
@@ -137,8 +136,8 @@ public interface IFragmentable : IHasMass, IHasChemicalFormula
     }
 }
 
-public static class IFragmentableExtensions 
-{ 
+public static class IFragmentableExtensions
+{
     public static void Fragment(this IFragmentable fragmentable, DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<Product> products, IFragmentationParams? fragmentationParams = null)
     {
         fragmentable.Fragment(dissociationType, fragmentationTerminus, products, fragmentationParams);

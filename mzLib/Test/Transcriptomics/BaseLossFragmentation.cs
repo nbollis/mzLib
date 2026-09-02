@@ -27,12 +27,14 @@ public static class BaseLossFragmentation
 
         IFragmentationParams fragmentationParams = new RnaFragmentationParams
         {
-             ModificationsCanSuppressBaseLossIons = true
+            ModificationsCanSuppressBaseLossIons = true,
+            DissociationType = DissociationType.CID,
+            FragmentationTerminus = FragmentationTerminus.Both
         };
 
-        unmodified.Fragment(DissociationType.CID, FragmentationTerminus.Both, unmodifiedProducts, fragmentationParams);
-        modified.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts, fragmentationParams);
-        modified2.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts2, fragmentationParams);
+        unmodified.Fragment(fragmentationParams, ref unmodifiedProducts);
+        modified.Fragment(fragmentationParams, ref modifiedProducts);
+        modified2.Fragment(fragmentationParams, ref modifiedProducts2);
 
         Assert.That(unmodifiedProducts.Any(p => p.ProductType == ProductType.aBaseLoss));
         Assert.That(modifiedProducts.Any(p => p.ProductType == ProductType.aBaseLoss));
@@ -55,12 +57,14 @@ public static class BaseLossFragmentation
 
         IFragmentationParams fragmentationParams = new RnaFragmentationParams
         {
-            ModificationsCanSuppressBaseLossIons = false
+            ModificationsCanSuppressBaseLossIons = false,
+            DissociationType = DissociationType.CID,
+            FragmentationTerminus = FragmentationTerminus.Both
         };
 
-        unmodified.Fragment(DissociationType.CID, FragmentationTerminus.Both, unmodifiedProducts, fragmentationParams);
-        modified.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts, fragmentationParams);
-        modified2.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts2, fragmentationParams);
+        unmodified.Fragment(fragmentationParams, ref unmodifiedProducts);
+        modified.Fragment(fragmentationParams, ref modifiedProducts);
+        modified2.Fragment(fragmentationParams, ref modifiedProducts2   );
 
         Assert.That(unmodifiedProducts.Any(p => p.ProductType == ProductType.aBaseLoss));
         Assert.That(modifiedProducts.Any(p => p.ProductType == ProductType.aBaseLoss));
@@ -81,8 +85,14 @@ public static class BaseLossFragmentation
         var unmodifiedProducts = new List<Product>();
         var modifiedProducts = new List<Product>();
 
-        unmodified.Fragment(DissociationType.CID, FragmentationTerminus.Both, unmodifiedProducts);
-        twoOMethyl.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts);
+        var fragmentParams = new RnaFragmentationParams
+        {
+            DissociationType = DissociationType.CID,
+            FragmentationTerminus = FragmentationTerminus.Both
+        };
+
+        unmodified.Fragment(fragmentParams, ref unmodifiedProducts);
+        twoOMethyl.Fragment(fragmentParams, ref modifiedProducts);
 
         // Ensure all products except the base loss are identical
         var types = unmodifiedProducts.Select(p => p.ProductType).ToHashSet();
@@ -148,10 +158,15 @@ public static class BaseLossFragmentation
         Assert.That(twoOMethyl.MonoisotopicMass, Is.EqualTo(unmodified.MonoisotopicMass + modMass).Within(0.001));
 
         var unmodifiedProducts = new List<Product>();
-        var modifiedProducts = new List<Product>();
+        var modifiedProducts = new List<Product>(); 
+        var fragmentParams = new RnaFragmentationParams
+        {
+            DissociationType = DissociationType.CID,
+            FragmentationTerminus = FragmentationTerminus.Both
+        };
 
-        unmodified.Fragment(DissociationType.CID, FragmentationTerminus.Both, unmodifiedProducts);
-        twoOMethyl.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts);
+        unmodified.Fragment(fragmentParams, ref unmodifiedProducts);
+        twoOMethyl.Fragment(fragmentParams, ref modifiedProducts);
 
         var twoOBaseLoss = modifiedProducts.Where(p => p.ProductType == ProductType.aBaseLoss)
             .FirstOrDefault(p => p.FragmentNumber == 3);
@@ -175,9 +190,14 @@ public static class BaseLossFragmentation
 
         var unmodifiedProducts = new List<Product>();
         var modifiedProducts = new List<Product>();
+        var fragmentParams = new RnaFragmentationParams
+        {
+            DissociationType = DissociationType.CID,
+            FragmentationTerminus = FragmentationTerminus.Both
+        };
 
-        unmodified.Fragment(DissociationType.CID, FragmentationTerminus.Both, unmodifiedProducts);
-        nSix.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts);
+        unmodified.Fragment(fragmentParams, ref unmodifiedProducts);
+        nSix.Fragment(fragmentParams, ref modifiedProducts);
 
         var twoOBaseLoss = modifiedProducts.Where(p => p.ProductType == ProductType.aBaseLoss)
             .FirstOrDefault(p => p.FragmentNumber == 3);
@@ -201,9 +221,14 @@ public static class BaseLossFragmentation
 
         var unmodifiedProducts = new List<Product>();
         var modifiedProducts = new List<Product>();
+        var fragmentParams = new RnaFragmentationParams
+        {
+            DissociationType = DissociationType.CID,
+            FragmentationTerminus = FragmentationTerminus.Both
+        };
 
-        nSix.Fragment(DissociationType.CID, FragmentationTerminus.Both, unmodifiedProducts);
-        twoOMethyl.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts);
+        nSix.Fragment(fragmentParams, ref unmodifiedProducts);
+        twoOMethyl.Fragment(fragmentParams, ref modifiedProducts);
 
         var twoOBaseLoss = modifiedProducts.Where(p => p.ProductType == ProductType.aBaseLoss)
             .FirstOrDefault(p => p.FragmentNumber == 3);
@@ -227,9 +252,14 @@ public static class BaseLossFragmentation
 
         var unmodifiedProducts = new List<Product>();
         var modifiedProducts = new List<Product>();
+        var fragmentParams = new RnaFragmentationParams
+        {
+            DissociationType = DissociationType.CID,
+            FragmentationTerminus = FragmentationTerminus.Both
+        };
 
-        unmod.Fragment(DissociationType.CID, FragmentationTerminus.Both, unmodifiedProducts);
-        dimethyl.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts);
+        unmod.Fragment(fragmentParams, ref unmodifiedProducts);
+        dimethyl.Fragment(fragmentParams, ref modifiedProducts);
 
         var unmodBaseLoss = modifiedProducts.Where(p => p.ProductType == ProductType.aBaseLoss)
             .FirstOrDefault(p => p.FragmentNumber == 3);
@@ -253,9 +283,14 @@ public static class BaseLossFragmentation
 
         var unmodifiedProducts = new List<Product>();
         var modifiedProducts = new List<Product>();
+        var fragmentParams = new RnaFragmentationParams
+        {
+            DissociationType = DissociationType.CID,
+            FragmentationTerminus = FragmentationTerminus.Both
+        };
 
-        twoOMethyl.Fragment(DissociationType.CID, FragmentationTerminus.Both, unmodifiedProducts);
-        dimethyl.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts);
+        twoOMethyl.Fragment(fragmentParams, ref unmodifiedProducts);
+        dimethyl.Fragment(fragmentParams, ref modifiedProducts);
 
         var twoOBaseLoss = modifiedProducts.Where(p => p.ProductType == ProductType.aBaseLoss)
             .FirstOrDefault(p => p.FragmentNumber == 3);
@@ -279,9 +314,14 @@ public static class BaseLossFragmentation
 
         var unmodifiedProducts = new List<Product>();
         var modifiedProducts = new List<Product>();
+        var fragmentParams = new RnaFragmentationParams
+        {
+            DissociationType = DissociationType.CID,
+            FragmentationTerminus = FragmentationTerminus.Both
+        };
 
-        nSix.Fragment(DissociationType.CID, FragmentationTerminus.Both, unmodifiedProducts);
-        dimethyl.Fragment(DissociationType.CID, FragmentationTerminus.Both, modifiedProducts);
+        nSix.Fragment(fragmentParams, ref unmodifiedProducts);
+        dimethyl.Fragment(fragmentParams, ref modifiedProducts);
 
         var nSixBaseLoss = modifiedProducts.Where(p => p.ProductType == ProductType.aBaseLoss)
             .FirstOrDefault(p => p.FragmentNumber == 3);

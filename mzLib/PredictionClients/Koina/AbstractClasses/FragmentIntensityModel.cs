@@ -164,7 +164,7 @@ namespace PredictionClients.Koina.AbstractClasses
         /// such as in ResponseToPredictions() with MapToInputFullSequence mapping mode selected, since Koina does not return M-ions and 
         /// any potential issues with generated M-ions would be inherited here.
         /// </summary>
-        private static readonly FragmentationParams _noMIonParams = new() { GenerateMIon = false };
+        private static readonly FragmentationParams _noMIonParams = new() { GenerateMIon = false, DissociationType = MassSpectrometry.DissociationType.HCD, FragmentationTerminus = FragmentationTerminus.Both };
         #endregion
 
         #region Inputs and Outputs for internal processing 
@@ -487,7 +487,7 @@ namespace PredictionClients.Koina.AbstractClasses
                         var peptide = batchPeptides[i];
                         var pwsm = new PeptideWithSetModifications(peptide.FullSequence);
                         List<Product> theoreticalProducts = new();
-                        pwsm.Fragment(MassSpectrometry.DissociationType.HCD, FragmentationTerminus.Both, theoreticalProducts, fragmentationParams: _noMIonParams);
+                        pwsm.Fragment(_noMIonParams, ref theoreticalProducts);
                         Dictionary<string, Product> tpLookup = theoreticalProducts.DistinctBy(tp => tp.Annotation).ToDictionary(tp => tp.Annotation);
 
                         var fragmentIons = new List<string>();
@@ -718,7 +718,7 @@ namespace PredictionClients.Koina.AbstractClasses
                 List<MatchedFragmentIon> fragmentIons = new();
 
                 List<Product> theoreticalProducts = new();
-                peptide.Fragment(MassSpectrometry.DissociationType.HCD, FragmentationTerminus.Both, theoreticalProducts, fragmentationParams: _noMIonParams); // Generate theoretical fragments to get the m/z values for the input sequence
+                peptide.Fragment(_noMIonParams, ref theoreticalProducts); // Generate theoretical fragments to get the m/z values for the input sequence
                 Dictionary<string, double> predictionAnnotationIntensityLookup = new();
                 Dictionary<string, Product> tpLookup = theoreticalProducts.DistinctBy(tp => tp.Annotation).ToDictionary(tp => tp.Annotation);
 
