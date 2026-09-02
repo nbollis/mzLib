@@ -1,21 +1,64 @@
 using Chemistry;
 using MassSpectrometry;
+using MzLibUtil;
 using Omics.Modifications;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Collections.Concurrent;
 
 namespace Omics.Fragmentation;
 
 public interface IFragmentable : IHasMass, IHasChemicalFormula
 {
     public Product DefaultMIon => new CustomMProduct(string.Empty, MonoisotopicMass);
+    public virtual IFragmentationParams DefaultFragmentationParams => FragmentationParams.Default;
 
     /// <summary>
     /// Generates theoretical fragments for given dissociation type for this peptide. 
     /// The "products" parameter is filled with these fragments.
     /// </summary>
-    public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<Product> products, IFragmentationParams? fragmentationParams = null);
+    [Obsolete("Use Fragment(IFragmentationParams fragmentationParameters, ref List<Product> products) instead.")]
+    public virtual void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<Product> products, IFragmentationParams? fragmentationParams = null)
+    {
+        fragmentationParams ??= DefaultFragmentationParams;
+        fragmentationParams.DissociationType = dissociationType;
+        fragmentationParams.FragmentationTerminus = fragmentationTerminus;
+        Fragment(fragmentationParams, ref products);
+    }
+
+    public IEnumerable<Product> GetBackboneFragments(IFragmentationParams fragmentationParameters);
+
+    /// <summary>
+    /// Generates theoretical fragments for given dissociation type for this peptide. 
+    /// The "products" parameter is filled with these fragments.
+    /// </summary>
+    public virtual void Fragment(IFragmentationParams fragmentationParameters, ref List<Product> products)
+    {
+        products.Clear();
+
+        IEnumerable<Product> workingProductsEnumerable = GetBackboneFragments(fragmentationParameters);
+
+        if (fragmentationParameters.GenerateMIon)
+        {
+            products.Add(DefaultMIon);
+            workingProductsEnumerable = workingProductsEnumerable.Concat(GetMIonsWithNeturalLosses(fragmentationParameters));
+        }
+
+        IBioPolymerWithSetMods? bpwsm = this as IBioPolymerWithSetMods;
+
+        // Create M ions minus the neutral loss of any mod. Previously Protein Only
+        if (bpwsm != null && fragmentationParameters is FragmentationParams)
+        {
+            workingProductsEnumerable = workingProductsEnumerable.Concat(GetMIonsFromModifications(bpwsm.AllModsOneIsNterminus.Values, fragmentationParameters.DissociationType));
+        }
+
+        // generate diagnostic ions
+        if (fragmentationParameters.GenerateDiagnosticIons && bpwsm != null)
+        {
+            workingProductsEnumerable = workingProductsEnumerable.Concat(GetDiagnosticIonsFromModifications(bpwsm.AllModsOneIsNterminus.Values, fragmentationParameters.DissociationType, fragmentationParameters));
+        }
+
+        products.AddRange(workingProductsEnumerable);
+    }
+
 
     /// <summary>
     /// Generates theoretical internal fragments for given dissociation type for this peptide. 
@@ -91,5 +134,18 @@ public interface IFragmentable : IHasMass, IHasChemicalFormula
             // the diagnostic ion is assumed to be annotated in the mod info as the *neutral mass* of the diagnostic ion, not the ionized species
             yield return new Product(ProductType.D, FragmentationTerminus.Both, diagnosticIon, diagnosticIonLabel, 0, 0);
         }
+    }
+}
+
+public static class IFragmentableExtensions 
+{ 
+    public static void Fragment(this IFragmentable fragmentable, DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<Product> products, IFragmentationParams? fragmentationParams = null)
+    {
+        fragmentable.Fragment(dissociationType, fragmentationTerminus, products, fragmentationParams);
+    }
+
+    public static void Fragment(this IFragmentable fragmentable, IFragmentationParams fragmentationParameters, ref List<Product> products)
+    {
+        fragmentable.Fragment(fragmentationParameters, ref products);
     }
 }

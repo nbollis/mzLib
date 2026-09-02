@@ -62,4 +62,6 @@ public class MockBioPolymerWithSetMods : IBioPolymerWithSetMods
     public bool Equals(IBioPolymerWithSetMods? other) => other != null && BaseSequence == other.BaseSequence;
     public override bool Equals(object? obj) => obj is IBioPolymerWithSetMods other && Equals(other);
     public override int GetHashCode() => BaseSequence.GetHashCode();
+
+    public IEnumerable<Product> GetBackboneFragments(IFragmentationParams fragmentationParameters) => new List<Product>();
 }

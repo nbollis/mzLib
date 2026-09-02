@@ -15,7 +15,7 @@ namespace Omics
     /// Proteins -> PeptideWithSetModifications : ProteolyticPeptide
     /// Nucleic Acids -> OligoWithSetMods : NucleolyticOligo
     /// </remarks>
-    public interface IBioPolymerWithSetMods : IHasChemicalFormula, IDigestionProduct, IEquatable<IBioPolymerWithSetMods>
+    public interface IBioPolymerWithSetMods : IHasChemicalFormula, IDigestionProduct, IFragmentable, IEquatable<IBioPolymerWithSetMods>
     {
         string FullSequence { get; }
         double MostAbundantMonoisotopicMass { get; }
@@ -26,12 +26,6 @@ namespace Omics
         int NumMods { get; }
         int NumFixedMods { get; }
         int NumVariableMods { get; }
-
-        public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus,
-            List<Product> products, IFragmentationParams? fragmentationParams = null);
-
-        public void FragmentInternally(DissociationType dissociationType, int minLengthOfFragments,
-            List<Product> products, IFragmentationParams? fragmentationParams = null);
 
         /// <summary>
         /// Outputs a duplicate IBioPolymerWithSetMods with a localized mass shift, replacing a modification when present

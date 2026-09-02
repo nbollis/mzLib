@@ -183,16 +183,13 @@ namespace Transcriptomics.Digestion
         public int NumFixedMods { get; }
         public int NumVariableMods => NumMods - NumFixedMods;
 
-        /// <summary>
-        /// Generates theoretical fragments for given dissociation type for this peptide. 
-        /// The "products" parameter is filled with these fragments.
-        /// </summary>
-        public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus,
-            List<Product> products, IFragmentationParams? fragmentationParams = null)
+        IFragmentationParams IFragmentable.DefaultFragmentationParams => RnaFragmentationParams.Default;
+
+        public IEnumerable<Product> GetBackboneFragments(IFragmentationParams fragmentationParameters)
         {
-            products.Clear();
-            fragmentationParams ??= RnaFragmentationParams.Default;
-            bool modsCanSuppressBaseLossIons = fragmentationParams is RnaFragmentationParams
+            var dissociationType = fragmentationParameters.DissociationType;
+            var fragmentationTerminus = fragmentationParameters.FragmentationTerminus;
+            bool modsCanSuppressBaseLossIons = fragmentationParameters is RnaFragmentationParams
             {
                 ModificationsCanSuppressBaseLossIons: true
             };
@@ -217,20 +214,13 @@ namespace Transcriptomics.Digestion
                 sequence = NucleicAcid.NucleicAcidArray[(OneBasedStartResidue - 1)..OneBasedEndResidue];
             }
 
-            // intact product ion
-            if (fragmentationParams.GenerateMIon && fragmentationTerminus is FragmentationTerminus.Both or FragmentationTerminus.None)
-            {
-                products.Add(((IFragmentable)this).DefaultMIon);
-                products.AddRange(((IFragmentable)this).GetMIonsWithNeturalLosses(fragmentationParams));
-            }
-
             if (calculateFivePrime)
-                foreach (var type in fivePrimeProductTypes)
-                    products.AddRange(GetNeutralFragments(type, sequence, modsCanSuppressBaseLossIons));
+                foreach (var product in fivePrimeProductTypes.SelectMany(p => GetNeutralFragments(p, sequence, modsCanSuppressBaseLossIons)))
+                    yield return product;
 
             if (calculateThreePrime)
-                foreach (var type in threePrimeProductTypes)
-                    products.AddRange(GetNeutralFragments(type, sequence, modsCanSuppressBaseLossIons));
+                foreach (var product in threePrimeProductTypes.SelectMany(p => GetNeutralFragments(p, sequence, modsCanSuppressBaseLossIons)))
+                    yield return product;
         }
 
         #region IEquatable

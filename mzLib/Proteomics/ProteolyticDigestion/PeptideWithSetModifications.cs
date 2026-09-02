@@ -2,7 +2,6 @@ using Chemistry;
 using Chromatography.RetentionTimePrediction;
 using Easy.Common.Extensions;
 using MassSpectrometry;
-using MzLibUtil;
 using Omics;
 using Omics.BioPolymer;
 using Omics.Digestion;
@@ -223,33 +222,10 @@ namespace Proteomics.ProteolyticDigestion
 
         public IBioPolymer Parent => Protein;
 
-
-        /// <summary>
-        /// Generates theoretical fragments for given dissociation type for this peptide. 
-        /// The "products" parameter is filled with these fragments.
-        /// </summary>
-        public void Fragment(DissociationType dissociationType, FragmentationTerminus fragmentationTerminus, List<Product> products, IFragmentationParams? fragmentationParams = null)
+        public IEnumerable<Product> GetBackboneFragments(IFragmentationParams fragmentationParameters)
         {
-            fragmentationParams ??= FragmentationParams.Default;
-
-            // This code is specifically written to be memory- and CPU -efficient because it is 
-            // called millions of times for a typical search (i.e., at least once per peptide). 
-            // If you modify this code, BE VERY CAREFUL about allocating new memory, especially 
-            // for new collections. This code also deliberately avoids using "yield return", again
-            // for performance reasons. Be sure to benchmark any changes with a parallelized 
-            // fragmentation of every peptide in a database (i.e., test for speed decreases and 
-            // memory issues).
-
-            products.Clear();
-
-            IEnumerable<Product> workingProducts = Enumerable.Empty<Product>();
-
-            if (fragmentationParams.GenerateMIon)
-            {
-                products.Add(((IFragmentable)this).DefaultMIon);
-                workingProducts = workingProducts.Concat(((IFragmentable)this).GetMIonsWithNeturalLosses(fragmentationParams));
-            }
-
+            var dissociationType = fragmentationParameters.DissociationType;
+            var fragmentationTerminus = fragmentationParameters.FragmentationTerminus;
             var massCaps = DissociationTypeCollection.GetNAndCTerminalMassShiftsForDissociationType(dissociationType);
 
             double cTermMass = 0;
@@ -363,13 +339,13 @@ namespace Proteomics.ProteolyticDigestion
                             }
                         }
 
-                        products.Add(new Product(
+                        yield return new Product(
                             nTermProductTypes[i],
                             FragmentationTerminus.N,
                             nTermMass + massCaps.Item1[i],
                             r + 1,
                             r + 1,
-                            0));
+                            0);
 
                         AddNeutralLossesFromMods(mod, nTermNeutralLosses, dissociationType);
 
@@ -377,19 +353,19 @@ namespace Proteomics.ProteolyticDigestion
                         {
                             foreach (double neutralLoss in nTermNeutralLosses)
                             {
-                                products.Add(new Product(
+                                yield return new Product(
                                     nTermProductTypes[i],
                                     FragmentationTerminus.N,
                                     nTermMass + massCaps.Item1[i] - neutralLoss,
                                     r + 1,
                                     r + 1,
-                                    neutralLoss));
+                                    neutralLoss);
                             }
                         }
                     }
                 }
 
-            // c-term fragments
+                // c-term fragments
             CTerminusFragments:
                 if (calculateCTermFragments)
                 {
@@ -449,13 +425,13 @@ namespace Proteomics.ProteolyticDigestion
                             }
                         }
 
-                        products.Add(new Product(
+                        yield return new Product(
                             cTermProductTypes[i],
                             FragmentationTerminus.C,
                             cTermMass + massCaps.Item2[i],
                             r + 1,
                             BaseSequence.Length - r,
-                            0));
+                            0);
 
                         AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
 
@@ -463,13 +439,13 @@ namespace Proteomics.ProteolyticDigestion
                         {
                             foreach (double neutralLoss in cTermNeutralLosses)
                             {
-                                products.Add(new Product(
+                                yield return new Product(
                                     cTermProductTypes[i],
                                     FragmentationTerminus.C,
                                     cTermMass + massCaps.Item2[i] - neutralLoss,
                                     r + 1,
                                     BaseSequence.Length - r,
-                                    neutralLoss));
+                                    neutralLoss);
                             }
                         }
                     }
@@ -497,13 +473,13 @@ namespace Proteomics.ProteolyticDigestion
                 }
 
                 // generate zDot product
-                products.Add(new Product(
+                yield return new Product(
                     ProductType.zDot,
                     FragmentationTerminus.C,
                     cTermMass + DissociationTypeCollection.GetMassShiftFromProductType(ProductType.zDot),
                     BaseSequence.Length,
                     1,
-                    0));
+                    0);
 
                 AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
 
@@ -511,24 +487,16 @@ namespace Proteomics.ProteolyticDigestion
                 {
                     foreach (double neutralLoss in cTermNeutralLosses)
                     {
-                        products.Add(new Product(
+                        yield return new Product(
                             ProductType.zDot,
                             FragmentationTerminus.C,
                             cTermMass + DissociationTypeCollection.GetMassShiftFromProductType(ProductType.zDot) - neutralLoss,
                             BaseSequence.Length,
                             1,
-                            neutralLoss));
+                            neutralLoss);
                     }
                 }
             }
-
-            // Create M ions minus the neutral loss of any mod. 
-            workingProducts = workingProducts.Concat(((IFragmentable)this).GetMIonsFromModifications(AllModsOneIsNterminus.Values, dissociationType));
-
-            // generate diagnostic ions
-            workingProducts = workingProducts.Concat(((IFragmentable)this).GetDiagnosticIonsFromModifications(AllModsOneIsNterminus.Values, dissociationType, fragmentationParams));
-
-            products.AddRange(workingProducts);
         }
 
         /// <summary>
