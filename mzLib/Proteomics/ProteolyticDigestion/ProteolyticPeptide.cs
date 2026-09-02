@@ -10,7 +10,7 @@ namespace Proteomics.ProteolyticDigestion
     /// Contains methods for modified peptide combinitorics
     /// </summary>
     [Serializable]
-    public class ProteolyticPeptide : DigestionProduct
+    public class ProteolyticPeptide : DigestionProduct, IDigestionProduct
     {
         internal ProteolyticPeptide(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, int missedCleavages, CleavageSpecificity cleavageSpecificityForFdrCategory, string peptideDescription = null, string baseSequence = null) :
             base(protein, oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, cleavageSpecificityForFdrCategory, peptideDescription, baseSequence)

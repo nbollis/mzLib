@@ -3,12 +3,11 @@ using Omics.Modifications;
 
 namespace Omics.Digestion
 {
-    public abstract class DigestionProduct
+
+    public abstract class DigestionProduct : IDigestionProduct
     {
         protected static readonly DictionaryPool<int, SortedSet<Modification>> DictionaryPool = new();
         protected static readonly DictionaryPool<int, Modification> FixedModDictionaryPool = new(8);
-
-        protected string _baseSequence;
 
         protected DigestionProduct(IBioPolymer parent, int oneBasedStartResidue, int oneBasedEndResidue, int missedCleavages, 
             CleavageSpecificity cleavageSpecificityForFdrCategory, string? description = null, string? baseSequence = null)
@@ -19,24 +18,56 @@ namespace Omics.Digestion
             MissedCleavages = missedCleavages;
             CleavageSpecificityForFdrCategory = cleavageSpecificityForFdrCategory;
             Description = description;
-            _baseSequence = baseSequence;
+
+            if (baseSequence is not null)
+                BaseSequence = baseSequence;
+            else if (Parent is not null)
+                BaseSequence = IDigestionProduct.GetBaseSequence(Parent, OneBasedStartResidue, OneBasedEndResidue);
+            else
+                BaseSequence = baseSequence;
         }
 
-        [field: NonSerialized] public IBioPolymer Parent { get; protected set; } // BioPolymer that this lysis product is a digestion product of
-        public string Description { get; protected set; } //unstructured explanation of source
-        public int OneBasedStartResidue { get; }// the residue number at which the peptide begins (the first residue in a protein is 1)
-        public int OneBasedEndResidue { get; }// the residue number at which the peptide ends
-        public int MissedCleavages { get; } // the number of missed cleavages this peptide has with respect to the digesting protease
+        /// <summary>
+        /// BioPolymer that this lysis product is a digestion product of.
+        /// </summary>
+        [field: NonSerialized] public IBioPolymer Parent { get; protected set; }
+
+        /// <summary>
+        /// Unstructured explanation of source.
+        /// </summary>
+        public string Description { get; protected set; }
+
+        /// <summary>
+        /// The residue number at which the peptide begins (the first residue in a protein is 1).
+        /// </summary>
+        public int OneBasedStartResidue { get; }
+
+        /// <summary>
+        /// The residue number at which the peptide ends.
+        /// </summary>
+        public int OneBasedEndResidue { get; }
+
+        /// <summary>
+        /// The number of missed cleavages this peptide has with respect to the digesting protease.
+        /// </summary>
+        public int MissedCleavages { get; }
 
         public virtual char PreviousResidue => Parent is null ? '-' : OneBasedStartResidue > 1 ? Parent[OneBasedStartResidue - 2] : '-';
 
         public virtual char NextResidue => Parent is null ? '-' : OneBasedEndResidue < Parent.Length ? Parent[OneBasedEndResidue] : '-';
 
-        public string BaseSequence =>
-            _baseSequence ??= Parent.BaseSequence.Substring(OneBasedStartResidue - 1,
-                OneBasedEndResidue - OneBasedStartResidue + 1);
-        public CleavageSpecificity CleavageSpecificityForFdrCategory { get; set; } //structured explanation of source
-        public int Length => BaseSequence.Length; //how many residues long the peptide is
+        public string BaseSequence { get; protected set; }
+
+        /// <summary>
+        /// Structured explanation of source.
+        /// </summary>
+        public CleavageSpecificity CleavageSpecificityForFdrCategory { get; set; }
+
+        /// <summary>
+        /// How many residues long the peptide is.
+        /// </summary>
+        public int Length => BaseSequence.Length;
+
         public char this[int zeroBasedIndex] => BaseSequence[zeroBasedIndex];
 
         #region Digestion Helper Methods
