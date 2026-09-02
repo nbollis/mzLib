@@ -48,12 +48,13 @@ public static class CuratedVsModomicsFragmentation
     public static void N6Methyladenosine_Single()
     {
         // Both sources share this id exactly; the dictionaries decide which entry resolves.
-        // Curated declares the methyl as base-localized (BL Modified), so it leaves with the base;
-        // the plain MODOMICS mod keeps it on the backbone after base loss.
+        // Curated declares the methyl base-localized (BL Modified), and MODOMICS derives the same
+        // behavior from its product ion ([N6-methyladenine]+ = [adenine]+ + CH2), so every fragment,
+        // including the base-loss ion, is identical across the two representations.
         CompareSources("N6-methyl single",
             "GUA[N6-methyladenosine on A]CUG",
             "GUA[N6-methyladenosine on A]CUG",
-            [(3, ChemicalFormula.ParseFormula("CH2").MonoisotopicMass)]);
+            []);
     }
 
     [Test]
