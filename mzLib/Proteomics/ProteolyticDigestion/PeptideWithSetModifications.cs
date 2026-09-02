@@ -222,7 +222,7 @@ namespace Proteomics.ProteolyticDigestion
 
         public IBioPolymer Parent => Protein;
 
-        public IEnumerable<Product> GetBackboneFragments(IFragmentationParams fragmentationParameters)
+        public void GetBackboneFragments(IFragmentationParams fragmentationParameters, ref List<Product> products)
         {
             var dissociationType = fragmentationParameters.DissociationType;
             var fragmentationTerminus = fragmentationParameters.FragmentationTerminus;
@@ -339,13 +339,13 @@ namespace Proteomics.ProteolyticDigestion
                             }
                         }
 
-                        yield return new Product(
+                        products.Add(new Product(
                             nTermProductTypes[i],
                             FragmentationTerminus.N,
                             nTermMass + massCaps.Item1[i],
                             r + 1,
                             r + 1,
-                            0);
+                            0));
 
                         AddNeutralLossesFromMods(mod, nTermNeutralLosses, dissociationType);
 
@@ -353,13 +353,13 @@ namespace Proteomics.ProteolyticDigestion
                         {
                             foreach (double neutralLoss in nTermNeutralLosses)
                             {
-                                yield return new Product(
+                                products.Add(new Product(
                                     nTermProductTypes[i],
                                     FragmentationTerminus.N,
                                     nTermMass + massCaps.Item1[i] - neutralLoss,
                                     r + 1,
                                     r + 1,
-                                    neutralLoss);
+                                    neutralLoss));
                             }
                         }
                     }
@@ -425,13 +425,13 @@ namespace Proteomics.ProteolyticDigestion
                             }
                         }
 
-                        yield return new Product(
+                        products.Add(new Product(
                             cTermProductTypes[i],
                             FragmentationTerminus.C,
                             cTermMass + massCaps.Item2[i],
                             r + 1,
                             BaseSequence.Length - r,
-                            0);
+                            0));
 
                         AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
 
@@ -439,13 +439,13 @@ namespace Proteomics.ProteolyticDigestion
                         {
                             foreach (double neutralLoss in cTermNeutralLosses)
                             {
-                                yield return new Product(
+                                products.Add(new Product(
                                     cTermProductTypes[i],
                                     FragmentationTerminus.C,
                                     cTermMass + massCaps.Item2[i] - neutralLoss,
                                     r + 1,
                                     BaseSequence.Length - r,
-                                    neutralLoss);
+                                    neutralLoss));
                             }
                         }
                     }
@@ -473,13 +473,13 @@ namespace Proteomics.ProteolyticDigestion
                 }
 
                 // generate zDot product
-                yield return new Product(
+                products.Add(new Product(
                     ProductType.zDot,
                     FragmentationTerminus.C,
                     cTermMass + DissociationTypeCollection.GetMassShiftFromProductType(ProductType.zDot),
                     BaseSequence.Length,
                     1,
-                    0);
+                    0));
 
                 AddNeutralLossesFromMods(mod, cTermNeutralLosses, dissociationType);
 
@@ -487,13 +487,13 @@ namespace Proteomics.ProteolyticDigestion
                 {
                     foreach (double neutralLoss in cTermNeutralLosses)
                     {
-                        yield return new Product(
+                        products.Add(new Product(
                             ProductType.zDot,
                             FragmentationTerminus.C,
                             cTermMass + DissociationTypeCollection.GetMassShiftFromProductType(ProductType.zDot) - neutralLoss,
                             BaseSequence.Length,
                             1,
-                            neutralLoss);
+                            neutralLoss));
                     }
                 }
             }

@@ -185,7 +185,7 @@ namespace Transcriptomics.Digestion
 
         IFragmentationParams IFragmentable.DefaultFragmentationParams => RnaFragmentationParams.Default;
 
-        public IEnumerable<Product> GetBackboneFragments(IFragmentationParams fragmentationParameters)
+        public void GetBackboneFragments(IFragmentationParams fragmentationParameters, ref List<Product> products)
         {
             var dissociationType = fragmentationParameters.DissociationType;
             var fragmentationTerminus = fragmentationParameters.FragmentationTerminus;
@@ -215,12 +215,12 @@ namespace Transcriptomics.Digestion
             }
 
             if (calculateFivePrime)
-                foreach (var product in fivePrimeProductTypes.SelectMany(p => GetNeutralFragments(p, sequence, modsCanSuppressBaseLossIons)))
-                    yield return product;
+                foreach (var productType in fivePrimeProductTypes.Select(p => GetNeutralFragments(p, sequence, modsCanSuppressBaseLossIons)))
+                    products.AddRange(productType);
 
             if (calculateThreePrime)
-                foreach (var product in threePrimeProductTypes.SelectMany(p => GetNeutralFragments(p, sequence, modsCanSuppressBaseLossIons)))
-                    yield return product;
+                foreach (var productType in threePrimeProductTypes.Select(p => GetNeutralFragments(p, sequence, modsCanSuppressBaseLossIons)))
+                    products.AddRange(productType);
         }
 
         #region IEquatable
