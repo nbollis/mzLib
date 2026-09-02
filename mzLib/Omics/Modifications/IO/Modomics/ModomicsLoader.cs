@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Microsoft.VisualBasic.FileIO;
 
 using Chemistry;
@@ -18,6 +17,8 @@ namespace Omics.Modifications.IO.Modomics;
 /// modification sits on the base, which yields <see cref="BaseModification"/> semantics: nothing on the
 /// base (a ribose methyl) gives Default; a partial or full portion gives Modified with that portion
 /// departing with the base. Ions that measure no unique answer keep the plain representation.
+/// The result also exposes a one-letter-code map (each loaded modification keyed by its MODOMICS
+/// "abbrev" symbol) for reading MODOMICS-coded sequences.
 /// </summary>
 public static class ModomicsLoader
 {
@@ -79,6 +80,7 @@ public static class ModomicsLoader
             TerminalModifications = _cachedBaseResult.TerminalModifications,
             DuplicateModifications = duplicates,
             NotYetRepresentableEntries = _cachedBaseResult.NotYetRepresentableEntries,
+            OneLetterCodeToMod = _cachedBaseResult.OneLetterCodeToMod,
         };
     }
 
@@ -117,6 +119,8 @@ public static class ModomicsLoader
         var terminalModifications = new List<Modification>();
         var notYetRepresentableEntries = new List<ModomicsNotYetRepresentableEntry>();
         var loadedById = new Dictionary<string, Modification>(StringComparer.Ordinal);
+        var oneLetterCodeToMod = new Dictionary<char, Modification>();
+        var duplicateOneLetterCodes = new HashSet<char>();
 
         foreach (var kvp in jsonDict)
         {
@@ -141,6 +145,19 @@ public static class ModomicsLoader
                     {
                         terminalModifications.Add(outcome.Modification);
                     }
+
+                    if (dto.Abbrev.Length == 1)
+                    {
+                        var code = dto.Abbrev[0];
+                        if (!duplicateOneLetterCodes.Contains(code))
+                        {
+                            if (!oneLetterCodeToMod.TryAdd(code, outcome.Modification))
+                            {
+                                oneLetterCodeToMod.Remove(code);
+                                duplicateOneLetterCodes.Add(code);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -150,6 +167,7 @@ public static class ModomicsLoader
             LoadedModifications = loadedModifications,
             TerminalModifications = terminalModifications,
             NotYetRepresentableEntries = notYetRepresentableEntries,
+            OneLetterCodeToMod = oneLetterCodeToMod,
         };
     }
 
@@ -458,7 +476,7 @@ public static class ModomicsLoader
         // "None of the modification is on the base" is always a candidate.
         yield return new ChemicalFormula();
 
-        var elements = ParseElementCounts(modificationFormula.Formula);
+        var elements = modificationFormula.GetElementCounts();
         var interiorIsEnumerable = elements.Count > 0
             && elements.All(e => e.Count >= 0)
             && elements.Aggregate(1L, (total, e) => total * (e.Count + 1)) <= 512;
@@ -479,7 +497,7 @@ public static class ModomicsLoader
         }
     }
 
-    private static IEnumerable<ChemicalFormula> EnumeratePortions(List<(string Element, int Count)> elements, int elementIndex, string prefix)
+    private static IEnumerable<ChemicalFormula> EnumeratePortions(List<(string Token, int Count)> elements, int elementIndex, string prefix)
     {
         if (elementIndex == elements.Count)
         {
@@ -491,28 +509,15 @@ public static class ModomicsLoader
             yield break;
         }
 
-        var (element, count) = elements[elementIndex];
+        var (token, count) = elements[elementIndex];
         for (var taken = 0; taken <= count; taken++)
         {
-            var withThisElement = taken == 0 ? prefix : prefix + element + taken;
+            var withThisElement = taken == 0 ? prefix : prefix + token + taken;
             foreach (var portion in EnumeratePortions(elements, elementIndex + 1, withThisElement))
             {
                 yield return portion;
             }
         }
-    }
-
-    private static List<(string Element, int Count)> ParseElementCounts(string formula)
-    {
-        // Hill notation: no spaces; counts of 1 are omitted; negative counts render as e.g. "H-1".
-        var counts = new List<(string Element, int Count)>();
-        foreach (Match match in Regex.Matches(formula, @"([A-Z][a-z]?)(-?\d+)?"))
-        {
-            var count = match.Groups[2].Success ? int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture) : 1;
-            counts.Add((match.Groups[1].Value, count));
-        }
-
-        return counts;
     }
 
     private static bool SameNominalMz(double first, double second)
@@ -569,6 +574,7 @@ public static class ModomicsLoader
             NotYetRepresentableEntry = new ModomicsNotYetRepresentableEntry
             {
                 Id = dto.Id,
+                Abbrev = dto.Abbrev,
                 ShortName = dto.ShortName,
                 Name = dto.Name,
                 Formula = dto.Formula,

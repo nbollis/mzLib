@@ -6,6 +6,7 @@ using System.Text;
 using MzLibUtil;
 using Transcriptomics.Digestion;
 using Omics.BioPolymer;
+using Omics.Modifications.IO.Modomics;
 
 namespace Transcriptomics
 {
@@ -52,15 +53,15 @@ namespace Transcriptomics
             _nucleicAcids = new Nucleotide[sequence.Length];
             ThreePrimeTerminus = threePrimeTerm ?? DefaultThreePrimeTerminus;
             FivePrimeTerminus = fivePrimeTerm ?? DefaultFivePrimeTerminus;
-            ParseSequenceString(sequence);
+            var allLocalizedModifications = oneBasedPossibleLocalizedModifications?.ToDictionary(kv => kv.Key, kv => kv.Value.ToList())
+                                          ?? new Dictionary<int, List<Modification>>();
+            ParseSequenceString(sequence, allLocalizedModifications);
 
             SequenceVariations = [];
             AppliedSequenceVariations = [];
             TruncationProducts = [];
-            OriginalNonVariantModifications = oneBasedPossibleLocalizedModifications ?? new Dictionary<int, List<Modification>>();
-            OneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications != null 
-                ? ((IBioPolymer)this).SelectValidOneBaseMods(oneBasedPossibleLocalizedModifications) 
-                : new Dictionary<int, List<Modification>>();
+            OriginalNonVariantModifications = allLocalizedModifications;
+            OneBasedPossibleLocalizedModifications = ((IBioPolymer)this).SelectValidOneBaseMods(allLocalizedModifications);
         }
 
         /// <summary>
@@ -335,41 +336,50 @@ namespace Transcriptomics
         /// updates the sequence string, and calculates the monoisotopic mass.
         /// </summary>
         /// <param name="sequence">The string sequence of nucleic acid characters to parse.</param>
-        private void ParseSequenceString(string sequence)
+        private void ParseSequenceString(string sequence, Dictionary<int, List<Modification>> localizedModifications)
         {
             if (string.IsNullOrEmpty(sequence))
                 return;
 
-            int index = 0;
             double monoMass = 0;
+            var modomicsCodeMap = Mods.ModomicsLoadReport.OneLetterCodeToMod;
 
-            StringBuilder sb = null;
-            sb = new StringBuilder(sequence.Length);
+            var sb = new StringBuilder(sequence.Length);
 
-            foreach (char letter in sequence)
+            void AddParsedResidue(Nucleotide residue, Modification? modification = null)
             {
-                Nucleotide residue;
-                if (Nucleotide.TryGetResidue(letter, out residue))
+                _nucleicAcids[sb.Length] = residue;
+                sb.Append(residue.Letter);
+                monoMass += residue.MonoisotopicMass;
+
+                if (modification is not null)
                 {
-                    _nucleicAcids[index++] = residue;
-                    sb.Append(residue.Letter);
-                    monoMass += residue.MonoisotopicMass;
+                    localizedModifications[sb.Length] = [modification];
+                }
+            }
+
+            for (int sequenceStringIndex = 0; sequenceStringIndex < sequence.Length; sequenceStringIndex++)
+            {
+                char letter = sequence[sequenceStringIndex];
+                if (letter is ' ' or '*')
+                {
+                    continue;
+                }
+
+                if (Nucleotide.TryGetResidue(letter, out var canonicalResidue))
+                {
+                    AddParsedResidue(canonicalResidue);
+                }
+                else if (modomicsCodeMap.TryGetValue(letter, out var modomicsModification)
+                         && Nucleotide.TryGetResidue(modomicsModification.Target!.Motif[0], out var targetResidue))
+                {
+                    AddParsedResidue(targetResidue, modomicsModification);
                 }
                 else
                 {
-                    switch (letter)
-                    {
-                        case ' ': // ignore spaces
-                            break;
-
-                        case '*': // ignore *
-                            break;
-
-                        default:
-                            throw new ArgumentException(string.Format(
-                                "Nucleic Acid Letter {0} does not exist in the Nucleic Acid Dictionary. {0} is also not a valid character",
-                                letter));
-                    }
+                    throw new ArgumentException(string.Format(
+                        "Nucleic Acid Letter {0} does not exist in the Nucleic Acid Dictionary. {0} is also not a valid character",
+                        letter));
                 }
             }
 
