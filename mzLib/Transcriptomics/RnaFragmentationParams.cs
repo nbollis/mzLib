@@ -9,7 +9,7 @@ public class RnaFragmentationParams : IFragmentationParams, IEquatable<RnaFragme
 {
     public static readonly RnaFragmentationParams Default = new();
     public bool GenerateMIon { get; set; } = true;
-    public bool GenerateDiagnosticIons { get; set; } = false;
+    public bool GenerateDiagnosticIons { get; set; } = true;
     public List<MIonLoss> MIonLosses { get; set; } = new();
     public bool ModificationsCanSuppressBaseLossIons { get; set; } = false;
     public Polarity Polarity { get; set; } = Polarity.Negative;
