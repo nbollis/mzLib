@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
@@ -14,33 +13,29 @@ using MassSpectrometry;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
-using Transcriptomics;
-using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
-using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace Development.Fragmentation;
 
 /// <summary>
 /// Benchmarks the fragmentation-only cost of the IFragmentable/IFragmentationParams refactor.
-/// All substrate construction (protein loading + digestion, RNA loading + digestion) happens in
-/// GlobalSetup, off-clock; the timed methods only call Fragment(...).
+/// All substrate construction (protein loading + digestion) happens in GlobalSetup, off-clock;
+/// the timed methods only call Fragment(...).
 /// </summary>
 /// <remarks>
-/// Uses a minimal exporter config so artifacts are just summary tables (Mean/StdDev) rather than
-/// the default per-measurement CSVs and R plots.
+/// Timing-only run: memory tracking is disabled and iterations are bounded so a 1000-protein
+/// corpus (bottom-up digestion yields tens of thousands of peptides) stays tractable.
 /// </remarks>
-[SimpleJob(RuntimeMoniker.Net10_0)]
-[MemoryDiagnoser]
+[SimpleJob(RuntimeMoniker.Net10_0, launchCount: 1, warmupCount: 4, iterationCount: 20)]
 [Config(typeof(MinimalArtifactsConfig))]
-[HideColumns("Job", "RntmId", "WarmupCount", "LaunchCount", "TargetCount", "RatioSD")]
+[HideColumns("Job", "RntmId", "LaunchCount", "WarmupCount", "IterationCount", "Gen0", "Gen1", "Gen2", "Allocated", "RatioSD")]
 public class BenchmarkDigestion
 {
     private class MinimalArtifactsConfig : ManualConfig
     {
         public MinimalArtifactsConfig()
         {
-            // Summary-only exports: one row per method (Mean/StdDev/Allocated), no per-measurement files.
+            // Summary-only exports: one row per method (Mean/StdDev), no per-measurement files.
             AddExporter(CsvExporter.Default);
             AddExporter(MarkdownExporter.GitHub);
             AddLogger(ConsoleLogger.Default);
@@ -52,40 +47,39 @@ public class BenchmarkDigestion
     // ── Inputs ────────────────────────────────────────────────────────────────────
     // Protein database path (local, human proteome with heavy variable mods).
     internal const string DefaultProteinDbPath = @"D:\Proteomes\uniprotkb_human_proteome_AND_reviewed_t_2024_03_22.xml";
-    // RNA databases housed in the test project, copied next to the Development output.
-    internal const string RnaTestDataDir = @"RnaTestData";
-    internal const string RnaEnsembl = @"TestDatabase_Ensembl.GRCh38.ncrna.fa";
-    internal const string RnaModomics = @"ModomicsUnmodifiedTrimmed.fasta";
 
-    // Cap the RNA corpus so setup stays tractable; override via environment variable.
-    internal const int DefaultRnaSequenceCap = 2000;
-    internal static int RnaSequenceCap =>
-        int.TryParse(Environment.GetEnvironmentVariable("MZLIB_BENCH_RNA_CAP"), out var cap) ? cap : DefaultRnaSequenceCap;
-
-    // Cap the protein corpus the same way (the human proteome defaults to the full set).
+    // Cap the protein corpus so setup stays tractable; override via environment variable.
     internal const int DefaultProteinCap = int.MaxValue;
     internal static int ProteinCap =>
         int.TryParse(Environment.GetEnvironmentVariable("MZLIB_BENCH_PROTEIN_CAP"), out var cap) ? cap : DefaultProteinCap;
 
-    private IReadOnlyList<OligoWithSetMods> _rnaOligos;
     private IReadOnlyList<PeptideWithSetModifications> _peptides;
     private IReadOnlyList<PeptideWithSetModifications> _proteins;
+
+    // Fixed fragmentation parameters so the loops match production search settings and the
+    // newest fragment-mass cutoffs (MaximumFragmentMassDa) are actually exercised.
+    private static readonly FragmentationParams FragmentationParameters = new()
+    {
+        DissociationType = DissociationType.HCD,
+        FragmentationTerminus = FragmentationTerminus.Both,
+        MaximumFragmentMassDa = 30000,
+    };
 
     [GlobalSetup]
     public void GlobalSetup()
     {
         _peptides = BuildPeptideCorpus();
         _proteins = BuildProteinCorpus();
-        _rnaOligos = BuildRnaCorpus().Take(RnaSequenceCap).ToList();
 
         // Warm up: trigger JIT and lazy mod/static initialization before timing.
-        if (_peptides.Count == 0 || _rnaOligos.Count == 0)
+        if (_peptides.Count == 0 && _proteins.Count == 0)
             throw new InvalidOperationException("Benchmark corpus is empty; check data paths and caps.");
 
         var warmupProducts = new List<Product>();
-        _peptides[0].Fragment(DissociationType.HCD, FragmentationTerminus.Both, warmupProducts);
-        _rnaOligos[0].Fragment(DissociationType.CID, FragmentationTerminus.Both, warmupProducts);
-        _proteins[0].Fragment(DissociationType.HCD, FragmentationTerminus.Both, warmupProducts);
+        if (_peptides.Count > 0)
+            _peptides[0].Fragment(FragmentationParameters, ref warmupProducts);
+        if (_proteins.Count > 0)
+            _proteins[0].Fragment(FragmentationParameters, ref warmupProducts);
     }
 
     private static IReadOnlyList<PeptideWithSetModifications> BuildPeptideCorpus()
@@ -112,33 +106,13 @@ public class BenchmarkDigestion
             .ToList();
     }
 
-    private static IEnumerable<OligoWithSetMods> BuildRnaCorpus()
-    {
-        var testDataRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, RnaTestDataDir));
-        foreach (var fasta in new[] { RnaEnsembl, RnaModomics })
-        {
-            var path = Path.Combine(testDataRoot, fasta);
-            if (!File.Exists(path))
-                continue;
-
-            var rnas = RnaDbLoader.LoadRnaFasta(path, generateTargets: true, DecoyType.None, false, out _);
-            foreach (var rna in rnas)
-            {
-                foreach (var oligo in rna.Digest(new RnaDigestionParams(), new List<Modification>(), new List<Modification>()))
-                {
-                    yield return oligo;
-                }
-            }
-        }
-    }
-
     [Benchmark]
     public int FragmentPeptides()
     {
         var products = new List<Product>();
         foreach (var peptide in _peptides)
         {
-            peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
+            peptide.Fragment(FragmentationParameters, ref products);
         }
 
         return products.Count;
@@ -150,19 +124,7 @@ public class BenchmarkDigestion
         var products = new List<Product>();
         foreach (var peptide in _proteins)
         {
-            peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
-        }
-
-        return products.Count;
-    }
-
-    [Benchmark]
-    public int FragmentRna()
-    {
-        var products = new List<Product>();
-        foreach (var oligo in _rnaOligos)
-        {
-            oligo.Fragment(DissociationType.CID, FragmentationTerminus.Both, products);
+            peptide.Fragment(FragmentationParameters, ref products);
         }
 
         return products.Count;
