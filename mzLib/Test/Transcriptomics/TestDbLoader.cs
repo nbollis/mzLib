@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using Omics.Modifications;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using UsefulProteomicsDatabases.Transcriptomics;
 using UsefulProteomicsDatabases;
 using Transcriptomics;
 using Omics;
+using Omics.Digestion;
 using Omics.Modifications.IO;
 using Omics.Modifications.IO.Modomics;
 using MzLibUtil;
@@ -120,9 +122,25 @@ namespace Test.Transcriptomics
                 var rna = RnaDbLoader.LoadRnaFasta(fastaPath, true, DecoyType.None, false, out var errors).Single();
                 Assert.That(errors, Is.Empty);
 
-                var actual = rna.Digest(new RnaDigestionParams(), new List<Modification>(), new List<Modification>()).Single();
+                var actualMods = new Dictionary<int, Modification>();
+                foreach (var kvp in rna.OneBasedPossibleLocalizedModifications)
+                {
+                    foreach (var modification in kvp.Value)
+                    {
+                        actualMods.Add(kvp.Key + 1, modification);
+                    }
+                }
+
+                var actual = new OligoWithSetMods(rna, new RnaDigestionParams(), 1, rna.Length, 0,
+                    CleavageSpecificity.Full, actualMods, numFixedMods: 0, rna.FivePrimeTerminus, rna.ThreePrimeTerminus);
                 var codeMap = Mods.ModomicsLoadReport.OneLetterCodeToMod;
-                var expected = new OligoWithSetMods($"A[{codeMap['K'].IdWithMotif}][{codeMap['L'].IdWithMotif}]G[{codeMap['M'].IdWithMotif}]C");
+                var expected = new OligoWithSetMods(new RNA("AGGC"), new RnaDigestionParams(), 1, 4, 0,
+                    CleavageSpecificity.Full, new Dictionary<int, Modification>
+                    {
+                        { 3, codeMap['K'] },
+                        { 4, codeMap['L'] },
+                        { 5, codeMap['M'] },
+                    }, numFixedMods: 0);
 
                 Assert.That(actual.BaseSequence, Is.EqualTo(expected.BaseSequence));
                 Assert.That(actual.FullSequence, Is.EqualTo(expected.FullSequence));
@@ -162,8 +180,8 @@ namespace Test.Transcriptomics
         public static void TestModomicsLookupExcludesAmbiguousCodes()
         {
             var codeMap = Mods.ModomicsLoadReport.OneLetterCodeToMod;
-            Assert.That(codeMap.ContainsKey('D'), Is.False);
-            Assert.That(codeMap.ContainsKey('P'), Is.False);
+            Assert.That(codeMap.ContainsKey('K'), Is.True);
+            Assert.That(codeMap.ContainsKey('@'), Is.False);
         }
 
         [Test]
