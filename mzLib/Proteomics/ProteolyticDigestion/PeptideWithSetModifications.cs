@@ -297,6 +297,12 @@ namespace Proteomics.ProteolyticDigestion
                         nTermMass = double.NaN;
                     }
 
+                    if (nTermMass > fragmentationParameters.MaximumFragmentMassDa)
+                    { 
+                        calculateNTermFragments = false;
+                        goto CTerminusFragments; 
+                    }
+
                     // add side-chain mod
                     if (AllModsOneIsNterminus.TryGetValue(r + 2, out Modification mod))
                     {
@@ -381,6 +387,11 @@ namespace Proteomics.ProteolyticDigestion
                         cTermMass = double.NaN;
                     }
 
+                    if (cTermMass > fragmentationParameters.MaximumFragmentMassDa)
+                    {
+                        calculateCTermFragments = false;
+                        continue;
+                    }
                     // add side-chain mod
                     if (AllModsOneIsNterminus.TryGetValue(BaseSequence.Length - r + 1, out Modification mod))
                     {
