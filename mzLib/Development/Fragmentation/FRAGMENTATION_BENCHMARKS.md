@@ -151,3 +151,18 @@ Interpretation: with the 30 kDa cap active, top-down cost is dominated by the ma
 now terminates at the cap's first crossing instead of scanning the protein tail (single-pass probe:
 ~3.7× faster on identical products). Bottom-up is roughly unchanged because most tryptic peptides sit
 below the cap and the array-precompute cost is amortized across products.
+
+### After user revert (only the `+6` line guard changes kept; my rewrite removed)
+
+Working tree = `af59522d` + `PeptideWithSetModifications.cs` guard lines only (n-side `>` exit,
+c-side `>=` exit) + the `IFragmentable`/`FragmentationParams` refactor. Same harness/caps/config
+(30 kDa, protein cap 1000, timing-only). 2026-09-03.
+
+| Method | This run (guard-only) | My rewrite | Pre-change (30 kDa) |
+|---|---|---|---|
+| `FragmentPeptides` (bottom-up) | 332.8 ms ± 6.08 | 392.4 ms ± 3.08 | 414.0 ms ± 7.06 |
+| `FragmentProteins` (top-down) | 1.2677 s ± 9.73 ms | 2,217.8 ms ± 33.4 | 2,141.1 ms ± 31.5 |
+
+Verdict: the minimal guard additions are the effective part of the optimization — the dense-array
+precompute / neutral-loss hoist were neutral-to-negative and were correctly dropped.
+Top-down at 30 kDa shows ~1.7× vs the pre-guard number; bottom-up ~16% faster.
