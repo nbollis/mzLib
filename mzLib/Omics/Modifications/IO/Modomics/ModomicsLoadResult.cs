@@ -29,4 +29,10 @@ public class ModomicsLoadResult
 
     /// <summary>Number of entries that cannot yet be represented.</summary>
     public int NotYetRepresentableCount => NotYetRepresentableEntries.Count;
+
+    /// <summary>
+    /// Unambiguous MODOMICS one-letter-code lookup used by sequence parsing. Only uniquely represented
+    /// modifications are included; duplicated codes are excluded.
+    /// </summary>
+    public Dictionary<char, Modification> OneLetterCodeToMod { get; init; } = new();
 }

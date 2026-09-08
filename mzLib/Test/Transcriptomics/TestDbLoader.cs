@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using Omics.Modifications;
 using System;
 using System.Collections.Generic;
@@ -9,8 +10,11 @@ using UsefulProteomicsDatabases.Transcriptomics;
 using UsefulProteomicsDatabases;
 using Transcriptomics;
 using Omics;
+using Omics.Digestion;
 using Omics.Modifications.IO;
+using Omics.Modifications.IO.Modomics;
 using MzLibUtil;
+using Transcriptomics.Digestion;
 
 namespace Test.Transcriptomics
 {
@@ -20,6 +24,8 @@ namespace Test.Transcriptomics
     {
         public static string ModomicsUnmodifedFastaPath => Path.Combine(TestContext.CurrentContext.TestDirectory,
             "Transcriptomics/TestData/ModomicsUnmodifiedTrimmed.fasta");
+
+        private const string ModomicsTestHeader = ">id:999|Name:modomics-coded|SOterm:SO:999|Type:tRNA|Subtype:Test|Feature:Demo|Cellular_Localization:cytosol|Species:Test organism";
 
         /// <summary>
         /// Detect the headertype of the test cases
@@ -76,6 +82,106 @@ namespace Test.Transcriptomics
             Assert.That(oligos.First().AdditionalDatabaseFields!["Subtype"], Is.EqualTo("Ala"));
             Assert.That(oligos.First().AdditionalDatabaseFields!["Feature"], Is.EqualTo("VGC"));
             Assert.That(oligos.First().AdditionalDatabaseFields!["Cellular Localization"], Is.EqualTo("prokaryotic cytosol"));
+        }
+
+        [Test]
+        public static void TestModomicsOneLetterCodesLoadAsCanonicalSequenceWithLocalizedMods()
+        {
+            var fastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "modomics_one_letter_codes.fasta");
+            File.WriteAllText(fastaPath, ModomicsTestHeader + Environment.NewLine + "AKLM");
+
+            try
+            {
+                var rnas = RnaDbLoader.LoadRnaFasta(fastaPath, true, DecoyType.None, false, out var errors);
+                Assert.That(errors, Is.Empty);
+                Assert.That(rnas.Count, Is.EqualTo(1));
+
+                var rna = rnas.Single();
+                Assert.That(rna.BaseSequence, Is.EqualTo("AGGC"));
+                Assert.That(rna.OneBasedPossibleLocalizedModifications.Keys.OrderBy(p => p), Is.EqualTo(new[] { 2, 3, 4 }));
+
+                var codeMap = Mods.ModomicsLoadReport.OneLetterCodeToMod;
+                Assert.That(rna.OneBasedPossibleLocalizedModifications[2].Single().IdWithMotif, Is.EqualTo(codeMap['K'].IdWithMotif));
+                Assert.That(rna.OneBasedPossibleLocalizedModifications[3].Single().IdWithMotif, Is.EqualTo(codeMap['L'].IdWithMotif));
+                Assert.That(rna.OneBasedPossibleLocalizedModifications[4].Single().IdWithMotif, Is.EqualTo(codeMap['M'].IdWithMotif));
+            }
+            finally
+            {
+                File.Delete(fastaPath);
+            }
+        }
+
+        [Test]
+        public static void TestModomicsOneLetterCodeFastaDigestsLikeBracketedSequence()
+        {
+            var fastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "modomics_one_letter_digest.fasta");
+            File.WriteAllText(fastaPath, ModomicsTestHeader + Environment.NewLine + "AKLM");
+
+            try
+            {
+                var rna = RnaDbLoader.LoadRnaFasta(fastaPath, true, DecoyType.None, false, out var errors).Single();
+                Assert.That(errors, Is.Empty);
+
+                var actualMods = new Dictionary<int, Modification>();
+                foreach (var kvp in rna.OneBasedPossibleLocalizedModifications)
+                {
+                    foreach (var modification in kvp.Value)
+                    {
+                        actualMods.Add(kvp.Key + 1, modification);
+                    }
+                }
+
+                var actual = new OligoWithSetMods(rna, new RnaDigestionParams(), 1, rna.Length, 0,
+                    CleavageSpecificity.Full, actualMods, numFixedMods: 0, rna.FivePrimeTerminus, rna.ThreePrimeTerminus);
+                var codeMap = Mods.ModomicsLoadReport.OneLetterCodeToMod;
+                var expected = new OligoWithSetMods(new RNA("AGGC"), new RnaDigestionParams(), 1, 4, 0,
+                    CleavageSpecificity.Full, new Dictionary<int, Modification>
+                    {
+                        { 3, codeMap['K'] },
+                        { 4, codeMap['L'] },
+                        { 5, codeMap['M'] },
+                    }, numFixedMods: 0);
+
+                Assert.That(actual.BaseSequence, Is.EqualTo(expected.BaseSequence));
+                Assert.That(actual.FullSequence, Is.EqualTo(expected.FullSequence));
+                Assert.That(actual.NumMods, Is.EqualTo(expected.NumMods));
+                Assert.That(actual.MonoisotopicMass, Is.EqualTo(expected.MonoisotopicMass).Within(1e-9));
+                CollectionAssert.AreEquivalent(expected.AllModsOneIsNterminus.Keys, actual.AllModsOneIsNterminus.Keys);
+                foreach (var expectedMod in expected.AllModsOneIsNterminus)
+                {
+                    Assert.That(actual.AllModsOneIsNterminus[expectedMod.Key].IdWithMotif, Is.EqualTo(expectedMod.Value.IdWithMotif));
+                }
+            }
+            finally
+            {
+                File.Delete(fastaPath);
+            }
+        }
+
+        [Test]
+        public static void TestModomicsOneLetterCodesThrowForUnsupportedSymbols()
+        {
+            var fastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "modomics_unknown_code.fasta");
+            File.WriteAllText(fastaPath, ModomicsTestHeader + Environment.NewLine + "A@C");
+
+            try
+            {
+                var exception = Assert.Throws<ArgumentException>(() =>
+                    RnaDbLoader.LoadRnaFasta(fastaPath, true, DecoyType.None, false, out _));
+                Assert.That(exception!.Message, Does.Contain("Nucleic Acid Letter @ does not exist"));
+            }
+            finally
+            {
+                File.Delete(fastaPath);
+            }
+        }
+
+        [Test]
+        public static void TestModomicsLookupExcludesAmbiguousCodes()
+        {
+            var codeMap = Mods.ModomicsLoadReport.OneLetterCodeToMod;
+            Assert.That(codeMap.ContainsKey('K'), Is.True);
+            Assert.That(codeMap.ContainsKey('@'), Is.False);
         }
 
         [Test]

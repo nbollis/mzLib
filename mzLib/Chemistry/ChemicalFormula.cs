@@ -216,6 +216,23 @@ namespace Chemistry
             return f;
         }
 
+        public List<(string Token, int Count)> GetElementCounts()
+        {
+            var counts = new List<(string Token, int Count)>();
+
+            foreach (var isotope in Isotopes.OrderBy(p => p.Key.AtomicNumber).ThenBy(p => p.Key.MassNumber))
+            {
+                counts.Add(($"{isotope.Key.Element.AtomicSymbol}{{{isotope.Key.MassNumber}}}", isotope.Value));
+            }
+
+            foreach (var element in Elements.OrderBy(p => p.Key.AtomicNumber))
+            {
+                counts.Add((element.Key.AtomicSymbol, element.Value));
+            }
+
+            return counts;
+        }
+
         public int NeutronCount()
         {
             if (Elements.Count > 0)

@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Chemistry;
 using Omics.Fragmentation;
+using Omics.Modifications;
 using Transcriptomics;
 using UsefulProteomicsDatabases;
 
@@ -137,7 +138,10 @@ namespace Test.Transcriptomics
             Assert.That(rna1.Length, Is.EqualTo(rna3.Length));
             Assert.That(rna1.Length, Is.EqualTo(rna3.Length));
 
-            Assert.Throws<ArgumentException>(() => new RNA("GUA~CUG"));
+            var rna4 = new RNA("GUA~CUG");
+            Assert.That(rna4.BaseSequence, Is.EqualTo("GUAUCUG"));
+            Assert.That(rna4.OneBasedPossibleLocalizedModifications[4].Single().IdWithMotif,
+                Is.EqualTo(Mods.ModomicsLoadReport.OneLetterCodeToMod['~'].IdWithMotif));
         }
 
         [Test]

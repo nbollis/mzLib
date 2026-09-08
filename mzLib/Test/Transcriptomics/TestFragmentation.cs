@@ -78,9 +78,14 @@ namespace Test.Transcriptomics
                         ? potentialProducts
                         : potentialProducts.Where(p => p.GetRnaTerminusType() == term).ToList();
 
-                    var expectedProductCount = term == FragmentationTerminus.Both
-                        ? (oligoWithSetMods.Length - 1) * (terminalSpecifc.Count - 1) + 1 // there is only one M ion, so for both, remove that form muliplier and add one
-                        : (oligoWithSetMods.Length - 1) * terminalSpecifc.Count;
+                    if (term != FragmentationTerminus.Both)
+                    {
+                        terminalSpecifc = terminalSpecifc.Append(ProductType.M).ToList();
+                    }
+
+                    var cleavageProductCount = terminalSpecifc.Count(p => p != ProductType.M);
+
+                    var expectedProductCount = (oligoWithSetMods.Length - 1) * cleavageProductCount + 1;
 
                     oligoWithSetMods.Fragment(type, term, products);
                     Assert.That(products.Count, Is.EqualTo(expectedProductCount));

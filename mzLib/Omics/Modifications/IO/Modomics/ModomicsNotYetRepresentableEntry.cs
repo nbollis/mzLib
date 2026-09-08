@@ -8,6 +8,9 @@ public class ModomicsNotYetRepresentableEntry
     /// <summary>MODOMICS numeric database id.</summary>
     public required int Id { get; init; }
 
+    /// <summary>MODOMICS one-letter code (the "abbrev" symbol), when it has exactly one character.</summary>
+    public required string Abbrev { get; init; }
+
     /// <summary>MODOMICS short name (e.g. "pm1G").</summary>
     public required string ShortName { get; init; }
 
