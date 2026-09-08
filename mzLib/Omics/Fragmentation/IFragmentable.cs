@@ -35,7 +35,8 @@ public interface IFragmentable : IHasMass, IHasChemicalFormula
 
         IBioPolymerWithSetMods? bpwsm = this as IBioPolymerWithSetMods;
 
-        // Create M ions minus the neutral loss of any mod. Previously Protein Only (represents a labile mod M-ion such as M-Phospho). 
+        // Create M ions minus the neutral loss of any mod. (represents a labile mod M-ion such as M-Phospho)
+        // Previously Protein Only, not exposed to RNA just yet, should be evaluated in the context of search before doing so. 
         if (bpwsm != null && fragmentationParameters is FragmentationParams)
         {
             foreach (var mod in bpwsm.AllModsOneIsNterminus.Values.Where(p => p.NeutralLosses != null))
