@@ -184,23 +184,7 @@ namespace Readers
             string outPath = Path.Combine(Path.GetDirectoryName(filePath)!,
                 filePath.GetPeriodTolerantFilenameWithoutExtension() + "_snip_" + startScan + "-" + endScan + ".mzML");
 
-            var sourceFile = new SourceFile(
-                originalFile.SourceFile.NativeIdFormat,
-                originalFile.SourceFile.MassSpectrometerFileFormat,
-                originalFile.SourceFile.CheckSum,
-                originalFile.SourceFile.FileChecksumType,
-                originalFile.SourceFile.Uri,
-                originalFile.SourceFile.Id,
-                originalFile.SourceFile.FileName)
-            {
-                // Carried explicitly: this is a field-by-field COPY of SourceFile, so an init-only
-                // property added later is silently dropped here even though no constructor call
-                // changed. Omitting it meant every snipped mzML still lost the instrument -- the
-                // exact loss the writer fix exists to prevent.
-                InstrumentModel = originalFile.SourceFile.InstrumentModel,
-                InstrumentSerialNumber = originalFile.SourceFile.InstrumentSerialNumber,
-                AcquisitionStartTime = originalFile.SourceFile.AcquisitionStartTime
-            };
+            var sourceFile = (SourceFile)originalFile.SourceFile.Clone();
 
             var dataFile = new GenericMsDataFile(scansForTheNewFile.ToArray(), sourceFile);
             MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(dataFile, outPath, false);

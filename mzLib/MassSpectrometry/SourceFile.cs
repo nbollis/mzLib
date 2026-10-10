@@ -21,7 +21,7 @@ using MzLibUtil;
 
 namespace MassSpectrometry
 {
-    public class SourceFile
+    public class SourceFile : ICloneable
     {
         /// <summary>
         /// Written to mzML's <c>sourceFile/@location</c> when no usable <see cref="Uri"/> is available,
@@ -121,5 +121,15 @@ namespace MassSpectrometry
         /// machine's time zone, and writes "Z".
         /// </summary>
         public DateTime? AcquisitionStartTime { get; init; }
+
+        public object Clone()
+        {
+            return new SourceFile(NativeIdFormat, MassSpectrometerFileFormat, CheckSum, FileChecksumType, Uri, Id, FileName)
+            {
+                InstrumentModel = this.InstrumentModel,
+                InstrumentSerialNumber = this.InstrumentSerialNumber,
+                AcquisitionStartTime = this.AcquisitionStartTime
+            };
+        }
     }
 }
