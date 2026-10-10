@@ -63,6 +63,18 @@
     <None Update="FileReadingTests\ArchitectureGuard\ThermoFisher.CommonCore.MassPrecisionEstimator.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_AllProteinGroups.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_AllTranscriptGroups.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_IndividualFile_ProteinGroups.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_IndividualFile_TranscriptGroups.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
