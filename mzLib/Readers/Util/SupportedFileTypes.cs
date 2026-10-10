@@ -40,21 +40,16 @@ namespace Readers
         MzIdentML,
         MzIdentMLGz,
         MetaMorpheusQuantifiedProteinGroups,
+        MetaMorpheusProteinGroups,
         FlashLFQQuantifiedPeptide,
         MetaMorpheusQuantifiedTranscriptGroups,
+        MetaMorpheusTranscriptGroups,
         FlashLFQQuantifiedOligo,
         DiaNnReportParquet
     }
 
     public static class SupportedFileTypeExtensions
     {
-        /// <summary>
-        /// The suffix every MetaMorpheus protein-group table name shares. <see cref="GetFileExtension"/> gives
-        /// the quantified name, which is the one written back out.
-        /// </summary>
-        private const string MetaMorpheusProteinGroupsSuffix = "ProteinGroups.tsv";
-        private const string MetaMorpheusTranscriptGroupsSuffix = "TranscriptGroups.tsv";
-
         /// <summary>
         /// Returns the extension for the file type
         /// </summary>
@@ -104,8 +99,12 @@ namespace Readers
                 SupportedFileType.Sdrf => ".sdrf.tsv",
                 SupportedFileType.MzIdentML => ".mzid",
                 SupportedFileType.MzIdentMLGz => ".mzid.gz",
+                // Covers both the AllProteinGroups.tsv and the individual file <file>_ProteinGroups.tsv cases
+                SupportedFileType.MetaMorpheusProteinGroups => "ProteinGroups.tsv", 
                 SupportedFileType.MetaMorpheusQuantifiedProteinGroups => "QuantifiedProteinGroups.tsv",
                 SupportedFileType.FlashLFQQuantifiedPeptide => "QuantifiedPeptides.tsv",
+                // Covers both the AllTranscriptGroups.tsv and the individual file <file>_TranscriptGroups.tsv cases
+                SupportedFileType.MetaMorpheusTranscriptGroups => "TranscriptGroups.tsv", 
                 SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups => "QuantifiedTranscriptGroups.tsv",
                 SupportedFileType.FlashLFQQuantifiedOligo => "QuantifiedOligos.tsv",
                 // As with DiaNnReport, only the conventional name WriteResults would use: the report is
@@ -158,11 +157,13 @@ namespace Readers
                         return SupportedFileType.MetaMorpheusQuantifiedProteinGroups;
                     // The same table under MetaMorpheus's other names: AllProteinGroups.tsv when label-free
                     // quantification is off, and <file>_ProteinGroups.tsv for each file's individual results.
-                    if (filePath.EndsWith(MetaMorpheusProteinGroupsSuffix, StringComparison.InvariantCultureIgnoreCase))
-                        return SupportedFileType.MetaMorpheusQuantifiedProteinGroups;
-                    if (filePath.EndsWith(MetaMorpheusTranscriptGroupsSuffix, StringComparison.InvariantCultureIgnoreCase))
+                    if (filePath.EndsWith(SupportedFileType.MetaMorpheusProteinGroups.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
+                        return SupportedFileType.MetaMorpheusProteinGroups;
+                    if (filePath.EndsWith(SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
                         return SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups;
-                    if (filePath.EndsWith(SupportedFileType.FlashLFQQuantifiedPeptide.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
+                    if (filePath.EndsWith(SupportedFileType.MetaMorpheusTranscriptGroups.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
+                            return SupportedFileType.MetaMorpheusTranscriptGroups;
+                        if (filePath.EndsWith(SupportedFileType.FlashLFQQuantifiedPeptide.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
                         return SupportedFileType.FlashLFQQuantifiedPeptide;
                     if (filePath.EndsWith(SupportedFileType.FlashLFQQuantifiedOligo.GetFileExtension(), StringComparison.InvariantCultureIgnoreCase))
                         return SupportedFileType.FlashLFQQuantifiedOligo;
@@ -329,8 +330,10 @@ namespace Readers
                 SupportedFileType.PytheasResult => typeof(PytheasResultFile),
                 SupportedFileType.MzIdentML => typeof(MzIdentMLResultFile),
                 SupportedFileType.MzIdentMLGz => typeof(MzIdentMLResultFile),
+                SupportedFileType.MetaMorpheusProteinGroups => typeof(ProteinGroupFromTsvFile),
                 SupportedFileType.MetaMorpheusQuantifiedProteinGroups => typeof(ProteinGroupFromTsvFile),
                 SupportedFileType.FlashLFQQuantifiedPeptide => typeof(QuantifiedPeptideFile),
+                SupportedFileType.MetaMorpheusTranscriptGroups => typeof(TranscriptGroupFromTsvFile),
                 SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups => typeof(TranscriptGroupFromTsvFile),
                 SupportedFileType.FlashLFQQuantifiedOligo => typeof(QuantifiedOligoFile),
                 SupportedFileType.DiaNnReportParquet => typeof(DiaNnParquetReportFile),

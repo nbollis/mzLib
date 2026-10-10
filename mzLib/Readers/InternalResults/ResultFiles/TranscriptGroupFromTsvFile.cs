@@ -6,7 +6,7 @@ namespace Readers;
 /// </summary>
 public class TranscriptGroupFromTsvFile : ProteinGroupFromTsvFile
 {
-    public override SupportedFileType FileType => SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups;
+    public override SupportedFileType FileType => string.IsNullOrEmpty(FilePath) ? SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups : FilePath.ParseFileType();
 
     public TranscriptGroupFromTsvFile(string filePath) : base(filePath) { }
 

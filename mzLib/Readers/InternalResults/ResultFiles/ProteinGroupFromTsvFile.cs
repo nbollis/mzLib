@@ -21,7 +21,7 @@ public class ProteinGroupFromTsvFile : ResultFile<ProteinGroupFromTsv>, IResultF
     private static readonly string[] SamplePrefixes =
         ["IntensityOccupancy_", "CountOccupancy_", "SpectralCount_", "Intensity_"];
 
-    public override SupportedFileType FileType => SupportedFileType.MetaMorpheusQuantifiedProteinGroups;
+    public override SupportedFileType FileType => FilePath.IsNullOrEmpty() ? SupportedFileType.MetaMorpheusQuantifiedProteinGroups : FilePath.ParseFileType();
     public override Software Software { get; set; }
 
     public ProteinGroupFromTsvFile(string filePath) : base(filePath, Software.MetaMorpheus) { }
