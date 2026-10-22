@@ -2,6 +2,7 @@ using MzLibUtil;
 using NUnit.Framework;
 using Readers;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,12 @@ namespace Test.FileReadingTests.InternalFileReading
     {
         private static string FixturePath => Path.Combine(TestContext.CurrentContext.TestDirectory,
             @"FileReadingTests\ExternalFileTypes\MetaMorpheus_RNA_AllQuantifiedTranscriptGroups.tsv");
+
+        private static string AllTranscriptGroupsFixturePath => Path.Combine(TestContext.CurrentContext.TestDirectory,
+            @"FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_AllTranscriptGroups.tsv");
+
+        private static string IndividualTranscriptGroupsFixturePath => Path.Combine(TestContext.CurrentContext.TestDirectory,
+            @"FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_IndividualFile_TranscriptGroups.tsv");
 
         [Test]
         public void ReadsEveryRowThroughBothEntryPoints()
@@ -101,10 +108,10 @@ namespace Test.FileReadingTests.InternalFileReading
             }
         }
 
-        [TestCase("AllTranscriptGroups.tsv")]
-        [TestCase("Sample1_TranscriptGroups.tsv")]
-        [TestCase("ALLQUANTIFIEDTRANSCRIPTGROUPS.TSV")]
-        public void RecognizesTranscriptGroupFileNames(string fileName)
+        [TestCase("AllTranscriptGroups.tsv", SupportedFileType.MetaMorpheusTranscriptGroups)]
+        [TestCase("Sample1_TranscriptGroups.tsv", SupportedFileType.MetaMorpheusTranscriptGroups)]
+        [TestCase("ALLQUANTIFIEDTRANSCRIPTGROUPS.TSV", SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups)]
+        public void RecognizesTranscriptGroupFileNames(string fileName, SupportedFileType expectedType)
         {
             string directory = Path.Combine(TestContext.CurrentContext.TestDirectory, nameof(TestTranscriptGroupFromTsv));
             Directory.CreateDirectory(directory);
@@ -113,8 +120,9 @@ namespace Test.FileReadingTests.InternalFileReading
 
             try
             {
-                Assert.That(path.ParseFileType(), Is.EqualTo(SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups));
+                Assert.That(path.ParseFileType(), Is.EqualTo(expectedType));
                 var result = (TranscriptGroupFromTsvFile)FileReader.ReadResultFile(path);
+                Assert.That(result.FileType, Is.EqualTo(expectedType));
                 Assert.That(result.Single().QValue, Is.EqualTo(0.004));
                 Assert.That(FileReader.ReadFile<TranscriptGroupFromTsvFile>(path).Single().ProteinGroupName, Is.EqualTo("T1"));
             }
@@ -122,6 +130,54 @@ namespace Test.FileReadingTests.InternalFileReading
             {
                 Directory.Delete(directory, true);
             }
+        }
+
+        [TestCaseSource(nameof(UnquantifiedFixtureCases))]
+        public void ReadsUnquantifiedTranscriptGroupFixturesThroughBothEntryPoints(
+            string fixturePath, int expectedRows, string expectedGroupName, string expectedSampleLabel,
+            SupportedFileType expectedType)
+        {
+            var direct = new TranscriptGroupFromTsvFile(fixturePath);
+            var factory = (TranscriptGroupFromTsvFile)FileReader.ReadResultFile(fixturePath);
+            var generic = FileReader.ReadFile<TranscriptGroupFromTsvFile>(fixturePath);
+            var row = direct.Single(r => r.ProteinGroupName == expectedGroupName);
+            var sample = expectedSampleLabel == "spectral"
+                ? row.SampleGroups.Values.First(s => s.SpectralCount is > 0)
+                : row.SampleGroups.Values.First(s => s.Intensity is > 0);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(fixturePath.ParseFileType(), Is.EqualTo(expectedType));
+                Assert.That(direct.FileType, Is.EqualTo(expectedType));
+                Assert.That(factory.FileType, Is.EqualTo(expectedType));
+                Assert.That(direct.Software, Is.EqualTo(Software.MetaMorpheus));
+                Assert.That(direct.Count(), Is.EqualTo(expectedRows));
+                Assert.That(factory.Count(), Is.EqualTo(expectedRows));
+                Assert.That(generic.Count(), Is.EqualTo(expectedRows));
+                Assert.That(sample.SpectralCount ?? 0, Is.GreaterThan(0));
+            });
+
+            if (expectedSampleLabel == "spectral")
+                Assert.That(sample.CountOccupancy.Sites, Is.Not.Empty);
+            else
+                Assert.That(sample.Intensity, Is.GreaterThan(0));
+        }
+
+        private static IEnumerable<TestCaseData> UnquantifiedFixtureCases()
+        {
+            yield return new TestCaseData(
+                AllTranscriptGroupsFixturePath, 9, "22mer#1-m6A", "spectral",
+                SupportedFileType.MetaMorpheusTranscriptGroups);
+            yield return new TestCaseData(
+                IndividualTranscriptGroupsFixturePath, 3, "20mer2", "intensity",
+                SupportedFileType.MetaMorpheusTranscriptGroups);
+        }
+
+        [Test]
+        public void ParameterlessTranscriptGroupReaderUsesTheQuantifiedFallback()
+        {
+            Assert.That(new TranscriptGroupFromTsvFile().FileType,
+                Is.EqualTo(SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups));
         }
 
         [Test]

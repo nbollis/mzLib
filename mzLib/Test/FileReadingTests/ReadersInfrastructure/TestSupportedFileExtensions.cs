@@ -53,8 +53,12 @@ namespace Test.FileReadingTests.ReadersInfrastructure
             yield return new TestCaseData(@"DataFiles\SmallCalibratible_Yeast.mzID", SupportedFileType.MzIdentML);
             yield return new TestCaseData(@"DataFiles\PXD078927_msgf_1_1_0.mzid.gz", SupportedFileType.MzIdentMLGz);
             yield return new TestCaseData(@"FileReadingTests\ExternalFileTypes\MetaMorpheus_1.1.11_AllQuantifiedProteinGroups.tsv", SupportedFileType.MetaMorpheusQuantifiedProteinGroups);
+            yield return new TestCaseData(@"FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_AllProteinGroups.tsv", SupportedFileType.MetaMorpheusProteinGroups);
+            yield return new TestCaseData(@"FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_IndividualFile_ProteinGroups.tsv", SupportedFileType.MetaMorpheusProteinGroups);
             yield return new TestCaseData(@"FileReadingTests\ExternalFileTypes\MetaMorpheus_1.1.11_AllQuantifiedPeptides.tsv", SupportedFileType.FlashLFQQuantifiedPeptide);
             yield return new TestCaseData(@"FileReadingTests\ExternalFileTypes\MetaMorpheus_RNA_AllQuantifiedTranscriptGroups.tsv", SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups);
+            yield return new TestCaseData(@"FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_AllTranscriptGroups.tsv", SupportedFileType.MetaMorpheusTranscriptGroups);
+            yield return new TestCaseData(@"FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_IndividualFile_TranscriptGroups.tsv", SupportedFileType.MetaMorpheusTranscriptGroups);
             yield return new TestCaseData(@"FileReadingTests\ExternalFileTypes\MetaMorpheus_RNA_AllQuantifiedOligos.tsv", SupportedFileType.FlashLFQQuantifiedOligo);
         }
 
@@ -140,6 +144,28 @@ namespace Test.FileReadingTests.ReadersInfrastructure
             // Ensure the enumType determination is implemented for all values 
             Type type = enumType.GetResultFileType();
             Assert.That(type, Is.Not.Null, $"Type for {enumType} is not implemented.");
+        }
+
+        [TestCase(SupportedFileType.MetaMorpheusProteinGroups, typeof(ProteinGroupFromTsvFile))]
+        [TestCase(SupportedFileType.MetaMorpheusQuantifiedProteinGroups, typeof(ProteinGroupFromTsvFile))]
+        [TestCase(SupportedFileType.MetaMorpheusTranscriptGroups, typeof(TranscriptGroupFromTsvFile))]
+        [TestCase(SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups, typeof(TranscriptGroupFromTsvFile))]
+        public static void GroupFileTypesUseTheSharedReaders(SupportedFileType fileType, Type expectedReaderType)
+        {
+            Assert.That(fileType.GetResultFileType(), Is.EqualTo(expectedReaderType));
+        }
+
+        [Test]
+        public static void ExistingSupportedFileTypeValuesRemainStable()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That((int)SupportedFileType.MetaMorpheusQuantifiedProteinGroups, Is.EqualTo(34));
+                Assert.That((int)SupportedFileType.FlashLFQQuantifiedPeptide, Is.EqualTo(35));
+                Assert.That((int)SupportedFileType.MetaMorpheusQuantifiedTranscriptGroups, Is.EqualTo(36));
+                Assert.That((int)SupportedFileType.FlashLFQQuantifiedOligo, Is.EqualTo(37));
+                Assert.That((int)SupportedFileType.DiaNnReportParquet, Is.EqualTo(38));
+            });
         }
 
         [Test]

@@ -30,6 +30,12 @@ namespace Test.FileReadingTests.InternalFileReading
         private static string FixturePath => Path.Combine(TestContext.CurrentContext.TestDirectory,
             @"FileReadingTests\ExternalFileTypes\MetaMorpheus_1.1.11_AllQuantifiedProteinGroups.tsv");
 
+        private static string AllProteinGroupsFixturePath => Path.Combine(TestContext.CurrentContext.TestDirectory,
+            @"FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_AllProteinGroups.tsv");
+
+        private static string IndividualProteinGroupsFixturePath => Path.Combine(TestContext.CurrentContext.TestDirectory,
+            @"FileReadingTests\ExternalFileTypes\MetaMorphrus_1.1.12_IndividualFile_ProteinGroups.tsv");
+
         private string _outputDirectory = "";
 
         [OneTimeSetUp]
@@ -163,18 +169,54 @@ namespace Test.FileReadingTests.InternalFileReading
         /// MetaMorpheus names the table AllProteinGroups.tsv when label-free quantification is off, and
         /// &lt;file&gt;_ProteinGroups.tsv for each file's individual results. Both are the same table.
         /// </summary>
-        [TestCase("AllProteinGroups.tsv")]
-        [TestCase("Sample1_ProteinGroups.tsv")]
-        [TestCase("ALLPROTEINGROUPS.TSV")]
-        public void EveryMetaMorpheusProteinGroupFileNameIsRecognised(string fileName)
+        [TestCase("AllProteinGroups.tsv", SupportedFileType.MetaMorpheusProteinGroups)]
+        [TestCase("Sample1_ProteinGroups.tsv", SupportedFileType.MetaMorpheusProteinGroups)]
+        [TestCase("ALLPROTEINGROUPS.TSV", SupportedFileType.MetaMorpheusProteinGroups)]
+        [TestCase("AllQuantifiedProteinGroups.tsv", SupportedFileType.MetaMorpheusQuantifiedProteinGroups)]
+        public void EveryMetaMorpheusProteinGroupFileNameIsRecognised(string fileName, SupportedFileType expectedType)
         {
             string path = Path.Combine(_outputDirectory, fileName);
             File.WriteAllText(path, "Protein Accession\tProtein Decoy/Contaminant/Target\tProtein QValue\nP1|P2\tT\t0.004\n");
 
-            Assert.That(path.ParseFileType(), Is.EqualTo(SupportedFileType.MetaMorpheusQuantifiedProteinGroups));
-            var row = ((ProteinGroupFromTsvFile)FileReader.ReadResultFile(path)).Single();
+            Assert.That(path.ParseFileType(), Is.EqualTo(expectedType));
+            var result = (ProteinGroupFromTsvFile)FileReader.ReadResultFile(path);
+            Assert.That(result.FileType, Is.EqualTo(expectedType));
+            var row = result.Single();
             Assert.That(row.Accessions, Is.EqualTo(new[] { "P1", "P2" }));
             Assert.That(FileReader.ReadFile<ProteinGroupFromTsvFile>(path).Single().QValue, Is.EqualTo(0.004));
+        }
+
+        [TestCaseSource(nameof(UnquantifiedFixtureCases))]
+        public void ReadsUnquantifiedProteinGroupFixturesThroughBothEntryPoints(
+            string fixturePath, int expectedRows, string expectedGroupName, SupportedFileType expectedType)
+        {
+            var direct = new ProteinGroupFromTsvFile(fixturePath);
+            var factory = (ProteinGroupFromTsvFile)FileReader.ReadResultFile(fixturePath);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(fixturePath.ParseFileType(), Is.EqualTo(expectedType));
+                Assert.That(direct.FileType, Is.EqualTo(expectedType));
+                Assert.That(factory.FileType, Is.EqualTo(expectedType));
+                Assert.That(direct.Software, Is.EqualTo(Software.MetaMorpheus));
+                Assert.That(direct.Count(), Is.EqualTo(expectedRows));
+                Assert.That(factory.Count(), Is.EqualTo(expectedRows));
+                Assert.That(direct.Single(r => r.ProteinGroupName == expectedGroupName).ProteinGroupName,
+                    Is.EqualTo(expectedGroupName));
+            });
+        }
+
+        private static IEnumerable<TestCaseData> UnquantifiedFixtureCases()
+        {
+            yield return new TestCaseData(AllProteinGroupsFixturePath, 13, "P29401", SupportedFileType.MetaMorpheusProteinGroups);
+            yield return new TestCaseData(IndividualProteinGroupsFixturePath, 15, "P14618", SupportedFileType.MetaMorpheusProteinGroups);
+        }
+
+        [Test]
+        public void ParameterlessProteinGroupReaderUsesTheQuantifiedFallback()
+        {
+            Assert.That(new ProteinGroupFromTsvFile().FileType,
+                Is.EqualTo(SupportedFileType.MetaMorpheusQuantifiedProteinGroups));
         }
 
         [Test]

@@ -40,12 +40,12 @@ namespace Readers
         MzIdentML,
         MzIdentMLGz,
         MetaMorpheusQuantifiedProteinGroups,
-        MetaMorpheusProteinGroups,
         FlashLFQQuantifiedPeptide,
         MetaMorpheusQuantifiedTranscriptGroups,
-        MetaMorpheusTranscriptGroups,
         FlashLFQQuantifiedOligo,
-        DiaNnReportParquet
+        DiaNnReportParquet,
+        MetaMorpheusProteinGroups,
+        MetaMorpheusTranscriptGroups
     }
 
     public static class SupportedFileTypeExtensions
