@@ -49,17 +49,23 @@ public class DeNovoMappingResult
     /// </summary>
     public int UniqueProteinsMapped { get; set; }
 
+    /// <summary>Mean of <see cref="RetentionTimeErrors"/>, in the predictor's units (Chronologer: % acetonitrile).</summary>
     public double MeanRtError { get; set; } = double.NaN;
+
+    /// <summary>Median of <see cref="RetentionTimeErrors"/>, in the predictor's units (Chronologer: % acetonitrile).</summary>
     public double MedianRtError { get; set; } = double.NaN;
+
+    /// <summary>Standard deviation of <see cref="RetentionTimeErrors"/>, in the predictor's units (Chronologer: % acetonitrile).</summary>
     public double StdDevRtError { get; set; } = double.NaN;
     public double MeanPredictionScore { get; set; } = double.NaN;
     public double MedianPredictionScore { get; set; } = double.NaN;
     public double StdDevPredictionScore { get; set; } = double.NaN;
 
     /// <summary>
-    /// Observed minus predicted retention time, in minutes, for each target prediction that has both. The prediction is
-    /// Chronologer's, mapped onto minutes by its file's calibration; predictions from files that could not be calibrated
-    /// are left out.
+    /// <see cref="DeNovoPrediction.RetentionTimeError"/> of each target prediction that has one: the observed time placed
+    /// on the predictor's scale by its file's calibration, minus the prediction. The unit is the predictor's
+    /// (Chronologer: % acetonitrile), not minutes, which keeps errors from runs with different gradients comparable.
+    /// Predictions from files that could not be calibrated are left out.
     /// </summary>
     [TypeConverter(typeof(CommaDelimitedDoubleListConverter))]
     public List<double> RetentionTimeErrors { get; set; } = new();

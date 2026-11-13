@@ -185,10 +185,10 @@ namespace Test.FileReadingTests.DeNovoMapping
         }
 
         [Test]
-        public void RetentionTimeErrorsAreInCalibratedMinutes()
+        public void RetentionTimeErrorsAreOnThePredictorScale()
         {
-            // The stub predicts i for the i-th peptide; the run elutes it at 5 + 2i minutes, so predictions are not
-            // minutes until calibrated. One anchor is 10 minutes late, and one prediction scores below the anchor cutoff.
+            // The stub predicts i for the i-th peptide; the run elutes it at 5 + 2i minutes, so one predictor unit is two
+            // minutes. One anchor is 10 minutes (5 units) late, and one prediction scores below the anchor cutoff.
             var peptides = Enumerable.Range(0, 30).Select(CalibrationPeptide).ToArray();
             var predictor = new LookupPredictor(peptides.Select((p, i) => (p, (double)i)));
             var psms = peptides.Select((p, i) => (p, i == 29 ? 0.5 : 0.9, (double?)((5 + 2 * i + (i == 15 ? 10 : 0)) * 60.0))).ToArray();
@@ -201,12 +201,88 @@ namespace Test.FileReadingTests.DeNovoMapping
             Assert.That(mapper.Warnings, Is.Empty);
             Assert.That(mapper.RetentionTimeCalibrations.Keys, Is.EqualTo(new[] { "RunCalibrated" }));
             Assert.That(mapper.RetentionTimeCalibrations["RunCalibrated"].AnchorCount, Is.EqualTo(29));
-            Assert.That(mapper.Predictions[3].CalibratedRetentionTime, Is.EqualTo(11).Within(0.05));
+            Assert.That(mapper.Predictions[3].RetentionTimeError, Is.EqualTo(0).Within(0.05));
             Assert.That(result.RetentionTimeErrors, Has.Count.EqualTo(30));
-            Assert.That(result.RetentionTimeErrors[15], Is.EqualTo(10).Within(0.1));
-            Assert.That(result.RetentionTimeErrors.Where((_, i) => i != 15), Has.All.InRange(-0.1, 0.1));
-            Assert.That(result.MedianRtError, Is.EqualTo(0).Within(0.1));
+            Assert.That(result.RetentionTimeErrors[15], Is.EqualTo(5).Within(0.1));
+            Assert.That(result.RetentionTimeErrors.Where((_, i) => i != 15), Has.All.InRange(-0.05, 0.05));
+            Assert.That(result.MedianRtError, Is.EqualTo(0).Within(0.05));
             Assert.That(predictor.Disposed, Is.False, "a predictor passed in stays the caller's");
+        }
+
+        [Test]
+        public void RunsWithDifferentGradientsGiveTheSameErrors()
+        {
+            // The same peptides on a gradient twice as long: minutes would double the errors, the predictor scale does not.
+            var peptides = Enumerable.Range(0, 30).Select(CalibrationPeptide).ToArray();
+            var predictor = new LookupPredictor(peptides.Select((p, i) => (p, (double)i)));
+            var protein = new Protein(string.Concat(peptides), "PGRAD");
+            double[] Errors(string run, double minutesPerUnit)
+            {
+                var psms = peptides.Select((p, i) => (p, 0.9, (double?)((5 + minutesPerUnit * (i + (i == 15 ? 5 : 0))) * 60.0))).ToArray();
+                string mzTab = WriteMzTab($"{run}.mztab", $"file:///Z:/{run}.mgf", psms);
+                var mapper = new DeNovoMapper([mzTab], new DeNovoMappingParameters { RetentionTimePredictor = predictor, MaxThreads = 1 });
+                return mapper.MapDatabase(run, [protein]).RetentionTimeErrors.ToArray();
+            }
+
+            Assert.That(Errors("RunLong", 4), Is.EqualTo(Errors("RunShort", 2)).Within(0.05));
+        }
+
+        [Test]
+        public void NonFiniteObservedTimeGetsNoError()
+        {
+            var peptides = Enumerable.Range(0, 30).Select(CalibrationPeptide).ToArray();
+            var predictor = new LookupPredictor(peptides.Select((p, i) => (p, (double)i)));
+            var psms = peptides.Select((p, i) => (p, 0.9, (double?)((5 + 2 * i) * 60.0))).ToArray();
+            string mzTab = WriteMzTab("RunNaN.mztab", "file:///Z:/RunNaN.mgf", psms);
+            var mapper = new DeNovoMapper([mzTab], new DeNovoMappingParameters { MapRetentionTimes = false });
+
+            // An MGF block without RTINSECONDS loads with a NaN time.
+            mapper.Predictions[4].ObservedRetentionTime = double.NaN;
+            using (var retentionTimeMapper = new DeNovoRetentionTimeMapper(predictor))
+            {
+                retentionTimeMapper.PredictRetentionTimes(mapper.Predictions, 1);
+                retentionTimeMapper.FitCalibrations(mapper.Predictions, 0.8);
+            }
+            var result = mapper.MapDatabase("NaN", [new Protein(string.Concat(peptides), "PNAN")]);
+
+            Assert.That(mapper.Predictions[4].RetentionTimeError, Is.Null);
+            Assert.That(result.RetentionTimeErrors, Has.Count.EqualTo(29));
+            Assert.That(result.MeanRtError, Is.EqualTo(0).Within(0.05));
+        }
+
+        [Test]
+        public void SpectrumWithAnotherPrecursorGivesNoTime()
+        {
+            // mzLib drops the empty second block, so Casanovo's index=2 (block three, 700) lands on block four (800)
+            // and index=3 runs past the end. Only index=0 keeps its time.
+            string mgf = Path.Combine(_directory, "RunShifted.mgf");
+            var builder = new StringBuilder();
+            foreach (var (scan, pepmass, peaks) in new[] { (1, 500.0, true), (2, 600.0, false), (3, 700.0, true), (4, 800.0, true) })
+            {
+                builder.AppendLine("BEGIN IONS").AppendLine($"PEPMASS={pepmass.ToString(CultureInfo.InvariantCulture)}")
+                    .AppendLine("CHARGE=2+").AppendLine($"SCANS={scan}").AppendLine($"RTINSECONDS={scan * 60}");
+                if (peaks)
+                    builder.AppendLine("200.0 100.0").AppendLine("300.0 200.0");
+                builder.AppendLine("END IONS");
+            }
+            File.WriteAllText(mgf, builder.ToString());
+            string mzTab = WriteMzTabAt("RunShifted.mztab", "file:///Z:/RunShifted.mgf",
+                ("VLSAADK", 0.9, 500.0, 0), ("AGLLDEFLSK", 0.9, 700.0, 2), ("TPEPTLDER", 0.9, 800.0, 3));
+
+            var mapper = new DeNovoMapper([mzTab], new DeNovoMappingParameters { SpectraFilePaths = [mgf] });
+
+            Assert.That(mapper.Predictions.Select(p => p.ObservedRetentionTime), Is.EqualTo(new double?[] { 1.0, null, null }));
+            Assert.That(mapper.Warnings.Single(w => w.Contains("precursor m/z")), Does.Contain("1 of 3 spectra references"));
+        }
+
+        [Test]
+        public void SpectraFileMustHaveTheRecordedExtension()
+        {
+            var supplied = new[] { Path.Combine("D:", "data", "Run.raw"), Path.Combine("D:", "data", "Other.mgf") };
+
+            Assert.That(DeNovoRetentionTimeMapper.ResolveSpectraFile("Z:/missing/Run.mgf", supplied), Is.Null);
+            Assert.That(DeNovoRetentionTimeMapper.ResolveSpectraFile("Z:/missing/Run.raw", supplied), Is.EqualTo(supplied[0]));
+            Assert.That(DeNovoRetentionTimeMapper.ResolveSpectraFile("Z:/missing/other.MGF", supplied), Is.EqualTo(supplied[1]));
         }
 
         [Test]
@@ -386,7 +462,15 @@ namespace Test.FileReadingTests.DeNovoMapping
             WriteMzTab(name, msRunLocation, [], psms);
 
         /// <param name="psms">Retention times are in seconds, as mzTab reports them.</param>
-        private string WriteMzTab(string name, string msRunLocation, string[] extraHeaderLines, params (string Sequence, double Score, double? RetentionTime)[] psms)
+        private string WriteMzTab(string name, string msRunLocation, string[] extraHeaderLines, params (string Sequence, double Score, double? RetentionTime)[] psms) =>
+            WriteMzTab(name, msRunLocation, extraHeaderLines, psms.Select((p, i) => (p.Sequence, p.Score, p.RetentionTime, 500.0, i)).ToArray());
+
+        /// <summary>PSMs with no retention time, each with its own precursor m/z and spectra_ref index.</summary>
+        private string WriteMzTabAt(string name, string msRunLocation, params (string Sequence, double Score, double MassToCharge, int Index)[] psms) =>
+            WriteMzTab(name, msRunLocation, [], psms.Select(p => (p.Sequence, p.Score, (double?)null, p.MassToCharge, p.Index)).ToArray());
+
+        private string WriteMzTab(string name, string msRunLocation, string[] extraHeaderLines,
+            (string Sequence, double Score, double? RetentionTime, double MassToCharge, int Index)[] psms)
         {
             string path = Path.Combine(_directory, name);
             var builder = new StringBuilder();
@@ -399,11 +483,12 @@ namespace Test.FileReadingTests.DeNovoMapping
 
             for (int i = 0; i < psms.Length; i++)
             {
-                var (sequence, score, rt) = psms[i];
+                var (sequence, score, rt, mz, index) = psms[i];
                 string rtText = rt?.ToString(CultureInfo.InvariantCulture) ?? "null";
+                string mzText = mz.ToString(CultureInfo.InvariantCulture);
                 string aaScores = string.Join(',', Enumerable.Repeat("0.90000", sequence.Length));
                 builder.AppendLine($"PSM\t{sequence}\t{i + 1}\tnull\tnull\tnull\tnull\t[MS, MS:1003281, Casanovo, 5.0.0]\t" +
-                                   $"{score.ToString(CultureInfo.InvariantCulture)}\tnull\t{rtText}\t2\t500.0\t500.0\tms_run[1]:index={i}\tnull\tnull\tnull\tnull\t{aaScores}");
+                                   $"{score.ToString(CultureInfo.InvariantCulture)}\tnull\t{rtText}\t2\t{mzText}\t{mzText}\tms_run[1]:index={index}\tnull\tnull\tnull\tnull\t{aaScores}");
             }
 
             File.WriteAllText(path, builder.ToString());

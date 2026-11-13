@@ -60,9 +60,12 @@ public class DeNovoPrediction : IRetentionPredictable
     public double? PredictedRetentionTime { get; set; }
 
     /// <summary>
-    /// <see cref="PredictedRetentionTime"/> mapped onto minutes by its file's calibration. Null when either is missing.
+    /// <see cref="ObservedRetentionTime"/> placed on the predictor's scale by its file's calibration, minus
+    /// <see cref="PredictedRetentionTime"/>, so in the predictor's units (Chronologer: % acetonitrile), not minutes.
+    /// That scale is the same in every run, so errors from different runs can be pooled. Null when either time is
+    /// missing or not finite, or the file could not be calibrated.
     /// </summary>
-    public double? CalibratedRetentionTime { get; set; }
+    public double? RetentionTimeError { get; set; }
 
     public string BaseSequence { get; }
     public string FullSequence => Record.FullSequence;

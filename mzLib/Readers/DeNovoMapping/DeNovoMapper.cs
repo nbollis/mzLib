@@ -81,9 +81,10 @@ public class DeNovoMapper
     public IReadOnlyList<DeNovoPrediction> Predictions { get; }
 
     /// <summary>
-    /// Each mzTab file's calibration from predicted retention time to minutes, keyed by
+    /// Each mzTab file's calibration from its minutes to the predictor's scale, keyed by
     /// <see cref="DeNovoPrediction.FileKey"/>. Empty when retention times are not mapped; files that could not be
-    /// fitted are absent.
+    /// fitted are absent. The model's docs speak of library iRT; here that scale is the predictor's
+    /// (Chronologer: % acetonitrile), and <see cref="IrtCalibrationModel.ResidualSd"/> is in the same units.
     /// </summary>
     public IReadOnlyDictionary<string, IrtCalibrationModel> RetentionTimeCalibrations { get; } =
         new Dictionary<string, IrtCalibrationModel>();
@@ -183,8 +184,8 @@ public class DeNovoMapper
             {
                 result.TargetPredictions++;
                 result.TargetPredictionScores.Add(prediction.Score);
-                if (prediction is { ObservedRetentionTime: { } observed, CalibratedRetentionTime: { } calibrated })
-                    result.RetentionTimeErrors.Add(observed - calibrated);
+                if (prediction.RetentionTimeError is { } error && double.IsFinite(error))
+                    result.RetentionTimeErrors.Add(error);
             }
 
             if (decoyHit[i])

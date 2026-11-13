@@ -73,15 +73,31 @@ public class DeNovoRetentionTimeMapper : IDisposable
                 .OrderBy(s => s.OneBasedScanNumber)
                 .ToArray();
 
+            int looked = 0, mismatched = 0;
             foreach (var prediction in group)
             {
                 if (prediction.ObservedRetentionTime.HasValue)
                     continue;
 
+                looked++;
                 var scan = FindScan(prediction.Record.SpectraRef, ms2Scans, dataFile);
-                if (scan is not null)
-                    prediction.ObservedRetentionTime = scan.RetentionTime;
+                if (scan is null)
+                    continue;
+
+                // A reference that resolved to the wrong spectrum would give a wrong time, and the calibration is
+                // fitted from these times, so keep a time only when the spectrum is the one Casanovo read.
+                if (!PrecursorMatches(scan, prediction.Record.ExperimentalMassToCharge))
+                {
+                    mismatched++;
+                    continue;
+                }
+
+                prediction.ObservedRetentionTime = scan.RetentionTime;
             }
+
+            if (mismatched > 0)
+                Warnings.Add($"{Path.GetFileName(mzTab.FilePath)}: {mismatched} of {looked} spectra references resolved to a spectrum " +
+                             $"in {Path.GetFileName(spectraPath)} whose precursor m/z differs from the PSM's; their retention times were left empty.");
         }
     }
 
@@ -105,11 +121,12 @@ public class DeNovoRetentionTimeMapper : IDisposable
 
     /// <summary>
     /// Fits, for each mzTab file, the predicted retention time against the observed one with mzLib's robust LOWESS
-    /// (<see cref="IrtCalibration.Fit"/>), then sets <see cref="DeNovoPrediction.CalibratedRetentionTime"/> on every
-    /// prediction of that file. Anchors are the file's predictions scoring at least <paramref name="minimumAnchorScore"/>,
-    /// one per peptide (the best-scoring one). They do not depend on any database, so every database is scored against
-    /// the same calibration and the errors are comparable between databases. A file that cannot be fitted, for example
-    /// with fewer than 20 anchors, is warned about and its predictions get no calibrated time.
+    /// (<see cref="IrtCalibration.Fit"/>), then sets <see cref="DeNovoPrediction.RetentionTimeError"/> on every
+    /// prediction of that file: its observed time mapped onto the predictor's scale, minus the prediction. Anchors are the
+    /// file's predictions scoring at least <paramref name="minimumAnchorScore"/>, one per peptide (the best-scoring one).
+    /// They do not depend on any database, so every database is scored against the same calibration and the errors are
+    /// comparable between databases. A file that cannot be fitted, for example with fewer than 20 anchors, is warned
+    /// about and its predictions get no error.
     /// </summary>
     public void FitCalibrations(IReadOnlyList<DeNovoPrediction> predictions, double minimumAnchorScore)
     {
@@ -136,11 +153,14 @@ public class DeNovoRetentionTimeMapper : IDisposable
                 continue;
             }
 
+            // Compare on the predictor's scale: going forward with ToIrt multiplies by the fit's slope, where going back
+            // to minutes would divide by it and blow up wherever the curve is nearly flat.
             _calibrations[file.Key] = calibration;
             foreach (var prediction in file)
             {
-                if (prediction.PredictedRetentionTime is { } predicted)
-                    prediction.CalibratedRetentionTime = calibration.ToRtMinutes(new Irt(predicted)).Value;
+                if (prediction is { ObservedRetentionTime: { } observed, PredictedRetentionTime: { } predicted }
+                    && double.IsFinite(observed) && double.IsFinite(predicted))
+                    prediction.RetentionTimeError = calibration.ToIrt(new RtMinutes(observed)).Value - predicted;
             }
         }
     }
@@ -175,18 +195,37 @@ public class DeNovoRetentionTimeMapper : IDisposable
     }
 
     /// <summary>
-    /// Picks the spectra file for an mzTab ms_run: a supplied file with the same name (without extension),
-    /// otherwise the recorded location if it still exists.
+    /// Picks the spectra file for an mzTab ms_run: a supplied file with the same name and extension, otherwise the
+    /// recorded location if it still exists. The extension must match because a spectra_ref counts spectra in the
+    /// file Casanovo read; a .raw of the same run would number them differently.
     /// </summary>
     public static string? ResolveSpectraFile(string recordedPath, IReadOnlyList<string> spectraFilePaths)
     {
-        string name = Path.GetFileNameWithoutExtension(recordedPath);
+        string fileName = Path.GetFileName(recordedPath);
         var match = spectraFilePaths.FirstOrDefault(p =>
-            string.Equals(Path.GetFileNameWithoutExtension(p), name, StringComparison.OrdinalIgnoreCase));
+            string.Equals(Path.GetFileName(p), fileName, StringComparison.OrdinalIgnoreCase));
         if (match is not null)
             return match;
 
         return File.Exists(recordedPath) ? recordedPath : null;
+    }
+
+    /// <summary>
+    /// How far, in m/z, the spectrum's precursor may be from the PSM's exp_mass_to_charge. Casanovo copies that value
+    /// from the spectrum (PEPMASS or the selected ion), so they differ only by rounding.
+    /// </summary>
+    internal const double PrecursorMzTolerance = 0.01;
+
+    /// <summary>
+    /// True when the spectrum's precursor m/z agrees with the PSM's, or when either is missing and so cannot be checked.
+    /// </summary>
+    internal static bool PrecursorMatches(MsDataScan scan, double experimentalMassToCharge)
+    {
+        if (scan.SelectedIonMZ is not { } precursorMz || !double.IsFinite(precursorMz) || precursorMz <= 0
+            || !double.IsFinite(experimentalMassToCharge) || experimentalMassToCharge <= 0)
+            return true;
+
+        return Math.Abs(precursorMz - experimentalMassToCharge) <= PrecursorMzTolerance;
     }
 
     /// <summary>
